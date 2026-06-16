@@ -6,6 +6,7 @@ export const getDashboardData = async () => {
 
     return {
       symptomEntries: res.data.recentSymptoms,
+      dailyMonitoringEntries: res.data.recentDailyMonitoring,
       alerts: res.data.alerts,
       medSchedule: res.data.medicationSchedule,
       dietPlan: res.data.dietPlan,

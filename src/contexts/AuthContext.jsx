@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect } from "react";
 import { getMe } from "../services/authService";
+import { useAuthStore } from "../store/authStore";
 
 const AuthContext = createContext();
 
@@ -26,11 +27,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = (userData, token) => {
     localStorage.setItem("token", token);
+    useAuthStore.getState().setToken(token);
     setUser(userData);
   };
 
   const logout = () => {
     localStorage.removeItem("token");
+    useAuthStore.getState().clearToken();
     setUser(null);
   };
 

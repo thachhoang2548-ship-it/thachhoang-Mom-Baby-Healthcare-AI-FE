@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import AuthContext from "../contexts/AuthContext";
 import { createDailyMonitoring } from "../services/dailyMonitoringService";
 import { SleepForm } from "../components/dailyMonitoring/SleepForm";
 import { WaterForm } from "../components/dailyMonitoring/WaterForm";
@@ -7,10 +8,12 @@ import { MealForm } from "../components/dailyMonitoring/MealForm";
 import { MoodForm } from "../components/dailyMonitoring/MoodForm";
 import { VitalsForm } from "../components/dailyMonitoring/VitalsForm";
 import { SymptomsForm } from "../components/dailyMonitoring/SymptomsForm";
+import { StudentLifestyleForm } from "../components/dailyMonitoring/StudentLifestyleForm";
 import { SubmitCard } from "../components/dailyMonitoring/SubmitCard";
 
 const DailyMonitoringPage = () => {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
 
   const [sleep, setSleep] = useState({ hours: 6, quality: 3 });
   const [water, setWater] = useState({ liters: 6 });
@@ -20,6 +23,32 @@ const DailyMonitoringPage = () => {
   const [symptoms, setSymptoms] = useState({ severity: 2, note: "" });
   const [loading, setLoading] = useState(false);
 
+  // Student lifestyle state
+  const [lifestyle, setLifestyle] = useState({
+    studyHours: 4,
+    extracurricularHours: 1,
+    sleepHours: 6,
+    socialHours: 2,
+    physicalActivityHours: 1,
+    gpa: 3.0,
+    stressLevel: "Moderate"
+  });
+
+  const handleSleepChange = (newSleep) => {
+    setSleep(newSleep);
+    setLifestyle((prev) => ({ ...prev, sleepHours: newSleep.hours }));
+  };
+
+  const handleLifestyleChange = (updater) => {
+    setLifestyle((prev) => {
+      const next = typeof updater === "function" ? updater(prev) : updater;
+      if (next.sleepHours !== prev.sleepHours) {
+        setSleep((s) => ({ ...s, hours: next.sleepHours }));
+      }
+      return next;
+    });
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
 
@@ -27,7 +56,10 @@ const DailyMonitoringPage = () => {
 
     const payload = {
       date: new Date(),
-      sleep,
+      sleep: {
+        ...sleep,
+        hours: user?.userType === "student" ? lifestyle.sleepHours : sleep.hours
+      },
       water,
       meals,
       mood,
@@ -38,6 +70,15 @@ const DailyMonitoringPage = () => {
         weight: Number(vitals.weight),
       },
       symptoms,
+      ...(user?.userType === "student" ? {
+        studyHours: lifestyle.studyHours,
+        extracurricularHours: lifestyle.extracurricularHours,
+        sleepHours: lifestyle.sleepHours,
+        socialHours: lifestyle.socialHours,
+        physicalActivityHours: lifestyle.physicalActivityHours,
+        gpa: lifestyle.gpa,
+        stressLevel: lifestyle.stressLevel
+      } : {})
     };
 
     try {
@@ -71,12 +112,15 @@ const DailyMonitoringPage = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <SleepForm sleep={sleep} setSleep={setSleep} />
+          <SleepForm sleep={sleep} setSleep={handleSleepChange} />
           <WaterForm water={water} setWater={setWater} />
           <MealForm meals={meals} setMeals={setMeals} />
           <MoodForm mood={mood} setMood={setMood} />
           <VitalsForm vitals={vitals} setVitals={setVitals} />
           <SymptomsForm symptoms={symptoms} setSymptoms={setSymptoms} />
+          {user?.userType === "student" && (
+            <StudentLifestyleForm lifestyle={lifestyle} setLifestyle={handleLifestyleChange} />
+          )}
         </div>
 
         <SubmitCard loading={loading} onSubmit={handleSubmit} />

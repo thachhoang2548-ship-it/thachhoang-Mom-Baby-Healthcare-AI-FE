@@ -1,28 +1,35 @@
 export const MARKET = {
-  appName: "HealthSync",
-  tagline: "Đồng hành sức khỏe cho sinh viên Việt Nam",
+  appName: "Mom Ơi!",
+  tagline: "Thấu hiểu lòng mẹ, nâng bước con yêu - Dinh dưỡng & Sức khỏe tinh thần cho Mẹ và Bé",
   phonePlaceholder: "0912345678 hoặc +84912345678",
-  phoneHint: "Số điện thoại Việt Nam (dùng nhận SMS cảnh báo)",
+  phoneHint: "Số điện thoại người dùng (dùng nhận SMS cảnh báo y tế/sức khỏe)",
 };
 
 export const DIET_TYPES = [
-  { value: "balanced", label: "Ăn đa dạng (mặc định)" },
-  { value: "vegetarian", label: "Ăn chay" },
-  { value: "low_budget", label: "Sinh viên — ưu tiên món rẻ" },
-  { value: "low_sugar", label: "Hạn chế đường" },
-  { value: "low_salt", label: "Hạn chế muối" },
+  { value: "pre_natal", label: "Dinh dưỡng trước thai kỳ" },
+  { value: "pregnancy_diet", label: "Dinh dưỡng thai kỳ (Ăn cho hai người)" },
+  { value: "post_natal_recovery", label: "Dinh dưỡng hồi phục sau sinh" },
+  { value: "baby_weaning", label: "Thực đơn ăn dặm cho bé" }
 ];
 
 export const USER_TYPES = [
-  { value: "student", label: "Sinh viên" },
-  { value: "general", label: "Người dùng khác" },
+  { value: "pre-natal", label: "Chuẩn bị mang thai (Fertility Tracker)" },
+  { value: "pregnant", label: "Đang mang thai (Pregnancy Care)" },
+  { value: "post-natal", label: "Sau sinh (Postpartum Care & Baby Nutrition)" }
 ];
 
-export const COMMON_STUDENT_CONDITIONS = [
-  "viêm loét dạ dày",
-  "cận thị",
-  "hen suyễn",
-  "dị ứng",
-  "thiếu máu",
-  "lo âu / căng thẳng",
+export const SUBSCRIPTION_TIERS = [
+  { value: "free", label: "Mom Khởi Đầu (Free)" },
+  { value: "modern", label: "Mom Hiện Đại (100k-200k VND/tháng)" },
+  { value: "vip", label: "Super Mom VIP (200k-500k VND/tháng)" }
+];
+
+export const COMMON_MATERNAL_CONDITIONS = [
+  "ốm nghén nhiều",
+  "tiểu đường thai kỳ",
+  "nguy cơ tiền sản giật",
+  "lo âu/căng thẳng sau sinh",
+  "dị ứng thức ăn ở trẻ",
+  "bé hay khóc dạ đề",
+  "bé chậm tăng cân",
 ];

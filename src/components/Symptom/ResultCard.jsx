@@ -13,7 +13,7 @@ const ResultCard = ({ result }) => {
 
   const severity = result?.severity_level || "low";
   const condition = result?.predicted_condition || "Tình trạng chưa xác định";
-  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const baseUrl = import.meta.env.VITE_NODE_API_URL || "http://localhost:5000";
   const imageUrl = result.images && result.images.length > 0 
     ? `${baseUrl}/${result.images[0]}` 
     : null;

@@ -4,10 +4,16 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: "#0d9488",
-        saffron: "#0d9488",
-        "background-light": "#f8f7f5",
-        "background-dark": "#221b10",
+        primary: "#FF7A8A",
+        saffron: "#FF7A8A",
+        "background-light": "#FFF7F8",
+        "background-dark": "#1F1416",
+        secondary: "#FDBA74",
+        accent: "#10B981",
+        momPink: { DEFAULT: '#F472B6', light: '#FCE7F3', dark: '#DB2777' },
+        momPurple: { DEFAULT: '#A78BFA', light: '#EDE9FE', dark: '#7C3AED' },
+        momGreen: { DEFAULT: '#34D399', light: '#D1FAE5', dark: '#059669' },
+        momAmber: { DEFAULT: '#FBBF24', light: '#FEF9C3' },
       },
       fontFamily: {
         display: ["Manrope", "sans-serif"],

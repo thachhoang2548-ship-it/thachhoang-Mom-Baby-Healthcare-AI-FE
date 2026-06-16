@@ -37,11 +37,10 @@ export const SleepForm = ({ sleep, setSleep }) => {
               <button
                 key={idx}
                 onClick={() => setSleep({ ...sleep, quality: idx + 1 })}
-                className={`text-4xl transition-all ${
-                  sleep.quality === idx + 1
-                    ? "scale-125"
-                    : "opacity-50 hover:opacity-100 hover:scale-110"
-                }`}
+                className={`text-4xl transition-all ${sleep.quality === idx + 1
+                  ? "scale-125"
+                  : "opacity-50 hover:opacity-100 hover:scale-110"
+                  }`}
                 aria-label={`quality-${idx + 1}`}
               >
                 {idx === 2 ? <span className="p-2 rounded-full bg-saffron/20">{emo}</span> : emo}
