@@ -8,38 +8,38 @@ import {
 import { Toaster } from "react-hot-toast";
 
 // New Maternal Pages
-import LoginPage from "./pages/auth/LoginPage";
-import RegisterPage from "./pages/auth/RegisterPage";
-import JourneySetupPage from "./pages/onboarding/JourneySetupPage";
-import FertilityPage from "./pages/fertility/FertilityPage";
-import IvfTimelinePage from "./pages/fertility/IvfTimelinePage";
-import PregnancyDashPage from "./pages/pregnancy/PregnancyDashPage";
-import MealPlanPage from "./pages/pregnancy/MealPlanPage";
-import ExercisePlanPage from "./pages/pregnancy/ExercisePlanPage";
-import UpgradePage from "./pages/UpgradePage";
+import LandingPage from "./views/pages/LandingPage";
+import DashboardOverviewPage from "./views/pages/DashboardOverviewPage";
+import LoginPage from "./views/pages/auth/LoginPage";
+import RegisterPage from "./views/pages/auth/RegisterPage";
+import JourneySetupPage from "./views/pages/onboarding/JourneySetupPage";
+import FertilityPage from "./views/pages/fertility/FertilityPage";
+import PregnancyDashPage from "./views/pages/pregnancy/PregnancyDashPage";
+import MealPlanPage from "./views/pages/pregnancy/MealPlanPage";
+import ExercisePlanPage from "./views/pages/pregnancy/ExercisePlanPage";
+import UpgradePage from "./views/pages/UpgradePage";
 
 // Postpartum (Module 3) & Baby Nutrition (Module 4)
-import PostpartumDashPage from "./pages/postpartum/PostpartumDashPage";
-import EpdsPage from "./pages/postpartum/EpdsPage";
-import VoiceJournalPage from "./pages/postpartum/VoiceJournalPage";
-import BabyDashPage from "./pages/baby/BabyDashPage";
-import BabyMenuPage from "./pages/baby/BabyMenuPage";
-import GrowthChartPage from "./pages/baby/GrowthChartPage";
+import PostpartumDashPage from "./views/pages/postpartum/PostpartumDashPage";
+import EpdsPage from "./views/pages/postpartum/EpdsPage";
+import VoiceJournalPage from "./views/pages/postpartum/VoiceJournalPage";
+import BabyDashPage from "./views/pages/baby/BabyDashPage";
+import BabyMenuPage from "./views/pages/baby/BabyMenuPage";
+import GrowthChartPage from "./views/pages/baby/GrowthChartPage";
 
 // Other compatibility pages
-import Consent from "./pages/Consent";
-import RecipePage from "./pages/RecipePage";
-import NotificationsPage from "./pages/NotificationsPage";
-import MedicationScheduler from "./pages/MedicationScheduler";
-import SymptomPage from "./pages/SymptomPage";
-import SymptomHistoryPage from "./pages/SymptomHistoryPage";
-import SymptomDetailPage from "./pages/SymptomDetailPage";
-import DailyMonitoringPage from "./pages/DailyMonitoringPage";
-import ChatPage from "./pages/ChatPage";
+import Consent from "./views/pages/Consent";
+import RecipePage from "./views/pages/RecipePage";
+import NotificationsPage from "./views/pages/NotificationsPage";
+import MedicationScheduler from "./views/pages/MedicationScheduler";
+import SymptomPage from "./views/pages/SymptomPage";
+import SymptomHistoryPage from "./views/pages/SymptomHistoryPage";
+import SymptomDetailPage from "./views/pages/SymptomDetailPage";
+import DailyMonitoringPage from "./views/pages/DailyMonitoringPage";
 
-import ProtectedRoute from "./components/ProtectedRoute";
-import AppShell from "./components/layout/AppShell";
-import SplashScreen from "./components/SplashScreen";
+import ProtectedRoute from "./views/components/ProtectedRoute";
+import AppShell from "./views/components/layout/AppShell";
+import SplashScreen from "./views/components/SplashScreen";
 import { useSignalR } from "./hooks/useSignalR";
 
 function AppContent() {
@@ -51,7 +51,7 @@ function AppContent() {
       <Toaster position="top-right" reverseOrder={false} />
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/consent" element={<Consent />} />
@@ -75,11 +75,10 @@ function AppContent() {
           }
         >
           {/* Dashboard router fallback */}
-          <Route path="/dashboard" element={<Navigate to="/pregnancy" replace />} />
+          <Route path="/dashboard" element={<DashboardOverviewPage />} />
           
           {/* Fertility (Module 1) */}
           <Route path="/fertility" element={<FertilityPage />} />
-          <Route path="/fertility/ivf" element={<IvfTimelinePage />} />
 
           {/* Pregnancy (Module 2) */}
           <Route path="/pregnancy" element={<PregnancyDashPage />} />
@@ -108,7 +107,6 @@ function AppContent() {
           <Route path="/symptoms/:id" element={<SymptomDetailPage />} />
           <Route path="/symptom-entry" element={<SymptomPage />} />
           <Route path="/daily-monitoring" element={<DailyMonitoringPage />} />
-          <Route path="/chat" element={<ChatPage />} />
         </Route>
       </Routes>
     </>

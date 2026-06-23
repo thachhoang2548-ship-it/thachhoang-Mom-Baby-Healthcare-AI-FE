@@ -1,15 +1,15 @@
 import { useEffect, useRef } from 'react';
 import * as signalR from '@microsoft/signalr';
-import { useAuthStore } from '../store/authStore';
-import { useAlertStore } from '../store/alertStore';
+import { useAuthController } from '../controllers/authController';
+import { useAlertController } from '../controllers/alertController';
 import toast from 'react-hot-toast';
 import React from 'react';
 
 export function useSignalR() {
-  const token = useAuthStore((state) => state.token);
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const addAlert = useAlertStore((state) => state.addAlert);
-  const setSignalRConnected = useAlertStore((state) => state.setSignalRConnected);
+  const token = useAuthController((state) => state.token);
+  const isAuthenticated = useAuthController((state) => state.isAuthenticated);
+  const addAlert = useAlertController((state) => state.addAlert);
+  const setSignalRConnected = useAlertController((state) => state.setSignalRConnected);
   const connectionRef = useRef(null);
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export function useSignalR() {
       return;
     }
 
-    const hubUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5265'}/hubs/alerts`;
+    const hubUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/hubs/alerts`;
 
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(hubUrl, {
@@ -78,7 +78,7 @@ export function useSignalR() {
         const errMsg = err.toString();
         if (errMsg.includes('401') || errMsg.includes('Unauthorized')) {
           console.warn('SignalR unauthorized (401), clearing stale session...');
-          useAuthStore.getState().logout();
+          useAuthController.getState().logout();
           return;
         }
 
