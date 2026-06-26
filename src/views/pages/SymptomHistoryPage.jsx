@@ -8,7 +8,7 @@ export default function SymptomHistoryPage() {
 
   const getImageUrl = (url) => {
     if (!url) return "";
-    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+    if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) return url;
     const baseUrl = import.meta.env.VITE_NODE_API_URL || "http://localhost:5000";
     return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
   };
