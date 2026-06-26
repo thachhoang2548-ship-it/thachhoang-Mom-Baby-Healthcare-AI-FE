@@ -3,7 +3,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthController } from '../../../controllers/authController';
 import { useProfileController } from '../../../controllers/profileController';
 import { getTierNameVi } from '../../../utils/tierHelpers';
-import { Calendar, Heart, Baby, Sparkles, LogOut, RefreshCw, Activity, MessageSquare, LayoutDashboard } from 'lucide-react';
+import { Calendar, Heart, Baby, Sparkles, LogOut, RefreshCw, Activity, MessageSquare, LayoutDashboard, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function AppShell() {
@@ -75,6 +75,13 @@ export default function AppShell() {
       path: '/symptoms',
       icon: Activity,
       color: 'text-momGreen',
+    });
+
+    items.push({
+      label: 'Hồ Sơ Mẹ',
+      path: '/profile',
+      icon: User,
+      color: 'text-momPink',
     });
 
     items.push({
@@ -193,6 +200,14 @@ export default function AppShell() {
                 <span className="text-[10px] font-extrabold text-momPurple-dark dark:text-purple-400">
                   {tier === 'Free' ? 'Free' : tier}
                 </span>
+              </div>
+              <div className="mt-2.5 pt-2 border-t border-gray-100 dark:border-gray-800/60 flex justify-between items-center">
+                <Link to="/profile" className="text-[10px] font-bold text-momPink hover:text-momPink-dark hover:underline transition-all">
+                  Chỉnh sửa hồ sơ
+                </Link>
+                <Link to="/onboarding" className="text-[10px] font-bold text-gray-400 hover:text-gray-600 hover:underline transition-all">
+                  Đổi lộ trình
+                </Link>
               </div>
             </div>
           )}

@@ -18,6 +18,7 @@ import PregnancyDashPage from "./views/pages/pregnancy/PregnancyDashPage";
 import MealPlanPage from "./views/pages/pregnancy/MealPlanPage";
 import ExercisePlanPage from "./views/pages/pregnancy/ExercisePlanPage";
 import UpgradePage from "./views/pages/UpgradePage";
+import ProfilePage from "./views/pages/ProfilePage";
 
 // Postpartum (Module 3) & Baby Nutrition (Module 4)
 import PostpartumDashPage from "./views/pages/postpartum/PostpartumDashPage";
@@ -97,6 +98,7 @@ function AppContent() {
 
           {/* Simulated Premium Upgrade */}
           <Route path="/upgrade" element={<UpgradePage />} />
+          <Route path="/profile" element={<ProfilePage />} />
 
           {/* Other utility pages (kept for compatibility) */}
           <Route path="/diet-recipes" element={<RecipePage />} />
