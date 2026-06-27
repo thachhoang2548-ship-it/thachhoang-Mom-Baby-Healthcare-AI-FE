@@ -12,11 +12,23 @@ export default function AppShell() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const userRoles = Array.isArray(user?.roles) ? user.roles : (user?.role ? [user.role] : []);
+  const email = user?.email || '';
+  const isAdmin = userRoles.some(r => r.includes('Admin')) || email.includes('admin');
+  const isExpert = userRoles.some(r => r.includes('Expert')) || email.includes('expert');
+  const isStaff = userRoles.some(r => r.includes('Staff')) || email.includes('staff');
+
   useEffect(() => {
-    if (!momProfile) {
+    if (!momProfile && !isAdmin && !isExpert && !isStaff) {
       fetchProfile();
     }
-  }, [momProfile, fetchProfile]);
+    // Auto redirect special roles to their dedicated portal if they land on general dashboard
+    if (location.pathname === '/dashboard') {
+      if (isAdmin) navigate('/admin', { replace: true });
+      else if (isExpert) navigate('/expert', { replace: true });
+      else if (isStaff) navigate('/staff', { replace: true });
+    }
+  }, [momProfile, fetchProfile, location.pathname, isAdmin, isExpert, isStaff, navigate]);
 
   const handleLogout = async () => {
     try {
@@ -28,13 +40,45 @@ export default function AppShell() {
     }
   };
 
-  // Build navItems based on journeyStage and User Roles
+  // Build navItems based on user roles
   const getNavItems = () => {
-    const userRoles = Array.isArray(user?.roles) ? user.roles : (user?.role ? [user.role] : []);
-    const isAdmin = userRoles.some(r => r.includes('Admin'));
-    const isExpert = userRoles.some(r => r.includes('Expert'));
-    const isStaff = userRoles.some(r => r.includes('Staff'));
+    // 1. If System Admin
+    if (isAdmin) {
+      return [
+        {
+          label: 'Quản Trị Admin ⚙️',
+          path: '/admin',
+          icon: Settings,
+          color: 'text-blue-500',
+        }
+      ];
+    }
 
+    // 2. If Medical Expert
+    if (isExpert) {
+      return [
+        {
+          label: 'Duyệt AI & Tư Vấn 🩺',
+          path: '/expert',
+          icon: ShieldCheck,
+          color: 'text-purple-500',
+        }
+      ];
+    }
+
+    // 3. If Care Staff
+    if (isStaff) {
+      return [
+        {
+          label: 'Cổng Care Staff 🏥',
+          path: '/staff',
+          icon: HeartPulse,
+          color: 'text-emerald-500',
+        }
+      ];
+    }
+
+    // 4. Standard User (Mom) - ONLY Mom features shown
     const items = [
       {
         label: 'Tổng Quan',
@@ -43,48 +87,6 @@ export default function AppShell() {
         color: 'text-momPink',
       }
     ];
-
-    // Role Portals
-    if (isAdmin) {
-      items.push({
-        label: 'Quản Trị Admin ⚙️',
-        path: '/admin',
-        icon: Settings,
-        color: 'text-blue-500',
-      });
-    }
-    if (isExpert) {
-      items.push({
-        label: 'Duyệt AI & Tư Vấn 🩺',
-        path: '/expert',
-        icon: ShieldCheck,
-        color: 'text-purple-500',
-      });
-    }
-    if (isStaff) {
-      items.push({
-        label: 'Cổng Care Staff 🏥',
-        path: '/staff',
-        icon: HeartPulse,
-        color: 'text-emerald-500',
-      });
-    }
-
-    // If default user / demo mode, display role portals for easy testing
-    if (!isAdmin && !isExpert && !isStaff) {
-      items.push({
-        label: 'Duyệt AI Chuyên Gia 🩺',
-        path: '/expert',
-        icon: ShieldCheck,
-        color: 'text-purple-500',
-      });
-      items.push({
-        label: 'Quản Trị Admin ⚙️',
-        path: '/admin',
-        icon: Settings,
-        color: 'text-blue-500',
-      });
-    }
 
     if (journeyStage === 'PrePregnancy') {
       items.push({
@@ -115,7 +117,6 @@ export default function AppShell() {
       });
     }
 
-    // Common nav items for all stages
     items.push({
       label: 'Chẩn đoán AI',
       path: '/symptoms',
