@@ -20,6 +20,11 @@ import ExercisePlanPage from "./views/pages/pregnancy/ExercisePlanPage";
 import UpgradePage from "./views/pages/UpgradePage";
 import ProfilePage from "./views/pages/ProfilePage";
 
+// Role Portals (Admin, Expert, Staff)
+import AdminDashboardPage from "./views/pages/admin/AdminDashboardPage";
+import ExpertDashboardPage from "./views/pages/expert/ExpertDashboardPage";
+import StaffDashboardPage from "./views/pages/staff/StaffDashboardPage";
+
 // Postpartum (Module 3) & Baby Nutrition (Module 4)
 import PostpartumDashPage from "./views/pages/postpartum/PostpartumDashPage";
 import EpdsPage from "./views/pages/postpartum/EpdsPage";
@@ -99,6 +104,11 @@ function AppContent() {
           {/* Simulated Premium Upgrade */}
           <Route path="/upgrade" element={<UpgradePage />} />
           <Route path="/profile" element={<ProfilePage />} />
+
+          {/* Role Portals (Admin, Expert, Staff) */}
+          <Route path="/admin" element={<AdminDashboardPage />} />
+          <Route path="/expert" element={<ExpertDashboardPage />} />
+          <Route path="/staff" element={<StaffDashboardPage />} />
 
           {/* Other utility pages (kept for compatibility) */}
           <Route path="/diet-recipes" element={<RecipePage />} />

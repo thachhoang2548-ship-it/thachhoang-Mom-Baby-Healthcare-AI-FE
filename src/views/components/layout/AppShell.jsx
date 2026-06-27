@@ -3,7 +3,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthController } from '../../../controllers/authController';
 import { useProfileController } from '../../../controllers/profileController';
 import { getTierNameVi } from '../../../utils/tierHelpers';
-import { Calendar, Heart, Baby, Sparkles, LogOut, RefreshCw, Activity, MessageSquare, LayoutDashboard, User } from 'lucide-react';
+import { Calendar, Heart, Baby, Sparkles, LogOut, RefreshCw, Activity, MessageSquare, LayoutDashboard, User, Settings, ShieldCheck, HeartPulse } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function AppShell() {
@@ -28,8 +28,13 @@ export default function AppShell() {
     }
   };
 
-  // Build navItems based on journeyStage
+  // Build navItems based on journeyStage and User Roles
   const getNavItems = () => {
+    const userRoles = Array.isArray(user?.roles) ? user.roles : (user?.role ? [user.role] : []);
+    const isAdmin = userRoles.some(r => r.includes('Admin'));
+    const isExpert = userRoles.some(r => r.includes('Expert'));
+    const isStaff = userRoles.some(r => r.includes('Staff'));
+
     const items = [
       {
         label: 'Tổng Quan',
@@ -38,6 +43,48 @@ export default function AppShell() {
         color: 'text-momPink',
       }
     ];
+
+    // Role Portals
+    if (isAdmin) {
+      items.push({
+        label: 'Quản Trị Admin ⚙️',
+        path: '/admin',
+        icon: Settings,
+        color: 'text-blue-500',
+      });
+    }
+    if (isExpert) {
+      items.push({
+        label: 'Duyệt AI & Tư Vấn 🩺',
+        path: '/expert',
+        icon: ShieldCheck,
+        color: 'text-purple-500',
+      });
+    }
+    if (isStaff) {
+      items.push({
+        label: 'Cổng Care Staff 🏥',
+        path: '/staff',
+        icon: HeartPulse,
+        color: 'text-emerald-500',
+      });
+    }
+
+    // If default user / demo mode, display role portals for easy testing
+    if (!isAdmin && !isExpert && !isStaff) {
+      items.push({
+        label: 'Duyệt AI Chuyên Gia 🩺',
+        path: '/expert',
+        icon: ShieldCheck,
+        color: 'text-purple-500',
+      });
+      items.push({
+        label: 'Quản Trị Admin ⚙️',
+        path: '/admin',
+        icon: Settings,
+        color: 'text-blue-500',
+      });
+    }
 
     if (journeyStage === 'PrePregnancy') {
       items.push({
@@ -69,7 +116,6 @@ export default function AppShell() {
     }
 
     // Common nav items for all stages
-
     items.push({
       label: 'Chẩn đoán AI',
       path: '/symptoms',
