@@ -1,13 +1,65 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ArrowLeft, RefreshCw, Calendar, Check, BookOpen, Clock, Flame, Award, ChevronRight, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import babyService from '../../../models/services/babyService';
+
+const mapFastApiRecipe = (slotName, recipe, timeStr, emojiStr) => {
+  if (!recipe) return null;
+  
+  const mappedSteps = (recipe.cooking_steps || []).map((step, idx) => ({
+    desc: step.step_description || step.description || step.desc || `Bước ${idx + 1}`,
+    time: step.duration_minutes ? `${step.duration_minutes} phút` : (step.time || '5 phút')
+  }));
+
+  const mappedIngredients = (recipe.ingredients || []).map(ri => ({
+    name: ri.ingredient?.vietnamese_name || ri.ingredient?.english_name || '',
+    amount: ri.weight_grams ? ri.weight_grams.toString() : '10',
+    unit: 'g'
+  }));
+
+  const nutritionData = [
+    { name: 'Năng lượng (kcal)', value: Math.round(recipe.total_calories || 0) },
+    { name: 'Đạm (Protein g)', value: Math.round(recipe.total_protein_g || 0) },
+    { name: 'Chất béo (Fat g)', value: Math.round(recipe.total_fat_g || 0) },
+    { name: 'Tinh bột (Carbs g)', value: Math.round(recipe.total_carbs_g || 0) }
+  ];
+
+  return {
+    id: recipe.id,
+    slot: slotName,
+    name: recipe.name_vi || recipe.name_en || '',
+    emoji: emojiStr,
+    kcal: Math.round(recipe.total_calories || 150),
+    time: timeStr,
+    tags: recipe.tags || ['Dinh dưỡng', 'Chuẩn WHO'],
+    ingredients: mappedIngredients.length > 0 ? mappedIngredients : [
+      { name: 'Gạo tẻ ngon', amount: '25', unit: 'g' },
+      { name: 'Rau củ quả tươi', amount: '15', unit: 'g' }
+    ],
+    steps: mappedSteps.length > 0 ? mappedSteps : [
+      { desc: 'Chuẩn bị và sơ chế nguyên liệu tươi sạch.', time: '5 phút' },
+      { desc: 'Nấu chín mềm nhừ rồi nghiền mịn cho bé ăn.', time: '15 phút' }
+    ],
+    nutritionData: nutritionData,
+    eaten: false
+  };
+};
 
 export default function BabyMenuPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('today'); // 'today' | 'weekly' | 'history'
   
+  // 7 days grid hardcode (meals by day)
+  const weekdaysVi = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
+  const weeklyMeals = [
+    { slot: 'Sáng', stage: 'Bột ngọt', color: 'bg-momPink-light/30 text-momPink-dark' },
+    { slot: 'Trưa', stage: 'Cháo loãng thịt bò', color: 'bg-momPurple-light/30 text-momPurple-dark' },
+    { slot: 'Chiều', stage: 'Hoa quả nghiền', color: 'bg-momAmber-light/30 text-momAmber-dark' },
+    { slot: 'Tối', stage: 'Cháo rây rau củ', color: 'bg-momGreen-light/30 text-momGreen-dark' }
+  ];
+
   // Recipe Modal state
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [modalTab, setModalTab] = useState('ingredients'); // 'ingredients' | 'steps' | 'nutrition'
@@ -131,10 +183,209 @@ export default function BabyMenuPage() {
     }
   ]);
 
+  const [allergies, setAllergies] = useState([]);
+  const [babyId, setBabyId] = useState(null);
+  const [dailyMenu, setDailyMenu] = useState([]);
+  const [weeklyMenu, setWeeklyMenu] = useState(null);
+
+  // Fetch baby profiles and menus on mount
+  useEffect(() => {
+    const loadAllData = async () => {
+      try {
+        const res = await babyService.getProfiles();
+        if (res.isSuccess && res.data && res.data.length > 0) {
+          const firstBaby = res.data[0];
+          setBabyId(firstBaby.id);
+          setAllergies(firstBaby.allergies || []);
+          
+          // Load daily menu
+          try {
+            const dailyRes = await babyService.getDailyMenu(firstBaby.id);
+            if (dailyRes.success && dailyRes.data) {
+              const meals = dailyRes.data.meals || {};
+              const mappedToday = [];
+              if (meals.breakfast) mappedToday.push(mapFastApiRecipe("Sáng ☀️", meals.breakfast, "07:30", "🥣"));
+              if (meals.lunch) mappedToday.push(mapFastApiRecipe("Trưa 🍲", meals.lunch, "11:30", "🍲"));
+              if (meals.snack) mappedToday.push(mapFastApiRecipe("Chiều 🍌", meals.snack, "15:30", "🍌"));
+              if (meals.dinner) mappedToday.push(mapFastApiRecipe("Tối 🌙", meals.dinner, "18:30", "🥣"));
+              if (meals.supplementary_snack) mappedToday.push(mapFastApiRecipe("Phụ 🍼", meals.supplementary_snack, "20:00", "🍼"));
+
+              if (mappedToday.length > 0) {
+                setDailyMenu(mappedToday);
+              }
+            }
+          } catch (err) {
+            console.error('Failed to load daily menu from FastAPI:', err);
+          }
+
+          // Load weekly menu
+          try {
+            const weeklyRes = await babyService.getWeeklyMenu(firstBaby.id);
+            if (weeklyRes.success && weeklyRes.data) {
+              setWeeklyMenu(weeklyRes.data);
+            }
+          } catch (err) {
+            console.error('Failed to load weekly menu from FastAPI:', err);
+          }
+        }
+      } catch (e) {
+        console.error('Error loading baby profile for menu:', e);
+      }
+    };
+    loadAllData();
+  }, []);
+
+  // Filter out avoided ingredients and provide alternatives
+  const getFilteredRecipes = () => {
+    return recipes.map((recipe) => {
+      const isAvoided = allergies.some((avoidItem) => {
+        const avoidLower = avoidItem.toLowerCase().trim();
+        if (!avoidLower) return false;
+        
+        return (
+          recipe.name.toLowerCase().includes(avoidLower) ||
+          avoidLower.includes(recipe.name.toLowerCase()) ||
+          recipe.ingredients.some(ing => ing.name.toLowerCase().includes(avoidLower)) ||
+          (avoidLower.includes('yến mạch') && recipe.name.toLowerCase().includes('yến mạch')) ||
+          (avoidLower.includes('thịt bò') && recipe.name.toLowerCase().includes('thịt bò')) ||
+          (avoidLower.includes('bò') && recipe.name.toLowerCase().includes('thịt bò')) ||
+          (avoidLower.includes('cá hồi') && recipe.name.toLowerCase().includes('cá hồi'))
+        );
+      });
+
+      if (isAvoided) {
+        if (recipe.slot.includes('Sáng')) {
+          return {
+            ...recipe,
+            name: 'Cháo gạo rây bí đỏ sữa hạt (Tránh dị ứng)',
+            emoji: '🥣',
+            kcal: 120,
+            tags: ['dễ tiêu', 'an toàn', 'tránh dị ứng'],
+            ingredients: [
+              { name: 'Gạo tẻ thơm', amount: '30', unit: 'g' },
+              { name: 'Bí đỏ ngọt chín', amount: '20', unit: 'g' },
+              { name: 'Sữa mẹ hoặc sữa công thức', amount: '100', unit: 'ml' }
+            ],
+            steps: [
+              { desc: 'Ninh nhừ gạo tẻ với nước theo tỷ lệ 1:10.', time: '15 phút' },
+              { desc: 'Hấp chín bí đỏ rồi nghiền nhuyễn qua rây.', time: '7 phút' },
+              { desc: 'Trộn cháo rây mịn với bí đỏ nghiền và thêm sữa ấm trước khi bé ăn.', time: '3 phút' }
+            ]
+          };
+        }
+        if (recipe.slot.includes('Trưa')) {
+          return {
+            ...recipe,
+            name: 'Súp lườn gà khoai tây bông cải (Tránh dị ứng)',
+            emoji: '🍲',
+            kcal: 175,
+            tags: ['giàu đạm', 'an toàn', 'tránh dị ứng'],
+            ingredients: [
+              { name: 'Lườn ức gà sạch', amount: '25', unit: 'g' },
+              { name: 'Khoai tây nhỏ', amount: '20', unit: 'g' },
+              { name: 'Bông cải xanh', amount: '15', unit: 'g' },
+              { name: 'Dầu ô liu dặm bé', amount: '1', unit: 'thìa cà phê' }
+            ],
+            steps: [
+              { desc: 'Hấp chín lườn gà rồi đem xay nhuyễn hoặc rây thật mịn.', time: '10 phút' },
+              { desc: 'Hấp chín bông cải xanh và khoai tây cho chín mềm.', time: '10 phút' },
+              { desc: 'Xay nhuyễn toàn bộ các nguyên liệu rồi thêm dầu ô liu khuấy đều cữ ăn cho bé.', time: '5 phút' }
+            ]
+          };
+        }
+        if (recipe.slot.includes('Chiều')) {
+          return {
+            ...recipe,
+            name: 'Đu đủ chín nghiền sữa chua (Tránh dị ứng)',
+            emoji: '🍹',
+            kcal: 85,
+            tags: ['thanh mát', 'dồi dào vitamin', 'tránh dị ứng'],
+            ingredients: [
+              { name: 'Đu đủ chín ngọt', amount: '50', unit: 'g' },
+              { name: 'Sữa chua không đường cho bé', amount: '1', unit: 'hộp' }
+            ],
+            steps: [
+              { desc: 'Gọt vỏ đu đủ, bỏ hạt rồi dùng thìa dầm nhuyễn.', time: '3 phút' },
+              { desc: 'Trộn đều sữa chua không đường với đu đủ dầm nhuyễn.', time: '2 phút' }
+            ]
+          };
+        }
+        if (recipe.slot.includes('Tối')) {
+          return {
+            ...recipe,
+            name: 'Cháo chim bồ câu hạt sen bí ngô (Tránh dị ứng)',
+            emoji: '🥣',
+            kcal: 195,
+            tags: ['ngủ ngon', 'giàu kẽm', 'tránh dị ứng'],
+            ingredients: [
+              { name: 'Thịt chim bồ câu lọc xương', amount: '20', unit: 'g' },
+              { name: 'Hạt sen khô', amount: '10', unit: 'g' },
+              { name: 'Bí đỏ', amount: '20', unit: 'g' },
+              { name: 'Cháo trắng ninh sẵn', amount: '1', unit: 'bát' }
+            ],
+            steps: [
+              { desc: 'Thịt bồ câu hấp chín băm nhuyễn mịn.', time: '10 phút' },
+              { desc: 'Ninh nhừ hạt sen, bí đỏ rồi rây mịn.', time: '10 phút' },
+              { desc: 'Cho cháo trắng vào nồi nhỏ, trút thịt chim bồ câu, hạt sen và bí đỏ vào quấy nóng.', time: '5 phút' }
+            ]
+          };
+        }
+      }
+      return recipe;
+    });
+  };
+
+  const activeRecipes = dailyMenu.length > 0 ? dailyMenu : getFilteredRecipes();
+
+  // Filter 7-day weekly menu stages
+  const getFilteredWeeklyMeals = () => {
+    return weeklyMeals.map((meal) => {
+      const isAvoided = allergies.some((avoidItem) => {
+        const avoidLower = avoidItem.toLowerCase().trim();
+        if (!avoidLower) return false;
+        return (
+          meal.stage.toLowerCase().includes(avoidLower) ||
+          avoidLower.includes(meal.stage.toLowerCase()) ||
+          (avoidLower.includes('thịt bò') && meal.stage.toLowerCase().includes('thịt bò')) ||
+          (avoidLower.includes('bò') && meal.stage.toLowerCase().includes('thịt bò'))
+        );
+      });
+
+      if (isAvoided) {
+        if (meal.slot === 'Trưa') {
+          return { ...meal, stage: 'Cháo lườn gà cà rốt (Tránh dị ứng)' };
+        }
+      }
+      return meal;
+    });
+  };
+
+  const activeWeeklyMeals = getFilteredWeeklyMeals();
+
+  const getWeeklyMealForDay = (slotName, dayIndex) => {
+    if (weeklyMenu && weeklyMenu.days && weeklyMenu.days[dayIndex]) {
+      const dayMenu = weeklyMenu.days[dayIndex];
+      const meals = dayMenu.meals || {};
+      
+      let recipe = null;
+      if (slotName.includes('Sáng')) recipe = meals.breakfast;
+      else if (slotName.includes('Trưa')) recipe = meals.lunch;
+      else if (slotName.includes('Chiều') || slotName.includes('Phụ')) recipe = meals.snack || meals.supplementary_snack;
+      else if (slotName.includes('Tối')) recipe = meals.dinner;
+
+      if (recipe) {
+        return (recipe.name_vi || recipe.name_en || '');
+      }
+    }
+
+    const fallbackMeal = activeWeeklyMeals.find(m => m.slot.includes(slotName));
+    return fallbackMeal ? fallbackMeal.stage : '';
+  };
+
   // Coverage percentages
   const getEatenCoverage = () => {
-    const eatenCount = recipes.filter((r) => r.eaten).length;
-    return Math.floor((eatenCount / recipes.length) * 100);
+    const eatenCount = activeRecipes.filter((r) => r.eaten).length;
+    return Math.floor((eatenCount / activeRecipes.length) * 100);
   };
 
   const handleMarkEaten = (id) => {
@@ -163,14 +414,7 @@ export default function BabyMenuPage() {
     }));
   };
 
-  // 7 days grid hardcode (meals by day)
-  const weekdaysVi = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ Nhật'];
-  const weeklyMeals = [
-    { slot: 'Sáng', stage: 'Bột ngọt', color: 'bg-momPink-light/30 text-momPink-dark' },
-    { slot: 'Trưa', stage: 'Cháo loãng thịt bò', color: 'bg-momPurple-light/30 text-momPurple-dark' },
-    { slot: 'Chiều', stage: 'Hoa quả nghiền', color: 'bg-momAmber-light/30 text-momAmber-dark' },
-    { slot: 'Tối', stage: 'Cháo rây rau củ', color: 'bg-momGreen-light/30 text-momGreen-dark' }
-  ];
+
 
   return (
     <div className="space-y-6">
@@ -237,7 +481,7 @@ export default function BabyMenuPage() {
 
           {/* Recipe Card List */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {recipes.map((r) => (
+            {activeRecipes.map((r) => (
               <div
                 key={r.id}
                 className={`p-5 bg-white dark:bg-gray-800 border rounded-3xl shadow-sm flex flex-col justify-between gap-4 transition-all duration-300 ${
@@ -330,13 +574,13 @@ export default function BabyMenuPage() {
               </tr>
             </thead>
             <tbody>
-              {weeklyMeals.map((meal) => (
+              {activeWeeklyMeals.map((meal) => (
                 <tr key={meal.slot} className="border-b border-gray-100 dark:border-gray-750">
                   <td className="py-3 text-[11px] font-black text-gray-800 dark:text-white">{meal.slot}</td>
                   {weekdaysVi.map((d, i) => (
                     <td key={i} className="py-2 px-1 text-center">
                       <div className={`py-2 px-1 rounded-xl text-[9px] font-extrabold shadow-sm ${meal.color}`}>
-                        {meal.stage}
+                        {getWeeklyMealForDay(meal.slot, i)}
                       </div>
                     </td>
                   ))}

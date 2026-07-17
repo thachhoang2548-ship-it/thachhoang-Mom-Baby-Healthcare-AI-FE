@@ -74,6 +74,16 @@ const babyService = {
       foodHistory: profileData.foodHistory || []
     });
     return response.data;
+  },
+
+  getDailyMenu: async (babyId) => {
+    const response = await axiosClient.get(`/api/baby/${babyId}/menu/daily`);
+    return response.data;
+  },
+
+  getWeeklyMenu: async (babyId) => {
+    const response = await axiosClient.get(`/api/baby/${babyId}/menu/weekly`);
+    return response.data;
   }
 };
 

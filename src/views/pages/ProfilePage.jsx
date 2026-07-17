@@ -86,19 +86,26 @@ export default function ProfilePage() {
     }
   }, [height, weight]);
 
-  // Auto-calculate EDD (deliveryDate) based on pregnancyWeek
+  // Auto-calculate EDD (deliveryDate) and pregnancyWeek based on lastPeriodDate (LMP)
   useEffect(() => {
-    if (stage === 1 && pregnancyWeek) {
-      const weekNum = parseInt(pregnancyWeek);
-      if (weekNum >= 1 && weekNum <= 42) {
-        const remainingWeeks = 40 - weekNum;
-        const remainingDays = remainingWeeks * 7;
-        const today = new Date();
-        today.setDate(today.getDate() + remainingDays);
-        setDeliveryDate(today.toISOString().split("T")[0]);
+    if (stage === 1 && lastPeriodDate) {
+      const lmp = new Date(lastPeriodDate);
+      if (!isNaN(lmp.getTime())) {
+        // Calculate Expected Due Date (EDD): LMP + 280 days
+        const edd = new Date(lmp);
+        edd.setDate(edd.getDate() + 280);
+        setDeliveryDate(edd.toISOString().split("T")[0]);
+
+        // Calculate pregnancy week: (Today - LMP) / 7 + 1
+        const diffTime = Math.abs(new Date() - lmp);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        let calculatedWeek = Math.floor(diffDays / 7) + 1;
+        if (calculatedWeek < 1) calculatedWeek = 1;
+        if (calculatedWeek > 42) calculatedWeek = 42;
+        setPregnancyWeek(calculatedWeek);
       }
     }
-  }, [stage, pregnancyWeek]);
+  }, [stage, lastPeriodDate]);
 
   const handleConditionCheckbox = (cond) => {
     if (selectedConditions.includes(cond)) {
@@ -136,7 +143,7 @@ export default function ProfilePage() {
       hasGestDiabetes: hasGestDiabetes,
       medicalConditions: selectedConditions,
       avgCycleLength: stage === 0 ? parseInt(avgCycleLength) || null : null,
-      lastPeriodDate: stage === 0 && lastPeriodDate ? new Date(lastPeriodDate).toISOString() : null,
+      lastPeriodDate: (stage === 0 || stage === 1) && lastPeriodDate ? new Date(lastPeriodDate).toISOString() : null,
       deliveryDate: (stage === 1 || stage === 2) && deliveryDate ? new Date(deliveryDate).toISOString() : null,
       isBreastfeeding: stage === 2 ? isBreastfeeding : false,
     };
@@ -351,28 +358,38 @@ export default function ProfilePage() {
               {stage === 1 && (
                 <>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500">Tuần thai hiện tại (Tuần)</label>
+                    <label className="text-xs font-bold text-gray-500">Ngày đầu kỳ kinh cuối cùng (LMP)</label>
                     <input
-                      type="number"
-                      min="1"
-                      max="42"
-                      placeholder="Ví dụ: 12"
-                      value={pregnancyWeek}
-                      onChange={(e) => setPregnancyWeek(e.target.value)}
+                      type="date"
+                      value={lastPeriodDate}
+                      onChange={(e) => setLastPeriodDate(e.target.value)}
                       className="w-full px-4 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-momPink/30"
                     />
                   </div>
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-gray-500 flex justify-between">
-                      <span>Ngày dự sinh (EDD)</span>
-                      {pregnancyWeek && <span className="text-[10px] text-momPink font-black">Tự động tính từ tuần thai</span>}
+                      <span>Ngày dự sinh dự kiến (EDD)</span>
+                      {lastPeriodDate && <span className="text-[10px] text-momPink font-black">Tự động: LMP + 280 ngày</span>}
                     </label>
                     <input
                       type="date"
                       value={deliveryDate}
                       readOnly
-                      className="w-full px-4 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 text-sm font-semibold focus:outline-none bg-gray-50 dark:bg-gray-850/40 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                      className="w-full px-4 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 text-sm font-semibold focus:outline-none bg-gray-55 dark:bg-gray-850/40 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-500 flex justify-between">
+                      <span>Tuần thai hiện tại (Dự kiến)</span>
+                      {lastPeriodDate && <span className="text-[10px] text-momPink font-black">Tự động từ LMP</span>}
+                    </label>
+                    <input
+                      type="number"
+                      value={pregnancyWeek}
+                      readOnly
+                      className="w-full px-4 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 text-sm font-semibold focus:outline-none bg-gray-55 dark:bg-gray-850/40 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                     />
                   </div>
                 </>

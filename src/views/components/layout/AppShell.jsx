@@ -283,7 +283,7 @@ export default function AppShell() {
                     <Link to="/profile" className="text-[10px] font-bold text-momPink hover:text-momPink-dark hover:underline transition-all">
                       Chỉnh sửa hồ sơ
                     </Link>
-                    <Link to="/onboarding" className="text-[10px] font-bold text-gray-400 hover:text-gray-600 hover:underline transition-all">
+                    <Link to="/profile" className="text-[10px] font-bold text-gray-400 hover:text-gray-600 hover:underline transition-all">
                       Đổi lộ trình
                     </Link>
                   </div>

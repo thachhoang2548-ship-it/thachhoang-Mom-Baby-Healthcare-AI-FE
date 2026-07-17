@@ -89,7 +89,7 @@ export default function DashboardOverviewPage() {
           badge: 'Thiết lập lộ trình',
           color: 'from-gray-500 to-slate-600',
           icon: Compass,
-          actions: [{ label: 'Thiết lập lộ trình', path: '/onboarding' }],
+          actions: [{ label: 'Thiết lập hồ sơ', path: '/profile' }],
         };
     }
   };
@@ -144,7 +144,7 @@ export default function DashboardOverviewPage() {
                 </div>
               </div>
               <button
-                onClick={() => navigate('/onboarding')}
+                onClick={() => navigate('/profile')}
                 className="text-xs font-bold text-momPink hover:text-momPink-dark flex items-center gap-0.5 transition-colors"
               >
                 Đổi lộ trình <ChevronRight className="w-3.5 h-3.5" />

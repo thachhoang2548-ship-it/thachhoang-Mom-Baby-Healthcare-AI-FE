@@ -62,15 +62,8 @@ function AppContent() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/consent" element={<Consent />} />
 
-        {/* Private Onboarding Setup */}
-        <Route
-          path="/onboarding"
-          element={
-            <ProtectedRoute>
-              <JourneySetupPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* Redirect Onboarding to Profile Setup */}
+        <Route path="/onboarding" element={<Navigate to="/profile" replace />} />
 
         {/* Core Layout Shell (Requires auth) */}
         <Route

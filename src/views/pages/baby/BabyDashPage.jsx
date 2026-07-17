@@ -11,6 +11,7 @@ export default function BabyDashPage() {
   const [babies, setBabies] = useState([]);
   const [selectedBaby, setSelectedBaby] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dailyMenu, setDailyMenu] = useState([]);
 
   // Hardcoded WHO energy coverage stats for the Radar Chart
   const nutritionData = [
@@ -42,6 +43,36 @@ export default function BabyDashPage() {
     loadBabies();
   }, []);
 
+  const loadDailyMenu = async (babyId) => {
+    try {
+      const res = await babyService.getDailyMenu(babyId);
+      if (res.success && res.data) {
+        const mealsData = res.data.meals || [];
+        const mappedMeals = mealsData.map((meal, index) => {
+          let time = "07:30";
+          let emoji = "🥣";
+          if (meal.meal_slot.toLowerCase().includes("trưa")) { time = "11:30"; emoji = "🍲"; }
+          else if (meal.meal_slot.toLowerCase().includes("chiều") || meal.meal_slot.toLowerCase().includes("phụ")) { time = "15:30"; emoji = "🍌"; }
+          else if (meal.meal_slot.toLowerCase().includes("tối")) { time = "18:30"; emoji = "🥣"; }
+          
+          return {
+            slot: meal.meal_slot,
+            recipe: meal.recipe_name + (meal.is_alternative ? " (Tránh dị ứng)" : ""),
+            emoji: emoji,
+            kcal: meal.calories || 180,
+            time: time,
+            isAlternative: meal.is_alternative
+          };
+        });
+        if (mappedMeals.length > 0) {
+          setDailyMenu(mappedMeals);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to load daily menu from FastAPI:", e);
+    }
+  };
+
   const loadBabies = async () => {
     setLoading(true);
     try {
@@ -49,6 +80,7 @@ export default function BabyDashPage() {
       if (res.isSuccess && res.data && res.data.length > 0) {
         setBabies(res.data);
         setSelectedBaby(res.data[0]);
+        await loadDailyMenu(res.data[0].id);
       } else {
         // Redirect to growth charts page to prompt setup if no baby profiles
         setSelectedBaby(null);
@@ -106,6 +138,59 @@ export default function BabyDashPage() {
 
   const ageMonths = selectedBaby.ageMonths || 8;
   const isIronLow = nutritionData.find((d) => d.subject === 'Sắt (Iron)')?.value < 60;
+
+  // Filter out avoided ingredients and provide alternatives
+  const getFilteredMeals = () => {
+    const avoidList = selectedBaby?.allergies || [];
+    return todayMeals.map((meal) => {
+      const isAvoided = avoidList.some((avoidItem) => {
+        const avoidLower = avoidItem.toLowerCase().trim();
+        if (!avoidLower) return false;
+        return (
+          meal.recipe.toLowerCase().includes(avoidLower) ||
+          avoidLower.includes(meal.recipe.toLowerCase()) ||
+          (avoidLower.includes('yến mạch') && meal.recipe.toLowerCase().includes('yến mạch')) ||
+          (avoidLower.includes('thịt bò') && meal.recipe.toLowerCase().includes('thịt bò')) ||
+          (avoidLower.includes('bò') && meal.recipe.toLowerCase().includes('thịt bò')) ||
+          (avoidLower.includes('cá hồi') && meal.recipe.toLowerCase().includes('cá hồi'))
+        );
+      });
+
+      if (isAvoided) {
+        if (meal.slot.includes('Sáng')) {
+          return {
+            ...meal,
+            recipe: 'Cháo gạo lứt hạt chia sữa hạt (Tránh dị ứng)',
+            kcal: 140
+          };
+        }
+        if (meal.slot.includes('Trưa')) {
+          return {
+            ...meal,
+            recipe: 'Súp lườn gà khoai tây cà rốt (Tránh dị ứng)',
+            kcal: 210
+          };
+        }
+        if (meal.slot.includes('Chiều')) {
+          return {
+            ...meal,
+            recipe: 'Táo nghiền lê ngọt hấp chín (Tránh dị ứng)',
+            kcal: 90
+          };
+        }
+        if (meal.slot.includes('Tối')) {
+          return {
+            ...meal,
+            recipe: 'Cháo chim bồ câu hạt sen bí ngô (Tránh dị ứng)',
+            kcal: 195
+          };
+        }
+      }
+      return meal;
+    });
+  };
+
+  const activeMeals = dailyMenu.length > 0 ? dailyMenu : getFilteredMeals();
 
   return (
     <div className="space-y-6">
@@ -219,7 +304,7 @@ export default function BabyDashPage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          {todayMeals.map((meal, idx) => (
+          {activeMeals.map((meal, idx) => (
             <div
               key={idx}
               className="p-3.5 border border-pink-50/50 dark:border-gray-700 bg-pink-50/10 dark:bg-gray-900 rounded-2xl flex items-center justify-between gap-3 shadow-sm"
