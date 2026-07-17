@@ -100,6 +100,9 @@ function AppContent() {
           <Route path="/baby-nutrition" element={<BabyDashPage />} />
           <Route path="/baby-nutrition/menu" element={<BabyMenuPage />} />
           <Route path="/baby-nutrition/growth" element={<GrowthChartPage />} />
+          <Route path="/baby" element={<Navigate to="/baby-nutrition" replace />} />
+          <Route path="/baby/menu" element={<Navigate to="/baby-nutrition/menu" replace />} />
+          <Route path="/baby/growth" element={<Navigate to="/baby-nutrition/growth" replace />} />
 
           {/* Simulated Premium Upgrade */}
           <Route path="/upgrade" element={<UpgradePage />} />

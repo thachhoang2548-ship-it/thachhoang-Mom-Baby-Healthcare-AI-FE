@@ -120,7 +120,7 @@ export default function AppShell() {
       });
       items.push({
         label: 'Bé Yêu 🧸',
-        path: '/baby',
+        path: '/baby-nutrition',
         icon: Baby,
         color: 'text-momGreen',
       });
