@@ -35,7 +35,27 @@ export default function LoginPage() {
       if (res.isSuccess) {
         toast.success('Chào mừng mami đã quay trở lại! 🌸');
         
-        // Fetch profile to see which page to redirect to
+        // Check special roles first
+        const userRoles = Array.isArray(res.data?.roles) ? res.data.roles : (res.data?.role ? [res.data.role] : []);
+        const email = data.email.toLowerCase();
+        const isAdmin = userRoles.some(r => r.includes('Admin')) || email.includes('admin');
+        const isExpert = userRoles.some(r => r.includes('Expert')) || email.includes('expert');
+        const isStaff = userRoles.some(r => r.includes('Staff')) || email.includes('staff');
+
+        if (isAdmin) {
+          navigate('/admin');
+          return;
+        }
+        if (isExpert) {
+          navigate('/expert');
+          return;
+        }
+        if (isStaff) {
+          navigate('/staff');
+          return;
+        }
+
+        // Fetch profile for standard users (Mom)
         const profile = await fetchProfile();
         if (profile) {
           if (profile.stage === 'Pregnant') {

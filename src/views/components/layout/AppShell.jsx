@@ -22,11 +22,20 @@ export default function AppShell() {
     if (!momProfile && !isAdmin && !isExpert && !isStaff) {
       fetchProfile();
     }
-    // Auto redirect special roles to their dedicated portal if they land on general dashboard
-    if (location.pathname === '/dashboard') {
-      if (isAdmin) navigate('/admin', { replace: true });
-      else if (isExpert) navigate('/expert', { replace: true });
-      else if (isStaff) navigate('/staff', { replace: true });
+    
+    // Auto redirect special roles away from Mom pages to their respective portals
+    const path = location.pathname;
+    if (isAdmin && path !== '/admin' && path !== '/profile') {
+      navigate('/admin', { replace: true });
+    } else if (isExpert && path !== '/expert') {
+      navigate('/expert', { replace: true });
+    } else if (isStaff && path !== '/staff') {
+      navigate('/staff', { replace: true });
+    } else if (!isAdmin && !isExpert && !isStaff) {
+      // Normal Mom users cannot access Admin, Expert, or Staff portals
+      if (path === '/admin' || path === '/expert' || path === '/staff') {
+        navigate('/dashboard', { replace: true });
+      }
     }
   }, [momProfile, fetchProfile, location.pathname, isAdmin, isExpert, isStaff, navigate]);
 
