@@ -15,9 +15,9 @@ const babyService = {
     const backendPayload = {
       babyName: babyProfileData.babyName || babyProfileData.name || '',
       dateOfBirth: babyProfileData.dateOfBirth || babyProfileData.birthDate || new Date().toISOString(),
-      gender: typeof babyProfileData.gender === 'string'
+      gender: typeof babyProfileData.gender === 'number'
         ? babyProfileData.gender
-        : (babyProfileData.gender === 0 ? 'male' : 'female'),
+        : ((babyProfileData.gender || '').toString().toLowerCase() === 'male' || babyProfileData.gender === 'boy' || babyProfileData.gender === 0 ? 0 : 1),
       currentWeightKg: babyProfileData.currentWeightKg || babyProfileData.birthWeightKg || null,
       currentHeightCm: babyProfileData.currentHeightCm || babyProfileData.birthHeightCm || null,
       allergies: babyProfileData.allergies || [],
@@ -37,7 +37,7 @@ const babyService = {
       response.data.data = response.data.data.map(b => ({
         id: b.id,
         name: b.babyName || '',
-        gender: (b.gender || '').toLowerCase() === 'male' ? 0 : 1,
+        gender: b.gender === 0 || (b.gender || '').toString().toLowerCase() === 'male' ? 0 : 1,
         birthDate: b.dateOfBirth,
         birthWeightKg: b.currentWeightKg || 3.2,
         birthHeightCm: b.currentHeightCm || 50,

@@ -64,6 +64,17 @@ export default function GrowthChartPage() {
     loadBabies();
   }, []);
 
+  useEffect(() => {
+    if (momProfile && (momProfile.stage === 2 || momProfile.stage === 'Postpartum' || momProfile.journeyStage === 'Postpartum') && momProfile.deliveryDate) {
+      try {
+        const dateStr = new Date(momProfile.deliveryDate).toISOString().substring(0, 10);
+        setBirthDate(dateStr);
+      } catch (e) {
+        console.error('Error pre-filling birth date:', e);
+      }
+    }
+  }, [momProfile]);
+
   const loadBabies = async () => {
     setLoading(true);
     try {
