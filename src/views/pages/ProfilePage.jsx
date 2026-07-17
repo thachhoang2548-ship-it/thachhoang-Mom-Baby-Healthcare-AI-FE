@@ -58,6 +58,8 @@ export default function ProfilePage() {
         setStage(stageIdx);
         setPregnancyWeek(activeProfile.pregnancyWeek || "");
         setBmi(activeProfile.bmi || "");
+        setHeight(activeProfile.height || "");
+        setWeight(activeProfile.weight || "");
         setBloodSugarLevel(activeProfile.bloodSugarLevel || "");
         setHasGestDiabetes(activeProfile.hasGestDiabetes || false);
         setAvgCycleLength(activeProfile.avgCycleLength || "");
@@ -114,6 +116,8 @@ export default function ProfilePage() {
       stage: stage, // 0 = PrePregnancy, 1 = Pregnant, 2 = Postpartum
       pregnancyWeek: stage === 1 ? parseInt(pregnancyWeek) || null : null,
       bmi: bmi ? parseFloat(bmi) : null,
+      height: height ? parseFloat(height) : null,
+      weight: weight ? parseFloat(weight) : null,
       bloodSugarLevel: bloodSugarLevel ? parseFloat(bloodSugarLevel) : null,
       hasGestDiabetes: hasGestDiabetes,
       medicalConditions: selectedConditions,

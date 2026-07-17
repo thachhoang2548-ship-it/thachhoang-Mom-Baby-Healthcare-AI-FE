@@ -7,7 +7,7 @@ import { Calendar, Heart, Baby, Sparkles, LogOut, RefreshCw, Activity, MessageSq
 import toast from 'react-hot-toast';
 
 export default function AppShell() {
-  const { user, tier, logout } = useAuthController();
+  const { user, tier, logout, token, isAuthenticated } = useAuthController();
   const { journeyStage, fetchProfile, momProfile } = useProfileController();
   const navigate = useNavigate();
   const location = useLocation();
@@ -18,12 +18,15 @@ export default function AppShell() {
   const isExpert = userRoles.some(r => r.includes('Expert')) || email.includes('expert');
   const isStaff = userRoles.some(r => r.includes('Staff')) || email.includes('staff');
 
+  // 1. Fetch profile once when authenticated and profile is missing
   useEffect(() => {
-    if (!momProfile && !isAdmin && !isExpert && !isStaff) {
+    if (isAuthenticated && token && !momProfile && !isAdmin && !isExpert && !isStaff) {
       fetchProfile();
     }
-    
-    // Auto redirect special roles away from Mom pages to their respective portals
+  }, [isAuthenticated, token, momProfile, isAdmin, isExpert, isStaff, fetchProfile]);
+
+  // 2. Auto redirect special roles away from Mom pages to their respective portals
+  useEffect(() => {
     const path = location.pathname;
     if (isAdmin && path !== '/admin' && path !== '/profile') {
       navigate('/admin', { replace: true });
@@ -37,7 +40,7 @@ export default function AppShell() {
         navigate('/dashboard', { replace: true });
       }
     }
-  }, [momProfile, fetchProfile, location.pathname, isAdmin, isExpert, isStaff, navigate]);
+  }, [location.pathname, isAdmin, isExpert, isStaff, navigate]);
 
   const handleLogout = async () => {
     try {
