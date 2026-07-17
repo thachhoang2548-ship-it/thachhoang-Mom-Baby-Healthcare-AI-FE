@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfileController as useActualProfileController } from '../../../controllers/profileController';
 import postpartumService from '../../../models/services/postpartumService';
+import dailyMonitoringService from '../../../models/services/dailyMonitoringService';
 import FeedingLog from '../../components/postpartum/FeedingLog';
 import TierGate from '../../components/layout/TierGate';
 import { Heart, Activity, Calendar, Sparkles, Smile, ArrowRight, BookOpen, AlertTriangle } from 'lucide-react';
@@ -47,6 +48,19 @@ export default function PostpartumDashPage() {
           setRecoveryPhase(recoveryRes.data.recoveryPhase);
           setExerciseSchedule(recoveryRes.data.exerciseSchedule);
         }
+
+        // Fetch today's mood/monitoring entry from backend
+        try {
+          const todayRes = await dailyMonitoringService.getTodayMonitoring();
+          if (todayRes && (todayRes.isSuccess || todayRes.success || todayRes.Success) && todayRes.data) {
+            const entry = todayRes.data.data;
+            if (entry && entry.moodScore) {
+              setSelectedMood(entry.moodScore);
+            }
+          }
+        } catch (moodErr) {
+          console.error("Error fetching today's mood:", moodErr);
+        }
       } else {
         setSetupMode(true);
       }
@@ -78,9 +92,25 @@ export default function PostpartumDashPage() {
     }
   };
 
-  const logMood = (moodScore, label) => {
+  const logMood = async (moodScore, label) => {
+    const previousMood = selectedMood;
     setSelectedMood(moodScore);
-    toast.success(`Ghi nhận tâm trạng mami hôm nay: ${label}! 💕`);
+    try {
+      const res = await dailyMonitoringService.createDailyMonitoring({
+        moodScore: moodScore,
+        moodNote: label
+      });
+      if (res && (res.isSuccess || res.success || res.Success)) {
+        toast.success(`Ghi nhận cảm xúc "${label}" thành công! 💕`);
+      } else {
+        toast.error('Không thể lưu cảm xúc');
+        setSelectedMood(previousMood);
+      }
+    } catch (err) {
+      console.error('Error logging mood:', err);
+      toast.error('Lỗi khi ghi nhận cảm xúc');
+      setSelectedMood(previousMood);
+    }
   };
 
   if (loading) {
