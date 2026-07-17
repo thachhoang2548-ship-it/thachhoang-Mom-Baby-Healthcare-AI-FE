@@ -22,7 +22,7 @@ const COMMON_CONDITIONS = ["Cao huyết áp", "Thiếu máu", "Suy nhược", "D
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { user } = useAuthController();
-  const { momProfile, fetchProfile, updateProfile, isLoading } = useProfileController();
+  const { momProfile, fetchProfile, updateProfile, updateWeightLog, isLoading } = useProfileController();
 
   // Local Form States
   const [stage, setStage] = useState(0);
@@ -126,8 +126,19 @@ export default function ProfilePage() {
     try {
       const result = await updateProfile(payload);
       if (result) {
+        if (weight) {
+          await updateWeightLog(weight);
+        }
         toast.success("Cập nhật hồ sơ sức khỏe mami thành công! 🎉");
-        navigate("/dashboard");
+        
+        // Auto-redirect to appropriate stage portal
+        if (stage === 1) {
+          navigate("/pregnancy");
+        } else if (stage === 2) {
+          navigate("/baby-nutrition");
+        } else {
+          navigate("/fertility");
+        }
       } else {
         toast.error("Không thể cập nhật hồ sơ, vui lòng kiểm tra lại dữ liệu.");
       }

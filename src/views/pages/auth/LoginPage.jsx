@@ -64,8 +64,8 @@ export default function LoginPage() {
             navigate('/fertility');
           }
         } else {
-          // No profile yet, go to journey onboarding setup
-          navigate('/onboarding');
+          // No profile yet, go to profile setup
+          navigate('/profile');
         }
       } else {
         toast.error(res.message || 'Đăng nhập không thành công');

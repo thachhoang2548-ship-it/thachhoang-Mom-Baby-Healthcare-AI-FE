@@ -44,7 +44,7 @@ export default function RegisterPage() {
         // Auto-login user
         const loginRes = await login(data.email, data.password);
         if (loginRes.isSuccess) {
-          navigate('/onboarding');
+          navigate('/profile');
         } else {
           navigate('/login');
         }
