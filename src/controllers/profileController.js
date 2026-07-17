@@ -38,7 +38,8 @@ export const useProfileController = create((set, get) => ({
     set({ isLoading: true });
     try {
       const response = await axiosClient.get('/api/user-profile');
-      if (response.data.isSuccess && response.data.data) {
+      const isSuccessful = response.data && (response.data.isSuccess || response.data.success || response.data.Success);
+      if (isSuccessful && response.data.data) {
         const profile = response.data.data;
         const stage = mapStage(profile.stage);
         const week = profile.pregnancyWeek || null;
@@ -65,7 +66,8 @@ export const useProfileController = create((set, get) => ({
     set({ isLoading: true });
     try {
       const response = await axiosClient.put('/api/user-profile', profileData);
-      if (response.data.isSuccess && response.data.data) {
+      const isSuccessful = response.data && (response.data.isSuccess || response.data.success || response.data.Success);
+      if (isSuccessful && response.data.data) {
         const profile = response.data.data;
         const stage = mapStage(profile.stage);
         const week = profile.pregnancyWeek || null;
@@ -91,7 +93,8 @@ export const useProfileController = create((set, get) => ({
     set({ isLoading: true });
     try {
       const res = await pregnancyService.setupPregnancy(lastMenstrualPeriod, dueDate);
-      if (res.isSuccess && res.data) {
+      const isSuccessful = res && (res.isSuccess || res.success || res.Success);
+      if (isSuccessful && res.data) {
         await get().fetchProfile();
         return res.data;
       }
@@ -107,7 +110,8 @@ export const useProfileController = create((set, get) => ({
     set({ isLoading: true });
     try {
       const res = await pregnancyService.logWeight(weightKg);
-      if (res.isSuccess) {
+      const isSuccessful = res && (res.isSuccess || res.success || res.Success);
+      if (isSuccessful) {
         await get().fetchProfile();
         return res.data;
       }
