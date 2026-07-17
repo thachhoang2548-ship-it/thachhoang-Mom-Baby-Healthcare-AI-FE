@@ -1,21 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShieldAlert, ShieldCheck, Plus, Trash2, Check, AlertTriangle, AlertOctagon, Info, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import babyService from '../../../models/services/babyService';
 
 export default function AllergyTracker() {
-  const [introducedFoods, setIntroducedFoods] = useState([
-    { name: 'Cà rốt', date: '2026-05-20', reaction: 'none' },
-    { name: 'Thịt bò', date: '2026-05-22', reaction: 'none' },
-    { name: 'Lòng đỏ trứng', date: '2026-05-25', reaction: 'mild' },
-    { name: 'Cá hồi', date: '2026-05-28', reaction: 'none' },
-    { name: 'Tôm', date: '2026-06-01', reaction: 'severe' }
-  ]);
+  const [introducedFoods, setIntroducedFoods] = useState([]);
+  const [avoidFoods, setAvoidFoods] = useState([]);
+  const [baby, setBaby] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const [avoidFoods, setAvoidFoods] = useState(['Lòng đỏ trứng', 'Tôm']);
   const [foodName, setFoodName] = useState('');
   const [introDate, setIntroDate] = useState(new Date().toISOString().substring(0, 10));
   const [reaction, setReaction] = useState('none');
   const [showAddForm, setShowAddForm] = useState(false);
+
+  useEffect(() => {
+    loadBabyData();
+  }, []);
+
+  const loadBabyData = async () => {
+    try {
+      const res = await babyService.getProfiles();
+      if (res.isSuccess && res.data && res.data.length > 0) {
+        const activeBaby = res.data[0];
+        setBaby(activeBaby);
+
+        const rawHistory = activeBaby.foodHistory || [];
+        const parsedHistory = rawHistory.map(item => {
+          const parts = item.split('|');
+          return {
+            name: parts[0] || '',
+            date: parts[1] || new Date().toISOString().substring(0, 10),
+            reaction: parts[2] || 'none'
+          };
+        }).filter(f => f.name);
+
+        const parsedAvoid = activeBaby.allergies || [];
+
+        setIntroducedFoods(parsedHistory);
+        setAvoidFoods(parsedAvoid);
+      }
+    } catch (err) {
+      console.error("Error loading allergy data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // BR09 Alert modal state
   const [alertModal, setAlertModal] = useState({
@@ -24,8 +54,12 @@ export default function AllergyTracker() {
     severity: 'mild'
   });
 
-  const handleAddFood = (e) => {
+  const handleAddFood = async (e) => {
     e.preventDefault();
+    if (!baby) {
+      toast.error('Vui lòng tạo hồ sơ cho bé trước');
+      return;
+    }
     if (!foodName.trim()) {
       toast.error('Vui lòng nhập tên thực phẩm');
       return;
@@ -45,24 +79,39 @@ export default function AllergyTracker() {
       reaction
     };
 
-    setIntroducedFoods((prev) => [...prev, newFood]);
-
-    // BR09 Trigger: If mild or severe reaction is logged
+    const updatedHistory = [...introducedFoods, newFood];
+    const updatedAvoid = [...avoidFoods];
     if (reaction === 'mild' || reaction === 'severe') {
-      // Add to avoid list
-      if (!avoidFoods.includes(trimmedName)) {
-        setAvoidFoods((prev) => [...prev, trimmedName]);
+      if (!updatedAvoid.includes(trimmedName)) {
+        updatedAvoid.push(trimmedName);
       }
-      
-      // Open BR09 Warning Modal
-      setAlertModal({
-        isOpen: true,
-        foodName: trimmedName,
-        severity: reaction
+    }
+
+    try {
+      const historyStrings = updatedHistory.map(f => `${f.name}|${f.date}|${f.reaction}`);
+      await babyService.updateProfile(baby.id, {
+        ...baby,
+        foodHistory: historyStrings,
+        allergies: updatedAvoid
       });
-      toast.error(`Cảnh báo dị ứng: Đã thêm ${trimmedName} vào danh sách cần tránh! ⚠️`);
-    } else {
-      toast.success(`Đã ghi nhận giới thiệu thực phẩm ${trimmedName}! 💚`);
+
+      setIntroducedFoods(updatedHistory);
+      setAvoidFoods(updatedAvoid);
+
+      // BR09 Trigger: If mild or severe reaction is logged
+      if (reaction === 'mild' || reaction === 'severe') {
+        setAlertModal({
+          isOpen: true,
+          foodName: trimmedName,
+          severity: reaction
+        });
+        toast.error(`Cảnh báo dị ứng: Đã thêm ${trimmedName} vào danh sách cần tránh! ⚠️`);
+      } else {
+        toast.success(`Đã ghi nhận giới thiệu thực phẩm ${trimmedName}! 💚`);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Có lỗi xảy ra khi lưu thực phẩm');
     }
 
     // Reset form
@@ -71,13 +120,28 @@ export default function AllergyTracker() {
     setShowAddForm(false);
   };
 
-  const handleRemoveAvoid = (food) => {
-    setAvoidFoods((prev) => prev.filter((item) => item !== food));
-    // also update reaction to none in introduced list
-    setIntroducedFoods((prev) =>
-      prev.map((item) => (item.name === food ? { ...item, reaction: 'none' } : item))
+  const handleRemoveAvoid = async (food) => {
+    if (!baby) return;
+    const updatedAvoid = avoidFoods.filter((item) => item !== food);
+    const updatedHistory = introducedFoods.map((item) =>
+      item.name === food ? { ...item, reaction: 'none' } : item
     );
-    toast.success(`Đã xóa ${food} khỏi danh sách cần tránh`);
+
+    try {
+      const historyStrings = updatedHistory.map(f => `${f.name}|${f.date}|${f.reaction}`);
+      await babyService.updateProfile(baby.id, {
+        ...baby,
+        foodHistory: historyStrings,
+        allergies: updatedAvoid
+      });
+
+      setAvoidFoods(updatedAvoid);
+      setIntroducedFoods(updatedHistory);
+      toast.success(`Đã xóa ${food} khỏi danh sách cần tránh`);
+    } catch (err) {
+      console.error(err);
+      toast.error('Có lỗi xảy ra khi xóa thực phẩm');
+    }
   };
 
   return (

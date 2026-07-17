@@ -29,6 +29,11 @@ const postpartumService = {
     return response.data;
   },
 
+  getLatestEpds: async () => {
+    const response = await axiosClient.get('/api/postpartum/epds/latest');
+    return response.data;
+  },
+
   logVoiceJournal: async (audioBase64, mimeType = 'audio/webm') => {
     const response = await axiosClient.post('/api/postpartum/epds/voice-journal', {
       audioBase64,

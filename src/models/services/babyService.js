@@ -44,7 +44,8 @@ const babyService = {
         currentWeightKg: b.currentWeightKg || 3.2,
         currentHeightCm: b.currentHeightCm || 50,
         allergies: b.allergies || [],
-        foodHistory: b.foodHistory || []
+        foodHistory: b.foodHistory || [],
+        growthRecords: b.growthRecords || []
       }));
       
       // Ensure both keys are present and true
@@ -58,6 +59,19 @@ const babyService = {
     const response = await axiosClient.post(`/api/baby/${babyId}/growth`, {
       weightKg: parseFloat(weightKg),
       heightCm: parseFloat(heightCm)
+    });
+    return response.data;
+  },
+
+  updateProfile: async (babyId, profileData) => {
+    const response = await axiosClient.put(`/api/baby/${babyId}`, {
+      babyName: profileData.name || profileData.babyName,
+      dateOfBirth: profileData.birthDate || profileData.dateOfBirth,
+      gender: profileData.gender === 0 || profileData.gender === 'male' || profileData.gender === 'boy' ? 0 : 1,
+      currentWeightKg: parseFloat(profileData.currentWeightKg || profileData.birthWeightKg || 3.2),
+      currentHeightCm: parseFloat(profileData.currentHeightCm || profileData.birthHeightCm || 50),
+      allergies: profileData.allergies || [],
+      foodHistory: profileData.foodHistory || []
     });
     return response.data;
   }

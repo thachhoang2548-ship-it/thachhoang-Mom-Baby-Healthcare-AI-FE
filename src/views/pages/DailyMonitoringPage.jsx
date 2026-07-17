@@ -56,20 +56,20 @@ const DailyMonitoringPage = () => {
 
     const payload = {
       date: new Date(),
-      sleep: {
-        ...sleep,
-        hours: user?.userType === "student" ? lifestyle.sleepHours : sleep.hours
-      },
-      water,
-      meals,
-      mood,
-      vitals: {
-        sugar: Number(vitals.sugar),
-        bpHigh: Number(bpHigh),
-        bpLow: Number(bpLow),
-        weight: Number(vitals.weight),
-      },
-      symptoms,
+      sleepHours: Number(user?.userType === "student" ? lifestyle.sleepHours : sleep.hours),
+      sleepQuality: Number(sleep.quality),
+      waterLiters: Number(water.liters),
+      hadBreakfast: meals.breakfast,
+      hadLunch: meals.lunch,
+      hadDinner: meals.dinner,
+      moodScore: Number(mood.score),
+      moodNote: mood.note,
+      bloodSugar: Number(vitals.sugar),
+      bloodPressureHigh: Number(bpHigh),
+      bloodPressureLow: Number(bpLow),
+      weight: Number(vitals.weight),
+      symptomSeverity: Number(symptoms.severity),
+      symptomNote: symptoms.note,
       ...(user?.userType === "student" ? {
         studyHours: lifestyle.studyHours,
         extracurricularHours: lifestyle.extracurricularHours,

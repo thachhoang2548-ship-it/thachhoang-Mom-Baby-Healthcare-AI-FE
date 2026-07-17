@@ -61,6 +61,16 @@ export default function PostpartumDashPage() {
         } catch (moodErr) {
           console.error("Error fetching today's mood:", moodErr);
         }
+
+        // Fetch latest EPDS score from backend
+        try {
+          const epdsRes = await postpartumService.getLatestEpds();
+          if (epdsRes && (epdsRes.isSuccess || epdsRes.success || epdsRes.Success) && epdsRes.data) {
+            setLatestEpdsScore(epdsRes.data.score || 0);
+          }
+        } catch (epdsErr) {
+          console.error("Error fetching latest EPDS score:", epdsErr);
+        }
       } else {
         setSetupMode(true);
       }

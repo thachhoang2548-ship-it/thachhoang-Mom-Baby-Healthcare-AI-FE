@@ -81,14 +81,32 @@ export default function GrowthChartPage() {
       const res = await babyService.getProfiles();
       if (res.isSuccess && res.data && res.data.length > 0) {
         setBabies(res.data);
-        setSelectedBaby(res.data[0]);
-        // Simulate growth records if empty (or map if backend stores them)
-        const mockLogs = [
-          { month: 0, weight: res.data[0].birthWeightKg || 3.2, height: res.data[0].birthHeightCm || 50 },
-          { month: 2, weight: 5.4, height: 56.5 },
-          { month: 6, weight: 7.7, height: 65.5 }
-        ];
-        setWeightLogs(mockLogs);
+        const baby = res.data[0];
+        setSelectedBaby(baby);
+
+        let logs = [];
+        if (baby.growthRecords && baby.growthRecords.length > 0) {
+          logs = baby.growthRecords.map(g => {
+            const birthTime = new Date(baby.birthDate).getTime();
+            const logTime = new Date(g.recordedAt).getTime();
+            const diffMonths = Math.max(0, Math.floor((logTime - birthTime) / (1000 * 60 * 60 * 24 * 30.44)));
+            return {
+              month: diffMonths,
+              weight: g.weightKg,
+              height: g.heightCm
+            };
+          });
+        }
+
+        if (!logs.some(l => l.month === 0)) {
+          logs.unshift({
+            month: 0,
+            weight: baby.birthWeightKg || 3.2,
+            height: baby.birthHeightCm || 50
+          });
+        }
+
+        setWeightLogs(logs.sort((a, b) => a.month - b.month));
       } else {
         setSetupMode(true);
       }
@@ -189,10 +207,21 @@ export default function GrowthChartPage() {
   // Combine WHO percentiles and user growth records
   const getCombinedChartData = (type) => {
     const whoData = type === 'weight' ? WHO_WEIGHT_DATA : WHO_HEIGHT_DATA;
-    return whoData.map((whoNode) => {
-      const userPoint = weightLogs.find((l) => l.month === whoNode.month);
+    const allMonths = Array.from(new Set([
+      ...whoData.map(d => d.month),
+      ...weightLogs.map(l => l.month)
+    ])).sort((a, b) => a - b);
+
+    return allMonths.map((month) => {
+      const whoNode = whoData.find(d => d.month === month);
+      const userPoint = weightLogs.find((l) => l.month === month);
       return {
-        ...whoNode,
+        month,
+        P3: whoNode?.P3,
+        P15: whoNode?.P15,
+        P50: whoNode?.P50,
+        P85: whoNode?.P85,
+        P97: whoNode?.P97,
         userValue: userPoint ? (type === 'weight' ? userPoint.weight : userPoint.height) : undefined
       };
     });
@@ -384,11 +413,11 @@ export default function GrowthChartPage() {
                 <YAxis domain={[1, 16]} tick={{ fontSize: 9, fontWeight: 'bold' }} />
                 <Tooltip />
                 <Legend wrapperStyle={{ fontSize: 9, fontWeight: 'bold' }} />
-                <Line type="monotone" dataKey="P3" stroke="#cbd5e1" strokeDasharray="3 3" strokeWidth={1} dot={false} />
-                <Line type="monotone" dataKey="P15" stroke="#94a3b8" strokeDasharray="3 3" strokeWidth={1} dot={false} />
-                <Line type="monotone" dataKey="P50" stroke="#475569" strokeWidth={1.5} dot={false} label="WHO P50" />
-                <Line type="monotone" dataKey="P85" stroke="#94a3b8" strokeDasharray="3 3" strokeWidth={1} dot={false} />
-                <Line type="monotone" dataKey="P97" stroke="#cbd5e1" strokeDasharray="3 3" strokeWidth={1} dot={false} />
+                <Line type="monotone" dataKey="P3" stroke="#cbd5e1" strokeDasharray="3 3" strokeWidth={1} dot={false} connectNulls />
+                <Line type="monotone" dataKey="P15" stroke="#94a3b8" strokeDasharray="3 3" strokeWidth={1} dot={false} connectNulls />
+                <Line type="monotone" dataKey="P50" stroke="#475569" strokeWidth={1.5} dot={false} label="WHO P50" connectNulls />
+                <Line type="monotone" dataKey="P85" stroke="#94a3b8" strokeDasharray="3 3" strokeWidth={1} dot={false} connectNulls />
+                <Line type="monotone" dataKey="P97" stroke="#cbd5e1" strokeDasharray="3 3" strokeWidth={1} dot={false} connectNulls />
                 <Line type="monotone" dataKey="userValue" name="Bé của bạn" stroke="#FF7A8A" strokeWidth={3} dot={{ r: 5, fill: '#FF7A8A', strokeWidth: 2, stroke: '#fff' }} connectNulls />
               </ComposedChart>
             </ResponsiveContainer>
@@ -408,11 +437,11 @@ export default function GrowthChartPage() {
                 <YAxis domain={[40, 100]} tick={{ fontSize: 9, fontWeight: 'bold' }} />
                 <Tooltip />
                 <Legend wrapperStyle={{ fontSize: 9, fontWeight: 'bold' }} />
-                <Line type="monotone" dataKey="P3" stroke="#cbd5e1" strokeDasharray="3 3" strokeWidth={1} dot={false} />
-                <Line type="monotone" dataKey="P15" stroke="#94a3b8" strokeDasharray="3 3" strokeWidth={1} dot={false} />
-                <Line type="monotone" dataKey="P50" stroke="#475569" strokeWidth={1.5} dot={false} />
-                <Line type="monotone" dataKey="P85" stroke="#94a3b8" strokeDasharray="3 3" strokeWidth={1} dot={false} />
-                <Line type="monotone" dataKey="P97" stroke="#cbd5e1" strokeDasharray="3 3" strokeWidth={1} dot={false} />
+                <Line type="monotone" dataKey="P3" stroke="#cbd5e1" strokeDasharray="3 3" strokeWidth={1} dot={false} connectNulls />
+                <Line type="monotone" dataKey="P15" stroke="#94a3b8" strokeDasharray="3 3" strokeWidth={1} dot={false} connectNulls />
+                <Line type="monotone" dataKey="P50" stroke="#475569" strokeWidth={1.5} dot={false} connectNulls />
+                <Line type="monotone" dataKey="P85" stroke="#94a3b8" strokeDasharray="3 3" strokeWidth={1} dot={false} connectNulls />
+                <Line type="monotone" dataKey="P97" stroke="#cbd5e1" strokeDasharray="3 3" strokeWidth={1} dot={false} connectNulls />
                 <Line type="monotone" dataKey="userValue" name="Bé của bạn" stroke="#8B5CF6" strokeWidth={3} dot={{ r: 5, fill: '#8B5CF6', strokeWidth: 2, stroke: '#fff' }} connectNulls />
               </ComposedChart>
             </ResponsiveContainer>
