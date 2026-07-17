@@ -65,6 +65,16 @@ const pregnancyService = {
       durationMinutes: parseInt(durationMinutes)
     });
     return response.data;
+  },
+
+  getWeightLogs: async () => {
+    const response = await axiosClient.get('/api/pregnancy/weight-logs');
+    return response.data;
+  },
+
+  getTodaySteps: async () => {
+    const response = await axiosClient.get('/api/pregnancy/today-steps');
+    return response.data;
   }
 };
 

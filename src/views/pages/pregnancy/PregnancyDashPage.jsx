@@ -41,16 +41,33 @@ export default function PregnancyDashPage() {
   }, []);
 
   const loadDashboardData = async () => {
-    const profile = await fetchProfile();
-    
-    // Default mock weight logs combined with actual logs from backend if any
-    const mockLogs = [
-      { week: 1, weight: 51.0, recordedAt: new Date(Date.now() - 77 * 24 * 60 * 60 * 1000).toISOString() },
-      { week: 4, weight: 51.2, recordedAt: new Date(Date.now() - 56 * 24 * 60 * 60 * 1000).toISOString() },
-      { week: 8, weight: 52.0, recordedAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString() },
-      { week: 11, weight: 53.1, recordedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() },
-    ];
-    setWeightLogs(mockLogs);
+    try {
+      const profile = await fetchProfile();
+      
+      // Load real weight logs
+      const weightRes = await pregnancyService.getWeightLogs();
+      const hasLogs = weightRes && (weightRes.isSuccess || weightRes.success || weightRes.Success) && Array.isArray(weightRes.data) && weightRes.data.length > 0;
+      if (hasLogs) {
+        setWeightLogs(weightRes.data);
+      } else {
+        // Default mock weight logs combined with actual logs from backend if any
+        const mockLogs = [
+          { week: 1, weight: 51.0, recordedAt: new Date(Date.now() - 77 * 24 * 60 * 60 * 1000).toISOString() },
+          { week: 4, weight: 51.2, recordedAt: new Date(Date.now() - 56 * 24 * 60 * 60 * 1000).toISOString() },
+          { week: 8, weight: 52.0, recordedAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString() },
+          { week: 11, weight: 53.1, recordedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() },
+        ];
+        setWeightLogs(mockLogs);
+      }
+
+      // Load today's steps
+      const stepsRes = await pregnancyService.getTodaySteps();
+      if (stepsRes && (stepsRes.isSuccess || stepsRes.success || stepsRes.Success) && stepsRes.data) {
+        setTodaySteps(stepsRes.data.todaySteps || 0);
+      }
+    } catch (e) {
+      console.error('Error loading dashboard data:', e);
+    }
   };
 
   // Weight Log Submission

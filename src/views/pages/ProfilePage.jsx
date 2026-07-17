@@ -86,6 +86,20 @@ export default function ProfilePage() {
     }
   }, [height, weight]);
 
+  // Auto-calculate EDD (deliveryDate) based on pregnancyWeek
+  useEffect(() => {
+    if (stage === 1 && pregnancyWeek) {
+      const weekNum = parseInt(pregnancyWeek);
+      if (weekNum >= 1 && weekNum <= 42) {
+        const remainingWeeks = 40 - weekNum;
+        const remainingDays = remainingWeeks * 7;
+        const today = new Date();
+        today.setDate(today.getDate() + remainingDays);
+        setDeliveryDate(today.toISOString().split("T")[0]);
+      }
+    }
+  }, [stage, pregnancyWeek]);
+
   const handleConditionCheckbox = (cond) => {
     if (selectedConditions.includes(cond)) {
       setSelectedConditions(selectedConditions.filter((c) => c !== cond));
@@ -350,12 +364,15 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-gray-500">Ngày dự sinh (EDD)</label>
+                    <label className="text-xs font-bold text-gray-500 flex justify-between">
+                      <span>Ngày dự sinh (EDD)</span>
+                      {pregnancyWeek && <span className="text-[10px] text-momPink font-black">Tự động tính từ tuần thai</span>}
+                    </label>
                     <input
                       type="date"
                       value={deliveryDate}
-                      onChange={(e) => setDeliveryDate(e.target.value)}
-                      className="w-full px-4 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-momPink/30"
+                      readOnly
+                      className="w-full px-4 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 text-sm font-semibold focus:outline-none bg-gray-50 dark:bg-gray-850/40 text-gray-500 dark:text-gray-400 cursor-not-allowed"
                     />
                   </div>
                 </>
