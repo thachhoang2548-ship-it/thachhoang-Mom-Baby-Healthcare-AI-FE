@@ -21,6 +21,7 @@ const registerSchema = z
 
 export default function RegisterPage() {
   const registerUser = useAuthController((state) => state.register);
+  const login = useAuthController((state) => state.login);
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -38,8 +39,15 @@ export default function RegisterPage() {
     try {
       const res = await registerUser(data.email, data.password, data.fullName);
       if (res.isSuccess) {
-        toast.success('Đăng ký tài khoản thành công! Mami đăng nhập nhé 🌸');
-        navigate('/login');
+        toast.success('Đăng ký thành công! Hệ thống đang tự động đăng nhập... 🌸');
+        
+        // Auto-login user
+        const loginRes = await login(data.email, data.password);
+        if (loginRes.isSuccess) {
+          navigate('/onboarding');
+        } else {
+          navigate('/login');
+        }
       } else {
         toast.error(res.message || 'Đăng ký không thành công');
       }
