@@ -10,12 +10,47 @@ import axiosClient from '../api/axiosClient';
 
 const babyService = {
   createProfile: async (babyProfileData) => {
-    const response = await axiosClient.post('/api/baby/profile', babyProfileData);
+    // Map frontend fields to match C# BabyProfile class properties:
+    // BabyName (string), DateOfBirth (DateTime), Gender (string), CurrentWeightKg (float?), CurrentHeightCm (float?)
+    const backendPayload = {
+      babyName: babyProfileData.babyName || babyProfileData.name || '',
+      dateOfBirth: babyProfileData.dateOfBirth || babyProfileData.birthDate || new Date().toISOString(),
+      gender: typeof babyProfileData.gender === 'string'
+        ? babyProfileData.gender
+        : (babyProfileData.gender === 0 ? 'male' : 'female'),
+      currentWeightKg: babyProfileData.currentWeightKg || babyProfileData.birthWeightKg || null,
+      currentHeightCm: babyProfileData.currentHeightCm || babyProfileData.birthHeightCm || null,
+      allergies: babyProfileData.allergies || [],
+      foodHistory: babyProfileData.foodHistory || [],
+      growthRecords: []
+    };
+    const response = await axiosClient.post('/api/baby/profile', backendPayload);
     return response.data;
   },
 
   getProfiles: async () => {
     const response = await axiosClient.get('/api/baby/profiles');
+    
+    // Support both success and isSuccess properties and map backend response back to the format frontend expects
+    const isSuccessful = response.data && (response.data.isSuccess || response.data.success || response.data.Success);
+    if (isSuccessful && Array.isArray(response.data.data)) {
+      response.data.data = response.data.data.map(b => ({
+        id: b.id,
+        name: b.babyName || '',
+        gender: (b.gender || '').toLowerCase() === 'male' ? 0 : 1,
+        birthDate: b.dateOfBirth,
+        birthWeightKg: b.currentWeightKg || 3.2,
+        birthHeightCm: b.currentHeightCm || 50,
+        currentWeightKg: b.currentWeightKg || 3.2,
+        currentHeightCm: b.currentHeightCm || 50,
+        allergies: b.allergies || [],
+        foodHistory: b.foodHistory || []
+      }));
+      
+      // Ensure both keys are present and true
+      response.data.isSuccess = true;
+      response.data.success = true;
+    }
     return response.data;
   },
 
