@@ -8,12 +8,18 @@ import React from 'react';
 export function useSignalR() {
   const token = useAuthController((state) => state.token);
   const isAuthenticated = useAuthController((state) => state.isAuthenticated);
+  const user = useAuthController((state) => state.user);
   const addAlert = useAlertController((state) => state.addAlert);
   const setSignalRConnected = useAlertController((state) => state.setSignalRConnected);
   const connectionRef = useRef(null);
 
+  // Determine special roles that do not need maternal SignalR connections
+  const isAdmin = user?.roles?.some(r => r.includes('Admin')) || user?.email?.includes('admin');
+  const isExpert = user?.roles?.some(r => r.includes('Expert')) || user?.email?.includes('expert');
+  const isStaff = user?.roles?.some(r => r.includes('Staff')) || user?.email?.includes('staff');
+
   useEffect(() => {
-    if (!isAuthenticated || !token) {
+    if (!isAuthenticated || !token || isAdmin || isExpert || isStaff) {
       if (connectionRef.current) {
         connectionRef.current.stop();
         connectionRef.current = null;
@@ -74,11 +80,14 @@ export function useSignalR() {
         console.error('SignalR AlertHub connection failed:', err);
         setSignalRConnected(false);
 
-        // If unauthorized (401), logout to clear stale/expired tokens and stop retrying
         const errMsg = err.toString();
         if (errMsg.includes('401') || errMsg.includes('Unauthorized')) {
-          console.warn('SignalR unauthorized (401), clearing stale session...');
-          useAuthController.getState().logout();
+          console.warn('SignalR unauthorized (401), attempting token refresh...');
+          // Trigger a token refresh. If it succeeds, useEffect will re-run automatically since 'token' changes.
+          const newToken = await useAuthController.getState().refreshTokenAction();
+          if (newToken) {
+            console.log('Token refreshed successfully. Re-running hook.');
+          }
           return;
         }
 
@@ -116,5 +125,5 @@ export function useSignalR() {
         setSignalRConnected(false);
       }
     };
-  }, [token, isAuthenticated, addAlert, setSignalRConnected]);
+  }, [token, isAuthenticated, isAdmin, isExpert, isStaff, addAlert, setSignalRConnected]);
 }

@@ -9,6 +9,7 @@
  * ===================================================================
  */
 import { create } from 'zustand';
+import axios from 'axios';
 import authService from '../models/services/authService';
 import axiosClient, { injectAuthStore } from '../models/api/axiosClient';
 
@@ -129,6 +130,33 @@ export const useAuthController = create((set, get) => ({
         set({ user: null, isAuthenticated: false });
       }
     }
+  },
+
+  // Thực hiện làm mới token âm thầm
+  refreshTokenAction: async () => {
+    const storedRefreshToken = get().refreshToken;
+    if (!storedRefreshToken) {
+      await get().logout();
+      return null;
+    }
+    try {
+      const url = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/auth/refresh`;
+      const refreshResponse = await axios.post(url, {
+        refreshToken: storedRefreshToken,
+      });
+
+      const resData = refreshResponse.data;
+      const isSuccessful = resData && (resData.isSuccess || resData.success || resData.Success);
+      if (isSuccessful && resData.data) {
+        const { token, refreshToken, user } = resData.data;
+        get().setTokens(token, refreshToken, user);
+        return token;
+      }
+    } catch (err) {
+      console.error('Silent token refresh in authController failed:', err);
+    }
+    await get().logout();
+    return null;
   },
 }));
 

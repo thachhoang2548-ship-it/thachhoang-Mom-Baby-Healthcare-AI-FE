@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import babyService from '../../../models/services/babyService';
+import { useProfileController } from '../../../controllers/profileController';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Scatter, ComposedChart } from 'recharts';
 import { ArrowLeft, Scale, ArrowUpRight, Activity, ShieldAlert, Sparkles, CheckCircle2, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -37,6 +38,7 @@ const WHO_HEIGHT_DATA = [
 
 export default function GrowthChartPage() {
   const navigate = useNavigate();
+  const { momProfile, updateProfile } = useProfileController();
   const [babies, setBabies] = useState([]);
   const [selectedBaby, setSelectedBaby] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -108,6 +110,17 @@ export default function GrowthChartPage() {
 
       const res = await babyService.createProfile(payload);
       if (res.isSuccess) {
+        // Automatically sync mother's stage to Postpartum
+        try {
+          await updateProfile({
+            ...momProfile,
+            stage: 2,
+            deliveryDate: payload.birthDate
+          });
+        } catch (stageErr) {
+          console.warn('Error auto-updating mom stage to postpartum:', stageErr);
+        }
+
         toast.success('Thiết lập hồ sơ bé thành công! 🎉');
         setSetupMode(false);
         await loadBabies();

@@ -140,13 +140,7 @@ export default function AppShell() {
       color: 'text-momPink',
     });
 
-    items.push({
-      label: 'Đổi Lộ Trình',
-      path: '/onboarding',
-      icon: RefreshCw,
-      color: 'text-gray-500',
-    });
-    
+
     items.push({
       label: 'Nâng Cấp',
       path: '/upgrade',
@@ -166,6 +160,27 @@ export default function AppShell() {
     return 'Chưa thiết lập';
   };
 
+  const handleLogoClick = () => {
+    if (isAdmin) navigate('/admin');
+    else if (isExpert) navigate('/expert');
+    else if (isStaff) navigate('/staff');
+    else navigate('/dashboard');
+  };
+
+  const getSubTitleVi = () => {
+    if (isAdmin) return 'Hệ Thống Quản Trị';
+    if (isExpert) return 'Chuyên Gia Y Tế';
+    if (isStaff) return 'Care Staff';
+    return getStageNameVi(journeyStage);
+  };
+
+  const getRoleBadgeVi = () => {
+    if (isAdmin) return 'Quản Trị Viên';
+    if (isExpert) return 'Chuyên Gia';
+    if (isStaff) return 'Nhân Viên';
+    return getTierNameVi(tier);
+  };
+
   return (
     <div className="h-screen bg-[#FCF8F8] dark:bg-[#0E0C0F] text-gray-800 dark:text-gray-100 flex flex-col font-sans relative overflow-hidden">
       {/* Decorative premium ambient glowing spots */}
@@ -175,7 +190,7 @@ export default function AppShell() {
       
       {/* Top Header Bar */}
       <header className="sticky top-0 z-30 bg-white/60 dark:bg-gray-900/50 backdrop-blur-xl border-b border-white/50 dark:border-gray-850 py-3.5 px-4 sm:px-8 flex items-center justify-between relative">
-        <div onClick={() => navigate('/onboarding')} className="cursor-pointer flex items-center gap-2.5 group">
+        <div onClick={handleLogoClick} className="cursor-pointer flex items-center gap-2.5 group">
           <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-momPink to-momPurple flex items-center justify-center text-white shadow-[0_4px_15px_rgba(236,72,153,0.3)] transition-transform duration-300 group-hover:scale-105">
             <span className="font-extrabold text-sm">MƠ</span>
           </div>
@@ -184,7 +199,7 @@ export default function AppShell() {
               Mom Ơi!
             </h1>
             <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">
-              {getStageNameVi(journeyStage)}
+              {getSubTitleVi()}
             </p>
           </div>
         </div>
@@ -197,7 +212,7 @@ export default function AppShell() {
                 {user.fullName || user.email}
               </span>
               <span className="text-[10px] bg-momPink-light/75 dark:bg-momPink/25 text-momPink-dark dark:text-pink-455 px-2.5 py-0.5 rounded-full font-bold">
-                {getTierNameVi(tier)}
+                {getRoleBadgeVi()}
               </span>
             </div>
           )}
