@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import babyService from '../../../models/services/babyService';
 import AllergyTracker from '../../components/baby/AllergyTracker';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
-import { Baby, Sparkles, AlertTriangle, Calendar, Award, ChevronRight, Activity, BookOpen } from 'lucide-react';
+import { Baby, Sparkles, AlertTriangle, Calendar, Award, ChevronRight, Activity, BookOpen, Pencil, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function BabyDashPage() {
@@ -127,10 +127,11 @@ export default function BabyDashPage() {
           </p>
         </div>
         <button
-          onClick={() => navigate('/baby-nutrition/growth')}
+          onClick={() => navigate('/baby-nutrition/create-baby')}
           className="px-6 py-3 bg-gradient-to-r from-momPink to-momPurple text-white text-xs font-extrabold rounded-xl transition hover:opacity-95 shadow active:scale-95"
         >
-          Thiết lập hồ sơ bé ngay
+          <Plus className="w-4 h-4 inline mr-1" />
+          Thêm hồ sơ bé ngay
         </button>
       </div>
     );
@@ -210,9 +211,19 @@ export default function BabyDashPage() {
             </p>
           </div>
         </div>
-        <span className="px-3.5 py-1.5 bg-momGreen-light/85 text-momGreen-dark text-[10px] font-extrabold rounded-full border border-momGreen-200">
-          {getWeaningStage(ageMonths)}
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() =>
+              navigate('/baby-nutrition/edit-baby', { state: { baby: selectedBaby } })
+            }
+            className="flex items-center gap-1.5 px-3.5 py-2 text-[11px] font-black text-momPink-dark border border-momPink/30 bg-pink-50/50 hover:bg-pink-100/60 dark:bg-pink-950/20 dark:border-pink-900/30 dark:text-pink-400 rounded-xl transition active:scale-95"
+          >
+            <Pencil className="w-3.5 h-3.5" /> Chỉnh sửa bé
+          </button>
+          <span className="px-3.5 py-1.5 bg-momGreen-light/85 text-momGreen-dark text-[10px] font-extrabold rounded-full border border-momGreen-200">
+            {getWeaningStage(ageMonths)}
+          </span>
+        </div>
       </div>
 
       {/* Alert Banner: BR07/BR08 (Iron deficiency warning) */}

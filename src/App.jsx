@@ -32,6 +32,7 @@ import VoiceJournalPage from "./views/pages/postpartum/VoiceJournalPage";
 import BabyDashPage from "./views/pages/baby/BabyDashPage";
 import BabyMenuPage from "./views/pages/baby/BabyMenuPage";
 import GrowthChartPage from "./views/pages/baby/GrowthChartPage";
+import BabyProfileFormPage from "./views/pages/baby/BabyProfileFormPage";
 
 // Other compatibility pages
 import Consent from "./views/pages/Consent";
@@ -93,6 +94,8 @@ function AppContent() {
           <Route path="/baby-nutrition" element={<BabyDashPage />} />
           <Route path="/baby-nutrition/menu" element={<BabyMenuPage />} />
           <Route path="/baby-nutrition/growth" element={<GrowthChartPage />} />
+          <Route path="/baby-nutrition/create-baby" element={<BabyProfileFormPage />} />
+          <Route path="/baby-nutrition/edit-baby" element={<BabyProfileFormPage />} />
           <Route path="/baby" element={<Navigate to="/baby-nutrition" replace />} />
           <Route path="/baby/menu" element={<Navigate to="/baby-nutrition/menu" replace />} />
           <Route path="/baby/growth" element={<Navigate to="/baby-nutrition/growth" replace />} />
