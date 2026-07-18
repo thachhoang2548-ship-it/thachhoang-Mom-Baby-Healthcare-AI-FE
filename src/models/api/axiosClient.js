@@ -43,7 +43,7 @@ const getAuthState = () => {
 };
 
 const axiosClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5265',
   timeout: 15000,
 });
 
@@ -140,7 +140,7 @@ axiosClient.interceptors.response.use(
       }
 
       try {
-        const url = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/auth/refresh`;
+        const url = `${import.meta.env.VITE_API_URL || 'http://localhost:5265'}/api/auth/refresh`;
         const refreshResponse = await axios.post(url, {
           refreshToken: storedRefreshToken,
         });

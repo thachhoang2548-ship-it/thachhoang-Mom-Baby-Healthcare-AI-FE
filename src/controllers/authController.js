@@ -140,7 +140,7 @@ export const useAuthController = create((set, get) => ({
       return null;
     }
     try {
-      const url = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/auth/refresh`;
+      const url = `${import.meta.env.VITE_API_URL || 'http://localhost:5265'}/api/auth/refresh`;
       const refreshResponse = await axios.post(url, {
         refreshToken: storedRefreshToken,
       });

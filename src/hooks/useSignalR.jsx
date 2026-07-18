@@ -28,7 +28,7 @@ export function useSignalR() {
       return;
     }
 
-    const hubUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/hubs/alerts`;
+    const hubUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5265'}/hubs/alerts`;
 
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(hubUrl, {
