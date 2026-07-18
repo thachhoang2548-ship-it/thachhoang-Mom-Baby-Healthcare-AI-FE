@@ -35,10 +35,6 @@ const fertilityService = {
     const response = await axiosClient.post('/api/fertility/ivf-timeline', {
       ivfStartDate,
       protocol
-    }, {
-      headers: {
-        'x-required-tier': 'MomHienDai'
-      }
     });
     return response.data;
   }

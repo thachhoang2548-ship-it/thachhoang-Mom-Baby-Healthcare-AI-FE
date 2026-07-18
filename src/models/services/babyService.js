@@ -9,6 +9,7 @@
 import axiosClient from '../api/axiosClient';
 
 const babyService = {
+  // ─── Create a new baby profile ───────────────────────────────────
   createProfile: async (babyProfileData) => {
     // Map frontend fields to match C# BabyProfile class properties:
     // BabyName (string), DateOfBirth (DateTime), Gender (string), CurrentWeightKg (float?), CurrentHeightCm (float?)
@@ -28,6 +29,12 @@ const babyService = {
     return response.data;
   },
 
+  // Alias used by BabyProfileFormPage (Create flow)
+  createBabyProfile: async (data) => {
+    return babyService.createProfile(data);
+  },
+
+  // ─── Get all baby profiles ────────────────────────────────────────
   getProfiles: async () => {
     const response = await axiosClient.get('/api/baby/profiles');
     
@@ -55,6 +62,7 @@ const babyService = {
     return response.data;
   },
 
+  // ─── Log a growth measurement ─────────────────────────────────────
   logGrowth: async (babyId, weightKg, heightCm) => {
     const response = await axiosClient.post(`/api/baby/${babyId}/growth`, {
       weightKg: parseFloat(weightKg),
@@ -63,6 +71,7 @@ const babyService = {
     return response.data;
   },
 
+  // ─── Update an existing baby profile ─────────────────────────────
   updateProfile: async (babyId, profileData) => {
     const response = await axiosClient.put(`/api/baby/${babyId}`, {
       babyName: profileData.name || profileData.babyName,
@@ -76,6 +85,20 @@ const babyService = {
     return response.data;
   },
 
+  // Alias used by BabyProfileFormPage (Edit flow)
+  updateBabyProfile: async (id, data) => {
+    return babyService.updateProfile(id, data);
+  },
+
+  // ─── Update growth-chart baseline after profile save ─────────────
+  // Called after create/update to sync the baseline measurement on the
+  // growth chart with the new currentWeightKg / currentHeightCm values.
+  updateGrowthBaseline: async (babyId) => {
+    const response = await axiosClient.post(`/api/baby/${babyId}/growth/baseline`);
+    return response.data;
+  },
+
+  // ─── Nutrition menus ──────────────────────────────────────────────
   getDailyMenu: async (babyId) => {
     const response = await axiosClient.get(`/api/baby/${babyId}/menu/daily`);
     return response.data;
@@ -88,3 +111,4 @@ const babyService = {
 };
 
 export default babyService;
+
