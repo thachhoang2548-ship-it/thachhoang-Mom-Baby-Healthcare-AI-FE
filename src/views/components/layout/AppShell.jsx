@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthController } from '../../../controllers/authController';
 import { useProfileController } from '../../../controllers/profileController';
-import { getTierNameVi } from '../../../utils/tierHelpers';
+
 import { Calendar, Heart, Baby, Sparkles, LogOut, RefreshCw, Activity, MessageSquare, LayoutDashboard, User, Settings, ShieldCheck, HeartPulse } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -144,12 +144,6 @@ export default function AppShell() {
     });
 
 
-    items.push({
-      label: 'Nâng Cấp',
-      path: '/upgrade',
-      icon: Sparkles,
-      color: 'text-momAmber',
-    });
 
     return items;
   };
@@ -181,7 +175,7 @@ export default function AppShell() {
     if (isAdmin) return 'Quản Trị Viên';
     if (isExpert) return 'Chuyên Gia';
     if (isStaff) return 'Nhân Viên';
-    return getTierNameVi(tier);
+    return 'Thành Viên';
   };
 
   return (
@@ -268,26 +262,16 @@ export default function AppShell() {
                 {user.email}
               </p>
               
-              {/* Only show subscription status and profile edit links for Mom users */}
+              {/* Profile edit links for Mom users */}
               {!isAdmin && !isExpert && !isStaff && (
-                <>
-                  <div className="mt-3 flex justify-between items-center bg-white/70 dark:bg-gray-900/60 p-2 rounded-xl border border-white/50 dark:border-gray-850">
-                    <span className="text-[9px] font-bold text-momPink-dark dark:text-pink-400 uppercase">
-                      Gói dịch vụ
-                    </span>
-                    <span className="text-[10px] font-extrabold text-momPurple-dark dark:text-purple-400">
-                      {tier === 'Free' ? 'Free' : tier}
-                    </span>
-                  </div>
-                  <div className="mt-2.5 pt-2 border-t border-gray-100 dark:border-gray-800/60 flex justify-between items-center">
-                    <Link to="/profile" className="text-[10px] font-bold text-momPink hover:text-momPink-dark hover:underline transition-all">
-                      Chỉnh sửa hồ sơ
-                    </Link>
-                    <Link to="/profile" className="text-[10px] font-bold text-gray-400 hover:text-gray-600 hover:underline transition-all">
-                      Đổi lộ trình
-                    </Link>
-                  </div>
-                </>
+                <div className="mt-2.5 pt-2 border-t border-gray-100 dark:border-gray-800/60 flex justify-between items-center">
+                  <Link to="/profile" className="text-[10px] font-bold text-momPink hover:text-momPink-dark hover:underline transition-all">
+                    Chỉnh sửa hồ sơ
+                  </Link>
+                  <Link to="/profile" className="text-[10px] font-bold text-gray-400 hover:text-gray-600 hover:underline transition-all">
+                    Đổi lộ trình
+                  </Link>
+                </div>
               )}
             </div>
           )}

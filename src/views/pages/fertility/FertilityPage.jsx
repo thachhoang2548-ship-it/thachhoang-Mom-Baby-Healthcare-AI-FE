@@ -36,8 +36,12 @@ export default function FertilityPage() {
   }, []);
 
   useEffect(() => {
-    loadCalendarData();
-  }, [selectedMonth, momProfile]);
+    // Chỉ gọi API khi user đã có dữ liệu kinh nguyệt (tránh 400 Bad Request)
+    if (momProfile?.lastPeriodDate) {
+      loadCalendarData();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMonth, momProfile?.lastPeriodDate]);
 
   const loadCalendarData = async () => {
     try {

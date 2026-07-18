@@ -21,10 +21,6 @@ const postpartumService = {
   submitEpds: async (answers = []) => {
     const response = await axiosClient.post('/api/postpartum/epds', {
       answers: answers.map(Number)
-    }, {
-      headers: {
-        'x-required-tier': 'MomHienDai'
-      }
     });
     return response.data;
   },
@@ -38,10 +34,6 @@ const postpartumService = {
     const response = await axiosClient.post('/api/postpartum/epds/voice-journal', {
       audioBase64,
       mimeType
-    }, {
-      headers: {
-        'x-required-tier': 'SuperMomVip'
-      }
     });
     return response.data;
   },

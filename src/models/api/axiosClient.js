@@ -7,7 +7,6 @@
  * Chức năng:
  *   - Tự động gắn JWT Bearer token vào mỗi request
  *   - Tự động refresh token khi gặp lỗi 401 (Unauthorized)
- *   - Xử lý 403 (Tier Lock) → mở modal nâng cấp
  *   - Xử lý 503 (Server down) → hiện thông báo lỗi
  *   - Chuẩn hóa response format (isSuccess / success)
  * ===================================================================
@@ -73,7 +72,7 @@ axiosClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor: xử lý token refresh (401), tier-lock (403), server down (503)
+// Response interceptor: xử lý token refresh (401), server down (503)
 axiosClient.interceptors.response.use(
   (response) => {
     // Chuẩn hóa response format
@@ -108,13 +107,6 @@ axiosClient.interceptors.response.use(
     }
 
     const status = error.response.status;
-
-    // Xử lý 403 Forbidden (Tier Lock)
-    if (status === 403) {
-      const requiredTier = originalRequest.headers?.['x-required-tier'] || 'MomHienDai';
-      window.dispatchEvent(new CustomEvent('TIER_LOCKED', { detail: { requiredTier } }));
-      return Promise.reject(error);
-    }
 
     // Xử lý 401 Unauthorized (Token Refresh)
     if (status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/api/auth/')) {
