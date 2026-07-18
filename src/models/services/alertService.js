@@ -13,6 +13,11 @@ const alertService = {
     const res = await axiosClient.get("/api/alerts");
     return res.data;
   },
+
+  resolveAlert: async (alertId) => {
+    const res = await axiosClient.patch(`/api/alerts/${alertId}/resolve`);
+    return res.data;
+  },
 };
 
 export default alertService;
