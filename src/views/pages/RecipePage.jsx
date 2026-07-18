@@ -59,8 +59,21 @@ export default function RecipePage() {
   // Handle submit generation
   const handleGenerate = async (e) => {
     e.preventDefault();
+
+    // Người dùng thường gõ nguyên liệu rồi bấm Gửi luôn mà quên nhấn Enter để tạo tag.
+    // Gộp phần đang gõ dở vào danh sách để nguyên liệu luôn được gửi lên AI.
+    const pending = ingredientInput.trim().toLowerCase();
+    const mergedIngredients = pending && !preferences.availableIngredients.includes(pending)
+      ? [...preferences.availableIngredients, pending]
+      : preferences.availableIngredients;
+
+    if (pending) {
+      setPreferences({ availableIngredients: mergedIngredients });
+      setIngredientInput("");
+    }
+
     try {
-      await generateRecipes(preferences);
+      await generateRecipes({ ...preferences, availableIngredients: mergedIngredients });
     } catch (err) {
       console.error(err);
     }
