@@ -22,8 +22,11 @@ export default function MealPlanPage() {
     try {
       const week = momProfile?.pregnancyWeek || 12;
       const res = await pregnancyService.getMealPlan(week);
-      if (res.isSuccess && res.data) {
+      // ApiResponse của backend trả về "success" (không phải "isSuccess")
+      if ((res.success || res.isSuccess) && res.data) {
         setMealPlan(res.data);
+      } else if (res.message) {
+        toast.error(res.message);
       }
     } catch (err) {
       console.error(err);

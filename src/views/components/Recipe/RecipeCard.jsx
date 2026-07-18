@@ -10,7 +10,8 @@ export default function RecipeCard({ recipe, onSave, onView }) {
 
   // Choose custom emoji/icon based on tags
   const getFoodEmoji = () => {
-    const titleLower = title.toLowerCase();
+    // Phòng thủ: title có thể thiếu nếu nguồn dữ liệu trả field khác — không để crash cả trang.
+    const titleLower = (title || "").toLowerCase();
     if (titleLower.includes("cá") || titleLower.includes("salmon")) return "🐟";
     if (titleLower.includes("thịt") || titleLower.includes("heo") || titleLower.includes("bò")) return "🥩";
     if (titleLower.includes("gà") || titleLower.includes("chicken")) return "🍗";

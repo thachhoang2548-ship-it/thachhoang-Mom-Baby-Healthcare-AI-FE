@@ -26,11 +26,27 @@ const recipeService = {
         }
       }
 
-      // Map lại cấu trúc giống Node.js để Controller không bị lỗi
+      // Map cấu trúc AI trả về ({recipe, calories, ingredients, steps}) sang đúng
+      // shape mà RecipeCard/RecipePage sử dụng ({title, nutritionInfo, ...}).
       return {
         success: true,
+        message: res.data?.message,
         data: {
-          recipes: recipesList.map(r => ({ ...r, _id: r.id || `recipe-${Date.now()}-${Math.random()}` })),
+          recipes: recipesList.map(r => ({
+            ...r,
+            _id: r.id || `recipe-${Date.now()}-${Math.random()}`,
+            title: r.title || r.recipe || "Món ăn AI",
+            description: r.description ||
+              (Array.isArray(r.ingredients) ? `Nguyên liệu: ${r.ingredients.map(i => (typeof i === "string" ? i : i.name)).join(", ")}` : ""),
+            nutritionInfo: r.nutritionInfo || { calories: r.calories || 0 },
+            tags: r.tags || ["AI gợi ý", "Chờ chuyên gia duyệt"],
+            // Modal chi tiết cần object; AI trả mảng chuỗi nên chuyển đổi tại đây.
+            ingredients: (r.ingredients || []).map(i =>
+              typeof i === "string" ? { name: i, amount: "", unit: "" } : i),
+            steps: (r.steps || []).map((s, idx) =>
+              typeof s === "string" ? { stepNumber: idx + 1, instruction: s, duration: "" } : s),
+            isSaved: false
+          })),
           profile: null
         }
       };
@@ -80,12 +96,8 @@ const recipeService = {
   },
 
   fetchCurrentProfile: async () => {
-    try {
-      const res = await axiosClient.get("/api/recipes/profiles/current");
-      return res.data;
-    } catch (error) {
-      throw error;
-    }
+    const res = await axiosClient.get("/api/recipes/profiles/current");
+    return res.data;
   },
 };
 
