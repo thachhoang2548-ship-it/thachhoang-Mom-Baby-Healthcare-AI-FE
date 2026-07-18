@@ -67,124 +67,12 @@ export default function BabyMenuPage() {
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
   const [checkedIngredients, setCheckedIngredients] = useState({});
 
-  // Mock list of recipes for today
-  const [recipes, setRecipes] = useState([
-    {
-      id: 1,
-      name: 'Cháo yến mạch chuối nhuyễn',
-      emoji: '🥣',
-      slot: 'Bữa Sáng ☀️',
-      duration: '15 phút',
-      kcal: 145,
-      tags: ['giàu sắt', 'dễ làm', 'dễ tiêu'],
-      protein: '4.5g',
-      iron: '2.8mg',
-      ingredients: [
-        { name: 'Yến mạch cán dẹt', amount: '30', unit: 'g' },
-        { name: 'Chuối chín ngọt', amount: '1/2', unit: 'quả' },
-        { name: 'Sữa mẹ hoặc sữa công thức', amount: '100', unit: 'ml' }
-      ],
-      steps: [
-        { desc: 'Ngâm yến mạch với nước ấm khoảng 5 phút cho mềm ra.', time: '5 phút' },
-        { desc: 'Nghiền nhuyễn chuối chín bằng nĩa hoặc rây mịn.', time: '2 phút' },
-        { desc: 'Cho yến mạch vào nồi nhỏ nấu nhỏ lửa khoảng 5-7 phút cho chín nhừ, khuấy đều.', time: '7 phút' },
-        { desc: 'Tắt bếp, trộn chuối nghiền và sữa vào khuấy đều cho ấm rồi cho bé ăn.', time: '1 phút' }
-      ],
-      nutritionData: [
-        { name: 'Protein', value: 45 },
-        { name: 'Carbs', value: 80 },
-        { name: 'Chất béo', value: 35 }
-      ],
-      eaten: false
-    },
-    {
-      id: 2,
-      name: 'Súp cá hồi bông cải xanh nhuyễn',
-      emoji: '🍲',
-      slot: 'Bữa Trưa 🍲',
-      duration: '25 phút',
-      kcal: 180,
-      tags: ['dồi dào omega-3', 'tốt cho mắt'],
-      protein: '8.2g',
-      iron: '1.9mg',
-      ingredients: [
-        { name: 'Filet Cá hồi tươi', amount: '25', unit: 'g' },
-        { name: 'Bông cải xanh', amount: '20', unit: 'g' },
-        { name: 'Khoai tây nhỏ', amount: '1/2', unit: 'củ' },
-        { name: 'Dầu ô liu dặm bé', amount: '1', unit: 'thìa cà phê' }
-      ],
-      steps: [
-        { desc: 'Hấp chín cá hồi tươi, gỡ thịt cá thật cẩn thận để loại bỏ hết xương răm.', time: '10 phút' },
-        { desc: 'Rửa sạch bông cải xanh và khoai tây, luộc hoặc hấp chín mềm.', time: '10 phút' },
-        { desc: 'Cho khoai tây, bông cải xanh và cá hồi vào máy xay xay nhuyễn hoặc rây mịn.', time: '3 phút' },
-        { desc: 'Múc ra bát, thêm 1 thìa dầu ô liu đảo đều và cho bé dùng ấm.', time: '2 phút' }
-      ],
-      nutritionData: [
-        { name: 'Protein', value: 75 },
-        { name: 'Carbs', value: 50 },
-        { name: 'Chất béo', value: 65 }
-      ],
-      eaten: false
-    },
-    {
-      id: 3,
-      name: 'Nước ép bơ lê nhuyễn mịn',
-      emoji: '🍹',
-      slot: 'Bữa Chiều 🍌',
-      duration: '10 phút',
-      kcal: 95,
-      tags: ['giàu béo tốt', 'thơm mịn'],
-      protein: '1.5g',
-      iron: '0.8mg',
-      ingredients: [
-        { name: 'Bơ chín sáp', amount: '1/4', unit: 'quả' },
-        { name: 'Lê ngọt chín', amount: '1/4', unit: 'quả' }
-      ],
-      steps: [
-        { desc: 'Gọt vỏ lê ngọt chín, ép lấy nước cốt lê ngọt thanh.', time: '5 phút' },
-        { desc: 'Dùng nĩa tán nhuyễn thịt bơ sáp chín mịn.', time: '3 phút' },
-        { desc: 'Trộn đều nước lê vào bát bơ tán nhuyễn cho đến khi đạt độ sánh mịn vừa phải.', time: '2 phút' }
-      ],
-      nutritionData: [
-        { name: 'Protein', value: 15 },
-        { name: 'Carbs', value: 45 },
-        { name: 'Chất béo', value: 80 }
-      ],
-      eaten: false
-    },
-    {
-      id: 4,
-      name: 'Cháo gà hạt sen bí đỏ ngọt',
-      emoji: '🥣',
-      slot: 'Bữa Tối 🌙',
-      duration: '30 phút',
-      kcal: 210,
-      tags: ['ngủ ngon', 'giàu đạm'],
-      protein: '7.8g',
-      iron: '2.2mg',
-      ingredients: [
-        { name: 'Lườn ức gà sạch', amount: '20', unit: 'g' },
-        { name: 'Bí đỏ ngọt', amount: '20', unit: 'g' },
-        { name: 'Hạt sen khô', amount: '10', unit: 'g' },
-        { name: 'Gạo tẻ ngon', amount: '20', unit: 'g' }
-      ],
-      steps: [
-        { desc: 'Ngâm hạt sen cho mềm, đem hấp chín cùng bí đỏ ngọt.', time: '15 phút' },
-        { desc: 'Ức gà hấp chín băm nhuyễn mịn.', time: '10 phút' },
-        { desc: 'Ninh gạo thành cháo loãng rồi trút hạt sen, bí đỏ nghiền nhuyễn và thịt gà vào quấy.', time: '4 phút' },
-        { desc: 'Khuấy nhỏ lửa thêm 1 phút cho cháo quánh dẻo rồi tắt bếp.', time: '1 phút' }
-      ],
-      nutritionData: [
-        { name: 'Protein', value: 70 },
-        { name: 'Carbs', value: 65 },
-        { name: 'Chất béo', value: 40 }
-      ],
-      eaten: false
-    }
-  ]);
+  // Recipes come from the FastAPI nutrition engine (via the .NET proxy).
+  // No hardcoded menu: when the API is unavailable we show an explicit notice instead.
+  const [recipes, setRecipes] = useState([]);
+  const [menuError, setMenuError] = useState(null);
 
   const [allergies, setAllergies] = useState([]);
-  const [babyId, setBabyId] = useState(null);
   const [dailyMenu, setDailyMenu] = useState([]);
   const [weeklyMenu, setWeeklyMenu] = useState(null);
 
@@ -193,15 +81,14 @@ export default function BabyMenuPage() {
     const loadAllData = async () => {
       try {
         const res = await babyService.getProfiles();
-        if (res.isSuccess && res.data && res.data.length > 0) {
+        if ((res.success || res.isSuccess) && res.data && res.data.length > 0) {
           const firstBaby = res.data[0];
-          setBabyId(firstBaby.id);
           setAllergies(firstBaby.allergies || []);
-          
+
           // Load daily menu
           try {
             const dailyRes = await babyService.getDailyMenu(firstBaby.id);
-            if (dailyRes.success && dailyRes.data) {
+            if ((dailyRes.success || dailyRes.isSuccess) && dailyRes.data) {
               const meals = dailyRes.data.meals || {};
               const mappedToday = [];
               if (meals.breakfast) mappedToday.push(mapFastApiRecipe("Sáng ☀️", meals.breakfast, "07:30", "🥣"));
@@ -212,24 +99,33 @@ export default function BabyMenuPage() {
 
               if (mappedToday.length > 0) {
                 setDailyMenu(mappedToday);
+                setMenuError(null);
+              } else {
+                setMenuError('Chưa có công thức phù hợp cho bé trong hệ thống.');
               }
+            } else {
+              setMenuError(dailyRes.message || 'Không thể tải thực đơn cho bé.');
             }
           } catch (err) {
             console.error('Failed to load daily menu from FastAPI:', err);
+            setMenuError(err.response?.data?.message || 'Dịch vụ dinh dưỡng hiện không khả dụng. Vui lòng thử lại sau.');
           }
 
           // Load weekly menu
           try {
             const weeklyRes = await babyService.getWeeklyMenu(firstBaby.id);
-            if (weeklyRes.success && weeklyRes.data) {
+            if ((weeklyRes.success || weeklyRes.isSuccess) && weeklyRes.data) {
               setWeeklyMenu(weeklyRes.data);
             }
           } catch (err) {
             console.error('Failed to load weekly menu from FastAPI:', err);
           }
+        } else {
+          setMenuError('Chưa có hồ sơ bé. Vui lòng tạo hồ sơ bé trước để nhận thực đơn.');
         }
       } catch (e) {
         console.error('Error loading baby profile for menu:', e);
+        setMenuError('Không thể tải hồ sơ bé. Vui lòng thử lại sau.');
       }
     };
     loadAllData();
@@ -384,14 +280,16 @@ export default function BabyMenuPage() {
 
   // Coverage percentages
   const getEatenCoverage = () => {
+    if (activeRecipes.length === 0) return 0;
     const eatenCount = activeRecipes.filter((r) => r.eaten).length;
     return Math.floor((eatenCount / activeRecipes.length) * 100);
   };
 
   const handleMarkEaten = (id) => {
-    setRecipes((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, eaten: !r.eaten } : r))
-    );
+    const toggle = (prev) => prev.map((r) => (r.id === id ? { ...r, eaten: !r.eaten } : r));
+    // Menu hiển thị có thể đến từ API (dailyMenu) hoặc state recipes — toggle cả hai.
+    setDailyMenu(toggle);
+    setRecipes(toggle);
     toast.success('Đã cập nhật trạng thái ăn của bé! 😋');
   };
 
@@ -478,6 +376,17 @@ export default function BabyMenuPage() {
               * Tích chọn "Đã cho bé ăn" trên từng món ăn để cộng điểm dinh dưỡng.
             </p>
           </div>
+
+          {/* Empty state when the nutrition engine is unavailable */}
+          {activeRecipes.length === 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-3xl p-6 text-center">
+              <span className="text-3xl block mb-2">🍽️</span>
+              <p className="text-sm font-bold text-amber-900">Chưa có thực đơn cho bé</p>
+              <p className="text-xs text-amber-800 font-semibold mt-1 leading-relaxed">
+                {menuError || 'Không thể kết nối dịch vụ dinh dưỡng. Vui lòng thử lại sau.'}
+              </p>
+            </div>
+          )}
 
           {/* Recipe Card List */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
