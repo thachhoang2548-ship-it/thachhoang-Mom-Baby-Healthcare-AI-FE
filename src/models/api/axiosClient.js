@@ -43,7 +43,10 @@ const getAuthState = () => {
 
 const axiosClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5265',
-  timeout: 15000,
+  // Các endpoint gọi AI (phân tích triệu chứng, sinh thực đơn...) mất khoảng 8-15s.
+  // Giữ 15s sẽ khiến request bị huỷ giữa chừng (ECONNABORTED), nên nới lên 60s
+  // cho khớp với timeout của HttpClient phía backend.
+  timeout: 60000,
 });
 
 let isRefreshing = false;

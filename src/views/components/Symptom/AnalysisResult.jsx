@@ -21,20 +21,38 @@ export default function AnalysisResult({ analysis }) {
     disclaimer
   } = result;
 
+  // Backend trả enum tiếng Anh (Low/Medium/High/Critical) — đổi sang nhãn tiếng Việt để hiển thị.
+  const URGENCY_LABELS = {
+    Low: "Thấp",
+    Medium: "Trung bình",
+    High: "Cao",
+    Critical: "Khẩn cấp"
+  };
+  const urgencyText = URGENCY_LABELS[urgencyLevel] || urgencyLevel;
+
   // 1. Color coding for Urgency level banner
   let urgencyStyles = "bg-green-50 border-green-200 text-green-800";
   let urgencyIcon = "✅";
 
-  if (urgencyLevel === "Khẩn cấp") {
+  if (urgencyText === "Khẩn cấp") {
     urgencyStyles = "bg-red-100 border-red-300 text-red-900 animate-pulse";
     urgencyIcon = "🚨";
-  } else if (urgencyLevel === "Cao") {
+  } else if (urgencyText === "Cao") {
     urgencyStyles = "bg-orange-50 border-orange-200 text-orange-900";
     urgencyIcon = "⚠️";
-  } else if (urgencyLevel === "Trung bình") {
+  } else if (urgencyText === "Trung bình") {
     urgencyStyles = "bg-yellow-50 border-yellow-200 text-yellow-900";
     urgencyIcon = "ℹ️";
   }
+
+  // Khi AI không trả được phân tích, mọi mục chi tiết đều rỗng -> báo rõ cho người dùng
+  // thay vì chỉ hiện mỗi banner mức độ khẩn cấp.
+  const hasAiDetails =
+    Boolean(urgencyReason) ||
+    possibleConditions.length > 0 ||
+    recommendations.length > 0 ||
+    dietarySuggestions.length > 0 ||
+    Boolean(lifestyleConnection);
 
   // 2. Color coding for probability tags
   const getProbabilityBadge = (prob) => {
@@ -56,10 +74,25 @@ export default function AnalysisResult({ analysis }) {
       <div className={`p-5 rounded-3xl border ${urgencyStyles} flex items-start gap-3.5 shadow-sm`}>
         <span className="text-2xl select-none leading-none mt-0.5">{urgencyIcon}</span>
         <div>
-          <h3 className="font-extrabold text-sm uppercase tracking-wider">Mức độ khẩn cấp: {urgencyLevel}</h3>
+          <h3 className="font-extrabold text-sm uppercase tracking-wider">Mức độ khẩn cấp: {urgencyText}</h3>
           <p className="text-xs font-semibold leading-relaxed mt-1 opacity-90">{urgencyReason}</p>
         </div>
       </div>
+
+      {/* Thông báo khi AI chưa phân tích được (bản ghi cũ hoặc AI lỗi) */}
+      {!hasAiDetails && (
+        <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 flex items-start gap-3.5 shadow-sm">
+          <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+          <div>
+            <h4 className="font-bold text-sm text-amber-900">Chưa có phân tích chi tiết từ AI</h4>
+            <p className="text-xs text-amber-800 font-semibold mt-1 leading-relaxed">
+              Bản ghi này chưa có dữ liệu phân tích (có thể được tạo trước khi AI hoạt động, hoặc AI
+              tạm thời không phản hồi). Vui lòng gửi lại mô tả triệu chứng để nhận lời khuyên và các
+              biện pháp chăm sóc.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Section F: See Doctor Referral */}
       {shouldSeeDoctor && (

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import adminService from "../../../models/services/adminService";
-import { Activity, ShieldAlert, HeartPulse, UserCheck } from "lucide-react";
+import alertService from "../../../models/services/alertService";
+import { Activity, ShieldAlert, HeartPulse, UserCheck, CheckCircle } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function StaffDashboardPage() {
   const [riskUsers, setRiskUsers] = useState([]);
@@ -16,6 +18,22 @@ export default function StaffDashboardPage() {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResolve = async (alertId, userName) => {
+    try {
+      const res = await alertService.resolveAlert(alertId);
+      if (res.isSuccess) {
+        toast.success(`Đã đánh dấu hoàn tất hỗ trợ cho ${userName}`);
+        // Refresh the list to remove the resolved user
+        await loadData();
+      } else {
+        toast.error('Không thể cập nhật trạng thái cảnh báo');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Lỗi khi xử lý cảnh báo');
     }
   };
 
@@ -65,9 +83,18 @@ export default function StaffDashboardPage() {
                   </span>
                   <span className="text-[10px] text-gray-400 font-semibold">{r.updatedAt || "Gần đây"}</span>
                 </div>
-                <div>
-                  <h3 className="font-bold text-sm text-gray-900 dark:text-white">{r.fullName || r.email}</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">Email: {r.email}</p>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold text-sm text-gray-900 dark:text-white">{r.fullName || r.email}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">Email: {r.email}</p>
+                  </div>
+                  <button
+                    onClick={() => handleResolve(r.alertId || r.id, r.fullName || r.email)}
+                    className="p-2 rounded-full bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors"
+                    title="Đánh dấu đã xử lý"
+                  >
+                    <CheckCircle className="w-5 h-5" />
+                  </button>
                 </div>
                 <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-2xl border border-gray-100 dark:border-gray-800">
                   <span className="text-[10px] font-bold text-gray-400 block uppercase mb-0.5">Ghi nhận nguy cơ:</span>

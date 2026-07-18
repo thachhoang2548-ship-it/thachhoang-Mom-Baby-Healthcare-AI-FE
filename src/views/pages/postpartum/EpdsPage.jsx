@@ -111,12 +111,10 @@ export default function EpdsPage() {
     setAnswers(nextAnswers);
 
     if (currentIdx < 9) {
-      // Short delay for user to register their click, then advance
       setTimeout(() => {
         setCurrentIdx((prev) => prev + 1);
       }, 250);
     } else {
-      // Submit immediately on final question selection
       await submitSurvey(nextAnswers);
     }
   };
@@ -142,12 +140,10 @@ export default function EpdsPage() {
     <TierGate requiredTier="MomHienDai">
       <div className="min-h-[80vh] flex flex-col items-center justify-center p-2 sm:p-4 bg-gradient-to-tr from-pink-50/20 via-purple-50/30 to-indigo-50/20">
         <div className="max-w-xl w-full">
-          
-          {/* Active Question screen */}
+
           {!result && (
             <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8 border border-pink-100/50 dark:border-gray-750 shadow-sm space-y-6">
-              
-              {/* Step indicator */}
+
               <div className="space-y-2">
                 <div className="flex justify-between items-center text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
                   <span>Khảo sát tâm lý EPDS</span>
@@ -161,14 +157,12 @@ export default function EpdsPage() {
                 </div>
               </div>
 
-              {/* Progress question text */}
               <div className="min-h-[90px] flex items-center pt-2">
                 <h3 className="text-base sm:text-lg font-black text-gray-850 dark:text-white leading-relaxed">
                   {questions[currentIdx].text}
                 </h3>
               </div>
 
-              {/* Options list */}
               <div className="grid grid-cols-1 gap-3 pt-2">
                 {questions[currentIdx].options.map((opt, oIdx) => (
                   <button
@@ -183,14 +177,12 @@ export default function EpdsPage() {
                 ))}
               </div>
 
-              {/* Bottom Muted Notice */}
               <p className="text-[10px] text-gray-400 dark:text-gray-500 font-semibold text-center italic leading-relaxed">
                 * Mami vui lòng chọn câu trả lời đúng nhất với cảm xúc trong suốt 7 ngày qua.
               </p>
             </div>
           )}
 
-          {/* Results screen */}
           {result && (
             <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 sm:p-8 border border-pink-100/50 dark:border-gray-750 shadow-sm space-y-6 animate-fade-in">
               <div className="text-center">
@@ -202,9 +194,7 @@ export default function EpdsPage() {
                 </h2>
               </div>
 
-              {/* Result card categorization */}
               {result.score < 10 ? (
-                // Safe state
                 <div className="bg-green-50/70 border border-green-200 p-5 rounded-2xl text-green-900 space-y-2 dark:bg-green-950/20 dark:border-green-900/30">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-5 h-5 text-green-600" />
@@ -214,19 +204,7 @@ export default function EpdsPage() {
                     Sức khỏe tinh thần của bạn đang ở trạng thái tốt. Hãy tiếp tục duy trì việc nghỉ ngơi hợp lý, vận động nhẹ nhàng và chia sẻ cảm xúc với người thân nhé!
                   </p>
                 </div>
-              ) : result.score <= 12 ? (
-                // Watch state
-                <div className="bg-amber-50/70 border border-amber-250 p-5 rounded-2xl text-amber-900 space-y-2 dark:bg-amber-950/20 dark:border-amber-900/30">
-                  <div className="flex items-center gap-2">
-                    <HelpCircle className="w-5 h-5 text-amber-600" />
-                    <h3 className="text-sm font-black uppercase">Hãy chú ý đến cảm xúc của bạn 💛</h3>
-                  </div>
-                  <p className="text-xs leading-relaxed font-semibold text-amber-850 dark:text-amber-300">
-                    Điểm số của mami nằm ở mức cận biên lo âu. Hãy dành thêm thời gian thư giãn bản thân, tham gia các buổi đi bộ thư thái và thử đánh giá lại sau 1 tuần.
-                  </p>
-                </div>
               ) : (
-                // Critical state (EPDS >= 13) - Trauma informed design: soft pink layout, no harsh red.
                 <div className="bg-pink-50/80 border border-pink-200 p-5 rounded-2xl text-pink-900 space-y-4 dark:bg-pink-950/20 dark:border-pink-900/35">
                   <div className="flex items-center gap-2">
                     <Heart className="w-5 h-5 text-pink-500 animate-pulse shrink-0" />
@@ -234,13 +212,11 @@ export default function EpdsPage() {
                       Bạn đang rất dũng cảm khi chia sẻ điều này 💙
                     </h3>
                   </div>
-                  
-                  {/* AI Empathetic message */}
+
                   <div className="text-xs font-semibold leading-relaxed text-pink-850 dark:text-pink-200 italic bg-white/50 dark:bg-gray-900/30 p-3.5 rounded-xl border border-pink-100/30">
                     "{result.aiMessage}"
                   </div>
 
-                  {/* Hotlines */}
                   <div className="p-3 bg-pink-100/50 dark:bg-pink-900/20 rounded-xl border border-pink-200/40 flex items-center gap-3">
                     <PhoneCall className="w-5 h-5 text-pink-600 shrink-0" />
                     <div>
@@ -249,7 +225,6 @@ export default function EpdsPage() {
                     </div>
                   </div>
 
-                  {/* Telehealth booking */}
                   <button
                     onClick={() => {
                       toast.success('Đang kết nối lịch hẹn tư vấn telehealth với Bác sĩ sản phụ khoa... 🩺');
@@ -261,7 +236,6 @@ export default function EpdsPage() {
                 </div>
               )}
 
-              {/* Tips for all levels */}
               <div className="space-y-3 pt-2">
                 <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Khuyến nghị tự chăm sóc tâm lý:</h4>
                 <ul className="space-y-2 text-xs text-gray-650 dark:text-gray-300 font-medium">
@@ -276,7 +250,6 @@ export default function EpdsPage() {
                 </ul>
               </div>
 
-              {/* Exit button */}
               <button
                 onClick={() => navigate('/postpartum')}
                 className="w-full py-3 border border-pink-150 text-momPink hover:bg-pink-50 text-xs font-bold rounded-xl transition duration-300 text-center block"
@@ -285,7 +258,7 @@ export default function EpdsPage() {
               </button>
             </div>
           )}
-          
+
         </div>
       </div>
     </TierGate>

@@ -12,29 +12,41 @@ import toast from "react-hot-toast";
 const mapSymptomLogToUI = (log) => {
   if (!log) return null;
 
-  let possibleConditions = [];
+  // Backend lưu toàn bộ kết quả phân tích của Gemini trong possibleConditionsJson.
+  // Các trường chi tiết (urgencyReason, recommendations, ...) nằm BÊN TRONG chuỗi JSON này,
+  // không phải là thuộc tính top-level của log.
+  let ai = {};
   if (log.possibleConditionsJson) {
     try {
-      const parsed = JSON.parse(log.possibleConditionsJson);
-      possibleConditions = parsed.possibleConditions || parsed;
+      ai = JSON.parse(log.possibleConditionsJson) || {};
     } catch (e) {
       console.warn("Failed to parse possibleConditionsJson", e);
     }
   }
 
+  // AI có thể trả về mảng điều kiện trực tiếp thay vì object bọc ngoài.
+  const possibleConditions = Array.isArray(ai)
+    ? ai
+    : ai.possibleConditions || [];
+
+  // Không có JSON phân tích => AI thất bại, để FE hiển thị thông báo thay vì kết quả giả.
+  const aiAvailable = Boolean(log.possibleConditionsJson);
+
   return {
     ...log,
     _id: log.id,
+    aiAvailable,
     analysisResult: {
       urgencyLevel: log.urgencyLevel,
-      urgencyReason: log.urgencyReason,
+      severityScore: log.severityScore,
+      shouldSeeDoctor: log.shouldSeeDoctor ?? ai.shouldSeeDoctor,
       possibleConditions,
-      lifestyleConnection: log.lifestyleConnection,
-      recommendations: log.recommendations || [],
-      dietarySuggestions: log.dietarySuggestions || [],
-      shouldSeeDoctor: log.shouldSeeDoctor,
-      specialistType: log.specialistType,
-      disclaimer: log.disclaimer
+      urgencyReason: ai.urgencyReason,
+      lifestyleConnection: ai.lifestyleConnection,
+      recommendations: ai.recommendations || [],
+      dietarySuggestions: ai.dietarySuggestions || [],
+      specialistType: ai.specialistType,
+      disclaimer: ai.disclaimer
     }
   };
 };
