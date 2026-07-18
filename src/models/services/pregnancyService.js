@@ -23,20 +23,13 @@ const pregnancyService = {
   },
 
   logFood: async (foods = []) => {
-    const response = await axiosClient.post('/api/pregnancy/food-log', { foods }, {
-      headers: {
-        'x-required-tier': 'MomHienDai'
-      }
-    });
+    const response = await axiosClient.post('/api/pregnancy/food-log', { foods });
     return response.data;
   },
 
   getMealPlan: async (week = null) => {
     const response = await axiosClient.get('/api/pregnancy/meal-plan', {
-      params: week ? { week } : {},
-      headers: {
-        'x-required-tier': 'MomHienDai'
-      }
+      params: week ? { week } : {}
     });
     return response.data;
   },
@@ -50,11 +43,7 @@ const pregnancyService = {
   },
 
   getExercisePlan: async () => {
-    const response = await axiosClient.get('/api/pregnancy/exercise-plan', {
-      headers: {
-        'x-required-tier': 'MomHienDai'
-      }
-    });
+    const response = await axiosClient.get('/api/pregnancy/exercise-plan');
     return response.data;
   },
 
