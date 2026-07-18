@@ -39,6 +39,8 @@ export default function BabyDashPage() {
     { slot: 'Bữa Tối 🌙', recipe: 'Cháo cá hồi bông cải xanh', emoji: '🥣', kcal: 200, time: '18:30' }
   ];
 
+  const isFetchingRef = React.useRef(false);
+
   useEffect(() => {
     loadBabies();
   }, []);
@@ -54,7 +56,7 @@ export default function BabyDashPage() {
           if (meal.meal_slot.toLowerCase().includes("trưa")) { time = "11:30"; emoji = "🍲"; }
           else if (meal.meal_slot.toLowerCase().includes("chiều") || meal.meal_slot.toLowerCase().includes("phụ")) { time = "15:30"; emoji = "🍌"; }
           else if (meal.meal_slot.toLowerCase().includes("tối")) { time = "18:30"; emoji = "🥣"; }
-          
+
           return {
             slot: meal.meal_slot,
             recipe: meal.recipe_name + (meal.is_alternative ? " (Tránh dị ứng)" : ""),
@@ -74,6 +76,9 @@ export default function BabyDashPage() {
   };
 
   const loadBabies = async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+
     setLoading(true);
     try {
       const res = await babyService.getProfiles();
@@ -82,14 +87,14 @@ export default function BabyDashPage() {
         setSelectedBaby(res.data[0]);
         await loadDailyMenu(res.data[0].id);
       } else {
-        // Redirect to growth charts page to prompt setup if no baby profiles
         setSelectedBaby(null);
       }
     } catch (err) {
       console.error(err);
-      toast.error('Lỗi khi tải hồ sơ bé yêu');
+      toast.error('Lỗi khi tải hồ sơ bé yêu 😢');
     } finally {
       setLoading(false);
+      isFetchingRef.current = false;
     }
   };
 
@@ -103,11 +108,24 @@ export default function BabyDashPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-24 bg-pink-100/50 rounded-3xl"></div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="h-64 bg-pink-50/50 rounded-3xl"></div>
-          <div className="h-64 bg-pink-50/50 rounded-3xl"></div>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-5 animate-fade-in">
+        <div className="relative flex items-center justify-center">
+          {/* Outer glowing pulse */}
+          <div className="absolute w-20 h-20 bg-pink-100 dark:bg-pink-950/20 rounded-full animate-ping opacity-75"></div>
+          {/* Inner rotating gradient ring */}
+          <div className="w-16 h-16 rounded-full border-4 border-momPink-light border-t-momPink animate-spin"></div>
+          {/* Center emoji */}
+          <div className="absolute text-2xl animate-bounce" style={{ animationDuration: '2s' }}>
+            👶
+          </div>
+        </div>
+        <div className="text-center space-y-1">
+          <h3 className="text-sm font-black text-gray-700 dark:text-white uppercase tracking-wider">
+            Đang tải thông tin bé yêu...
+          </h3>
+          <p className="text-[11px] text-gray-400 dark:text-gray-400 font-bold">
+            Chuẩn bị thực đơn dinh dưỡng chuẩn WHO & AI
+          </p>
         </div>
       </div>
     );
