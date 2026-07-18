@@ -63,11 +63,20 @@ const babyService = {
   },
 
   // ─── Log a growth measurement ─────────────────────────────────────
-  logGrowth: async (babyId, weightKg, heightCm) => {
-    const response = await axiosClient.post(`/api/baby/${babyId}/growth`, {
+  logGrowth: async (babyId, weightKg, heightCm, recordedAt) => {
+    const payload = {
       weightKg: parseFloat(weightKg),
       heightCm: parseFloat(heightCm)
-    });
+    };
+    if (recordedAt) {
+      payload.recordedAt = recordedAt;
+    }
+    const response = await axiosClient.post(`/api/baby/${babyId}/growth`, payload);
+    return response.data;
+  },
+
+  deleteGrowth: async (babyId, recordId) => {
+    const response = await axiosClient.delete(`/api/baby/${babyId}/growth/${recordId}`);
     return response.data;
   },
 
