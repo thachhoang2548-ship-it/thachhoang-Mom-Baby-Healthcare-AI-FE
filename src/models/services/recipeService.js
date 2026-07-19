@@ -45,7 +45,9 @@ const recipeService = {
               typeof i === "string" ? { name: i, amount: "", unit: "" } : i),
             steps: (r.steps || []).map((s, idx) =>
               typeof s === "string" ? { stepNumber: idx + 1, instruction: s, duration: "" } : s),
-            isSaved: false
+            isSaved: false,
+            isApproved: r.isApproved || (r.status === 1 || r.Status === 1) || false,
+            status: r.status ?? r.Status ?? 0
           })),
           profile: null
         }
@@ -71,7 +73,9 @@ const recipeService = {
       if (res.data?.success && res.data.data) {
         const mappedRecipes = (res.data.data.recipes || []).map(r => ({
           ...r,
-          _id: r.id
+          _id: r.id,
+          isApproved: r.isApproved ?? (r.status === 1 || r.Status === 1) ?? false,
+          status: r.status ?? r.Status ?? 0
         }));
         res.data.data.items = mappedRecipes;
         res.data.data.recipes = mappedRecipes;

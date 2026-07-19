@@ -32,7 +32,7 @@ export default function ProfileBadge({ profile }) {
         <span className="text-3xl select-none leading-none">{icon}</span>
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="font-bold text-lg leading-tight">Nhóm sinh viên: {profileName}</h3>
+            <h3 className="font-bold text-lg leading-tight">Nhóm: {profileName}</h3>
             <button
               onClick={() => setShowExplanation(true)}
               className="text-current opacity-70 hover:opacity-100 transition-opacity"

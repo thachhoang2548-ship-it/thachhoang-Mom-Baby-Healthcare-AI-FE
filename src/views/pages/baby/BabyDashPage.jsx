@@ -8,36 +8,13 @@ import toast from 'react-hot-toast';
 
 export default function BabyDashPage() {
   const navigate = useNavigate();
-  const [babies, setBabies] = useState([]);
   const [selectedBaby, setSelectedBaby] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [dailyMenu, setDailyMenu] = useState([]);
 
-  // Hardcoded WHO energy coverage stats for the Radar Chart
-  const nutritionData = [
-    { subject: 'Calories', value: 85, fullMark: 100 },
-    { subject: 'Đạm (Protein)', value: 90, fullMark: 100 },
-    { subject: 'Sắt (Iron)', value: 55, fullMark: 100 }, // Under 60% -> highlights alert warning
-    { subject: 'Kẽm (Zinc)', value: 70, fullMark: 100 },
-    { subject: 'Omega-3', value: 75, fullMark: 100 }
-  ];
-
-  // Daily target numbers
-  const dailyGoals = {
-    calories: 680,
-    protein: 11,
-    iron: 11,
-    zinc: 3,
-    omega3: 500
-  };
-
-  // 4 meal slots
-  const todayMeals = [
-    { slot: 'Bữa Sáng ☀️', recipe: 'Bột yến mạch bí đỏ sữa hạt', emoji: '🥣', kcal: 150, time: '07:30' },
-    { slot: 'Bữa Trưa 🍲', recipe: 'Cháo loãng thịt bò rau cải ngọt', emoji: '🍲', kcal: 220, time: '11:30' },
-    { slot: 'Bữa Chiều 🍌', recipe: 'Chuối nghiền bơ nhuyễn', emoji: '🍌', kcal: 110, time: '15:30' },
-    { slot: 'Bữa Tối 🌙', recipe: 'Cháo cá hồi bông cải xanh', emoji: '🥣', kcal: 200, time: '18:30' }
-  ];
+  // Dữ liệu thật từ nutrition engine (FastAPI qua .NET proxy):
+  // { meals, nutrition_totals, coverage_pct, goals } — không còn số liệu hardcode.
+  const [dailyMenu, setDailyMenu] = useState(null);
+  const [menuError, setMenuError] = useState(null);
 
   const isFetchingRef = React.useRef(false);
 
@@ -83,7 +60,6 @@ export default function BabyDashPage() {
     try {
       const res = await babyService.getProfiles();
       if (res.isSuccess && res.data && res.data.length > 0) {
-        setBabies(res.data);
         setSelectedBaby(res.data[0]);
         await loadDailyMenu(res.data[0].id);
       } else {
@@ -97,6 +73,56 @@ export default function BabyDashPage() {
       isFetchingRef.current = false;
     }
   };
+
+  const loadDailyMenu = async (babyId) => {
+    try {
+      const res = await babyService.getDailyMenu(babyId);
+      if ((res.success || res.isSuccess) && res.data) {
+        setDailyMenu(res.data);
+        setMenuError(null);
+      } else {
+        setMenuError(res.message || 'Không thể tải dữ liệu dinh dưỡng.');
+      }
+    } catch (err) {
+      console.error('Failed to load daily menu:', err);
+      setMenuError(err.response?.data?.message || 'Dịch vụ dinh dưỡng hiện không khả dụng.');
+    }
+  };
+
+  // ── Suy ra số liệu hiển thị từ dữ liệu engine ──────────────────────────────
+  const goals = dailyMenu?.goals || null;
+  const totals = dailyMenu?.nutrition_totals || {};
+  const coverage = dailyMenu?.coverage_pct || {};
+
+  // % sắt tính từ tổng thực tế / mục tiêu WHO (engine không trả sẵn trục này)
+  const ironPct = goals?.iron_mg > 0 ? Math.round((totals.iron_mg || 0) / goals.iron_mg * 100) : null;
+
+  const clampPct = (v) => Math.max(0, Math.min(100, Math.round(v || 0)));
+  const nutritionData = dailyMenu ? [
+    { subject: 'Calories', value: clampPct(coverage.calories), fullMark: 100 },
+    { subject: 'Đạm (Protein)', value: clampPct(coverage.protein_g), fullMark: 100 },
+    { subject: 'Chất béo (Fat)', value: clampPct(coverage.fat_g), fullMark: 100 },
+    { subject: 'Tinh bột (Carbs)', value: clampPct(coverage.carbs_g), fullMark: 100 },
+    { subject: 'Sắt (Iron)', value: clampPct(ironPct), fullMark: 100 }
+  ] : [];
+
+  // Map meals của engine → 4-5 cữ hiển thị
+  const MEAL_SLOTS = [
+    { key: 'breakfast', slot: 'Bữa Sáng ☀️', emoji: '🥣', time: '07:30' },
+    { key: 'lunch', slot: 'Bữa Trưa 🍲', emoji: '🍲', time: '11:30' },
+    { key: 'snack', slot: 'Bữa Chiều 🍌', emoji: '🍌', time: '15:30' },
+    { key: 'dinner', slot: 'Bữa Tối 🌙', emoji: '🥣', time: '18:30' },
+    { key: 'supplementary_snack', slot: 'Bữa Phụ 🍼', emoji: '🍼', time: '20:00' }
+  ];
+  const todayMeals = MEAL_SLOTS
+    .filter(({ key }) => dailyMenu?.meals?.[key])
+    .map(({ key, slot, emoji, time }) => ({
+      slot,
+      emoji,
+      time,
+      recipe: dailyMenu.meals[key].name_vi || dailyMenu.meals[key].name_en,
+      kcal: Math.round(dailyMenu.meals[key].total_calories || 0)
+    }));
 
   const getWeaningStage = (ageMonths) => {
     if (!ageMonths) return 'Chưa bắt đầu ăn dặm';
@@ -155,8 +181,9 @@ export default function BabyDashPage() {
     );
   }
 
-  const ageMonths = selectedBaby.ageMonths || 8;
-  const isIronLow = nutritionData.find((d) => d.subject === 'Sắt (Iron)')?.value < 60;
+  const ageMonths = selectedBaby.ageMonths ?? 0;
+  // BR07: cảnh báo khi % sắt THẬT (tổng thực đơn / mục tiêu WHO) dưới 60%
+  const isIronLow = ironPct !== null && ironPct < 60;
 
   // Filter out avoided ingredients and provide alternatives
   const getFilteredMeals = () => {
@@ -251,7 +278,7 @@ export default function BabyDashPage() {
           <div className="space-y-1">
             <h4 className="text-xs font-bold uppercase tracking-wider">Cảnh báo thiếu hụt vi chất (BR07)</h4>
             <p className="text-[11px] leading-relaxed font-semibold">
-              Hôm nay chỉ số Sắt đạt {nutritionData.find((d) => d.subject === 'Sắt (Iron)')?.value}% (dưới 60% nhu cầu khuyến nghị của WHO). Bé có nguy cơ mệt mỏi và chậm tăng trưởng. Hãy bổ sung cháo thịt bò, lòng đỏ trứng nấu chín hoặc rau bina vào cữ ăn tiếp theo.
+              Hôm nay chỉ số Sắt đạt {ironPct}% (dưới 60% nhu cầu khuyến nghị của WHO). Bé có nguy cơ mệt mỏi và chậm tăng trưởng. Hãy bổ sung cháo thịt bò, lòng đỏ trứng nấu chín hoặc rau bina vào cữ ăn tiếp theo.
             </p>
           </div>
         </div>
@@ -286,17 +313,21 @@ export default function BabyDashPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-3 pt-2">
-            {[
-              { label: 'Năng lượng ⚡', value: `${dailyGoals.calories} kcal`, color: 'bg-momPink-light/30 text-momPink-dark' },
-              { label: 'Chất đạm (Protein) 🥩', value: `${dailyGoals.protein} g`, color: 'bg-momPurple-light/30 text-momPurple-dark' },
-              { label: 'Chất sắt (Iron) 🍳', value: `${dailyGoals.iron} mg`, color: 'bg-momGreen-light/30 text-momGreen-dark' },
-              { label: 'Omega-3 🐟', value: `${dailyGoals.omega3} mg`, color: 'bg-momAmber-light/30 text-momAmber-dark' }
+            {goals ? [
+              { label: 'Năng lượng ⚡', value: `${Math.round(goals.calories)} kcal`, color: 'bg-momPink-light/30 text-momPink-dark' },
+              { label: 'Chất đạm (Protein) 🥩', value: `${Math.round(goals.protein_g)} g`, color: 'bg-momPurple-light/30 text-momPurple-dark' },
+              { label: 'Chất sắt (Iron) 🍳', value: `${Math.round(goals.iron_mg)} mg`, color: 'bg-momGreen-light/30 text-momGreen-dark' },
+              { label: 'Chất béo (Fat) 🥑', value: `${Math.round(goals.fat_g)} g`, color: 'bg-momAmber-light/30 text-momAmber-dark' }
             ].map((goal, i) => (
               <div key={i} className={`p-3.5 rounded-2xl flex flex-col justify-between ${goal.color}`}>
                 <span className="text-[10px] font-bold uppercase">{goal.label}</span>
                 <span className="text-base font-black mt-1.5">{goal.value}</span>
               </div>
-            ))}
+            )) : (
+              <p className="col-span-2 text-[11px] text-gray-400 font-semibold p-3">
+                {menuError || 'Đang tải mục tiêu dinh dưỡng...'}
+              </p>
+            )}
           </div>
         </div>
 
@@ -310,14 +341,20 @@ export default function BabyDashPage() {
           </div>
 
           <div className="h-56 w-full flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart cx="50%" cy="50%" outerRadius="75%" data={nutritionData}>
-                <PolarGrid stroke="#e2e8f0" />
-                <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9, fontWeight: 'bold', fill: '#475569' }} />
-                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 8 }} />
-                <Radar name="Bé yêu" dataKey="value" stroke="#FF7A8A" fill="#FF7A8A" fillOpacity={0.4} />
-              </RadarChart>
-            </ResponsiveContainer>
+            {nutritionData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart cx="50%" cy="50%" outerRadius="75%" data={nutritionData}>
+                  <PolarGrid stroke="#e2e8f0" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9, fontWeight: 'bold', fill: '#475569' }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 8 }} />
+                  <Radar name="Bé yêu" dataKey="value" stroke="#FF7A8A" fill="#FF7A8A" fillOpacity={0.4} />
+                </RadarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="text-[11px] text-gray-400 font-semibold text-center px-6">
+                {menuError || 'Đang tính toán mức đáp ứng dinh dưỡng từ thực đơn hôm nay...'}
+              </p>
+            )}
           </div>
         </div>
 
@@ -329,8 +366,14 @@ export default function BabyDashPage() {
           <h3 className="text-xs font-extrabold text-gray-880 dark:text-white uppercase tracking-wider">
             Thực đơn gợi ý hôm nay 🥣
           </h3>
-          <span className="text-[9px] bg-momPink-light/75 text-momPink-dark px-2.5 py-0.5 rounded-full font-bold">4 Cữ chính</span>
+          <span className="text-[9px] bg-momPink-light/75 text-momPink-dark px-2.5 py-0.5 rounded-full font-bold">{todayMeals.length} Cữ</span>
         </div>
+
+        {todayMeals.length === 0 && (
+          <p className="text-[11px] text-gray-400 font-semibold p-2">
+            {menuError || 'Chưa tải được thực đơn gợi ý. Vui lòng thử lại sau.'}
+          </p>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           {activeMeals.map((meal, idx) => (
@@ -347,9 +390,7 @@ export default function BabyDashPage() {
                 </div>
               </div>
               <button
-                onClick={() => {
-                  toast.success(`Đang mở chi tiết công thức món: ${meal.recipe}! 📖`);
-                }}
+                onClick={() => navigate('/baby-nutrition/menu')}
                 className="text-[10px] font-black text-momPurple hover:text-momPurple-dark flex items-center gap-0.5"
               >
                 Xem <ChevronRight className="w-3.5 h-3.5" />
@@ -359,8 +400,8 @@ export default function BabyDashPage() {
         </div>
       </div>
 
-      {/* Allergy Tracker embedded below */}
-      <AllergyTracker />
+      {/* Allergy Tracker embedded below — nối với hồ sơ bé thật */}
+      <AllergyTracker baby={selectedBaby} />
 
     </div>
   );

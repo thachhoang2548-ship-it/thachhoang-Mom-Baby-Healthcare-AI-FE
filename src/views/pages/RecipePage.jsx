@@ -79,10 +79,12 @@ export default function RecipePage() {
     }
   };
 
-  // Filter recipes (cached vs bookmarked)
+  // A recipe counts as approved when the backend has set Status = Approved (1)
+  const isRecipeApproved = (r) => r.isApproved || r.status === 1 || r.Status === 1;
+
   const displayedRecipes = filterType === "saved" 
-    ? recipes.filter(r => r.isSaved) 
-    : recipes;
+    ? recipes.filter(r => r.isSaved && isRecipeApproved(r)) 
+    : recipes.filter(r => isRecipeApproved(r));
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 font-sans">
@@ -301,7 +303,7 @@ export default function RecipePage() {
             <div className="bg-amber-50/50 border border-amber-100 rounded-3xl p-4 text-center animate-pulse">
               <p className="text-xs font-bold text-amber-700 flex items-center justify-center gap-1.5">
                 <RefreshCw className="w-4.5 h-4.5 animate-spin" />
-                🤖 Đang kết nối trí tuệ nhân tạo để thiết kế thực đơn sinh viên...
+                🤖 Đang kết nối trí tuệ nhân tạo để thiết kế thực đơn cho bạn...
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

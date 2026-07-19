@@ -3,49 +3,37 @@ import { ShieldAlert, ShieldCheck, Plus, Trash2, Check, AlertTriangle, AlertOcta
 import toast from 'react-hot-toast';
 import babyService from '../../../models/services/babyService';
 
-export default function AllergyTracker() {
-  const [introducedFoods, setIntroducedFoods] = useState([]);
-  const [avoidFoods, setAvoidFoods] = useState([]);
-  const [baby, setBaby] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function AllergyTracker({ baby }) {
+  // Khởi tạo từ HỒ SƠ BÉ THẬT (foodHistory + allergies do backend lưu)
+  const initialAllergies = baby?.allergies || [];
+  const initialFoods = (baby?.foodHistory || []).map((name) => ({
+    name,
+    date: null,
+    reaction: initialAllergies.some((a) => a.toLowerCase() === name.toLowerCase()) ? 'mild' : 'none'
+  }));
+
+  const [introducedFoods, setIntroducedFoods] = useState(initialFoods);
+  const [avoidFoods, setAvoidFoods] = useState(initialAllergies);
+
+  // Lưu foodHistory + allergies mới nhất về server
+  const persist = async (foods, avoids) => {
+    if (!baby?.id) return;
+    try {
+      await babyService.updateProfile(baby.id, {
+        ...baby,
+        allergies: avoids,
+        foodHistory: foods.map((f) => f.name)
+      });
+    } catch (err) {
+      console.error('Failed to save allergy data:', err);
+      toast.error('Không lưu được dữ liệu dị ứng lên hệ thống.');
+    }
+  };
 
   const [foodName, setFoodName] = useState('');
   const [introDate, setIntroDate] = useState(new Date().toISOString().substring(0, 10));
   const [reaction, setReaction] = useState('none');
   const [showAddForm, setShowAddForm] = useState(false);
-
-  useEffect(() => {
-    loadBabyData();
-  }, []);
-
-  const loadBabyData = async () => {
-    try {
-      const res = await babyService.getProfiles();
-      if (res.isSuccess && res.data && res.data.length > 0) {
-        const activeBaby = res.data[0];
-        setBaby(activeBaby);
-
-        const rawHistory = activeBaby.foodHistory || [];
-        const parsedHistory = rawHistory.map(item => {
-          const parts = item.split('|');
-          return {
-            name: parts[0] || '',
-            date: parts[1] || new Date().toISOString().substring(0, 10),
-            reaction: parts[2] || 'none'
-          };
-        }).filter(f => f.name);
-
-        const parsedAvoid = activeBaby.allergies || [];
-
-        setIntroducedFoods(parsedHistory);
-        setAvoidFoods(parsedAvoid);
-      }
-    } catch (err) {
-      console.error("Error loading allergy data:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // BR09 Alert modal state
   const [alertModal, setAlertModal] = useState({
@@ -79,39 +67,25 @@ export default function AllergyTracker() {
       reaction
     };
 
-    const updatedHistory = [...introducedFoods, newFood];
-    const updatedAvoid = [...avoidFoods];
+    const nextFoods = [...introducedFoods, newFood];
+    const nextAvoids = (reaction === 'mild' || reaction === 'severe') && !avoidFoods.includes(trimmedName)
+      ? [...avoidFoods, trimmedName]
+      : avoidFoods;
+
+    setIntroducedFoods(nextFoods);
+    setAvoidFoods(nextAvoids);
+    persist(nextFoods, nextAvoids);
+
+    // BR09 Trigger: If mild or severe reaction is logged
     if (reaction === 'mild' || reaction === 'severe') {
-      if (!updatedAvoid.includes(trimmedName)) {
-        updatedAvoid.push(trimmedName);
-      }
-    }
-
-    try {
-      const historyStrings = updatedHistory.map(f => `${f.name}|${f.date}|${f.reaction}`);
-      await babyService.updateProfile(baby.id, {
-        ...baby,
-        foodHistory: historyStrings,
-        allergies: updatedAvoid
+      setAlertModal({
+        isOpen: true,
+        foodName: trimmedName,
+        severity: reaction
       });
-
-      setIntroducedFoods(updatedHistory);
-      setAvoidFoods(updatedAvoid);
-
-      // BR09 Trigger: If mild or severe reaction is logged
-      if (reaction === 'mild' || reaction === 'severe') {
-        setAlertModal({
-          isOpen: true,
-          foodName: trimmedName,
-          severity: reaction
-        });
-        toast.error(`Cảnh báo dị ứng: Đã thêm ${trimmedName} vào danh sách cần tránh! ⚠️`);
-      } else {
-        toast.success(`Đã ghi nhận giới thiệu thực phẩm ${trimmedName}! 💚`);
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error('Có lỗi xảy ra khi lưu thực phẩm');
+      toast.error(`Cảnh báo dị ứng: Đã thêm ${trimmedName} vào danh sách cần tránh! ⚠️`);
+    } else {
+      toast.success(`Đã ghi nhận giới thiệu thực phẩm ${trimmedName}! 💚`);
     }
 
     // Reset form
@@ -120,28 +94,15 @@ export default function AllergyTracker() {
     setShowAddForm(false);
   };
 
-  const handleRemoveAvoid = async (food) => {
-    if (!baby) return;
-    const updatedAvoid = avoidFoods.filter((item) => item !== food);
-    const updatedHistory = introducedFoods.map((item) =>
+  const handleRemoveAvoid = (food) => {
+    const nextAvoids = avoidFoods.filter((item) => item !== food);
+    const nextFoods = introducedFoods.map((item) =>
       item.name === food ? { ...item, reaction: 'none' } : item
     );
-
-    try {
-      const historyStrings = updatedHistory.map(f => `${f.name}|${f.date}|${f.reaction}`);
-      await babyService.updateProfile(baby.id, {
-        ...baby,
-        foodHistory: historyStrings,
-        allergies: updatedAvoid
-      });
-
-      setAvoidFoods(updatedAvoid);
-      setIntroducedFoods(updatedHistory);
-      toast.success(`Đã xóa ${food} khỏi danh sách cần tránh`);
-    } catch (err) {
-      console.error(err);
-      toast.error('Có lỗi xảy ra khi xóa thực phẩm');
-    }
+    setAvoidFoods(nextAvoids);
+    setIntroducedFoods(nextFoods);
+    persist(nextFoods, nextAvoids);
+    toast.success(`Đã xóa ${food} khỏi danh sách cần tránh`);
   };
 
   return (
@@ -267,7 +228,7 @@ export default function AllergyTracker() {
                   <Icon className="w-4 h-4 shrink-0" />
                 </div>
                 <div className="flex items-center justify-between text-[8px] font-semibold text-gray-400 mt-1">
-                  <span>{new Date(food.date).toLocaleDateString('vi-VN')}</span>
+                  <span>{food.date ? new Date(food.date).toLocaleDateString('vi-VN') : '—'}</span>
                   <span>{food.reaction === 'none' ? 'An toàn' : food.reaction === 'mild' ? 'Dị ứng nhẹ' : 'Dị ứng nặng'}</span>
                 </div>
               </div>

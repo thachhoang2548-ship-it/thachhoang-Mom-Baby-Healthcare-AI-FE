@@ -1,5 +1,5 @@
 import React from "react";
-import { Clock, Flame, Bookmark, Sparkles, ChefHat } from "lucide-react";
+import { Clock, Flame, Bookmark, Sparkles, ChefHat, ShieldCheck } from "lucide-react";
 
 export default function RecipeCard({ recipe, onSave, onView }) {
   const { title, description, nutritionInfo, tags, imageUrl, isSaved } = recipe;
@@ -57,6 +57,14 @@ export default function RecipeCard({ recipe, onSave, onView }) {
         <span className="absolute bottom-3 left-3 px-3 py-1 rounded-full text-xs font-bold bg-white/95 text-gray-800 shadow-sm">
           ⭐ {difficulty}
         </span>
+
+        {/* Expert Approved badge */}
+        {(recipe.isApproved || recipe.status === 1 || recipe.Status === 1) && (
+          <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/95 text-white shadow-sm flex items-center gap-1">
+            <ShieldCheck className="w-3 h-3" />
+            Đã được chấp thuận ✓
+          </span>
+        )}
       </div>
 
       {/* Recipe Info */}

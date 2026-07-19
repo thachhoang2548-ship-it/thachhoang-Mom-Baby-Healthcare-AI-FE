@@ -43,9 +43,13 @@ const babyService = {
     if (isSuccessful && Array.isArray(response.data.data)) {
       response.data.data = response.data.data.map(b => ({
         id: b.id,
+        userId: b.userId,
         name: b.babyName || '',
+        babyName: b.babyName || '',
         gender: b.gender === 0 || (b.gender || '').toString().toLowerCase() === 'male' ? 0 : 1,
         birthDate: b.dateOfBirth,
+        dateOfBirth: b.dateOfBirth,
+        ageMonths: b.ageMonths ?? 0, // tuổi (tháng) do backend tính từ ngày sinh
         birthWeightKg: b.currentWeightKg || 3.2,
         birthHeightCm: b.currentHeightCm || 50,
         currentWeightKg: b.currentWeightKg || 3.2,
@@ -100,8 +104,6 @@ const babyService = {
   },
 
   // ─── Update growth-chart baseline after profile save ─────────────
-  // Called after create/update to sync the baseline measurement on the
-  // growth chart with the new currentWeightKg / currentHeightCm values.
   updateGrowthBaseline: async (babyId) => {
     const response = await axiosClient.post(`/api/baby/${babyId}/growth/baseline`);
     return response.data;

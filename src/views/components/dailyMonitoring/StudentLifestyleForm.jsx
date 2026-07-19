@@ -16,7 +16,7 @@ export const StudentLifestyleForm = ({ lifestyle, setLifestyle }) => {
         </div>
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Nhật ký sinh viên & Lối sống
+            Nhật ký sức khỏe & Lối sống
           </h3>
           <p className="text-xs text-gray-500">
             Giúp hệ thống phân tích sự cân bằng giữa học tập, sức khỏe và điểm số.

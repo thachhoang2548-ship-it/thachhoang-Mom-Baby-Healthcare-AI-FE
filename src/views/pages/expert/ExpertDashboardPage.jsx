@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import expertService from "../../../models/services/expertService";
-import { CheckCircle, XCircle, Clock, Utensils, UserCheck, MessageSquare, Sparkles, ShieldCheck } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Utensils, UserCheck, MessageSquare, Sparkles, ShieldCheck, BadgeCheck } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function ExpertDashboardPage() {
@@ -51,7 +51,9 @@ export default function ExpertDashboardPage() {
       const res = await expertService.reviewRecipe(recipeId, true, "Đã kiểm duyệt bởi chuyên gia dinh dưỡng.");
       if (res.isSuccess || res.success) {
         toast.success("Đã phê duyệt công thức món ăn thành công! 🎉");
-        setPendingRecipes(pendingRecipes.filter((r) => r.id !== recipeId));
+        setPendingRecipes(prev => prev.map(r => 
+          r.id === recipeId ? { ...r, _reviewedStatus: 'approved' } : r
+        ));
       }
     } catch (err) {
       console.error(err);
@@ -65,7 +67,9 @@ export default function ExpertDashboardPage() {
       const res = await expertService.reviewRecipe(rejectingRecipe.id, false, rejectNote || "Công thức chưa đạt yêu cầu dinh dưỡng.");
       if (res.isSuccess || res.success) {
         toast.success("Đã từ chối công thức thành công.");
-        setPendingRecipes(pendingRecipes.filter((r) => r.id !== rejectingRecipe.id));
+        setPendingRecipes(prev => prev.map(r => 
+          r.id === rejectingRecipe.id ? { ...r, _reviewedStatus: 'rejected' } : r
+        ));
         setRejectingRecipe(null);
         setRejectNote("");
       }
@@ -163,9 +167,21 @@ export default function ExpertDashboardPage() {
                   <div key={item.id} className="bg-white dark:bg-gray-800 rounded-3xl p-6 border border-gray-100 dark:border-gray-700/60 shadow-sm flex flex-col justify-between space-y-4">
                     <div className="space-y-3">
                       <div className="flex justify-between items-start gap-2">
-                        <span className="text-[10px] bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 font-bold px-2.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
-                          Chờ Chuyên Gia Phê Duyệt
-                        </span>
+                        {item._reviewedStatus === 'approved' ? (
+                          <span className="text-[10px] bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-bold px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                            <BadgeCheck className="w-3 h-3" />
+                            Đã Duyệt ✓
+                          </span>
+                        ) : item._reviewedStatus === 'rejected' ? (
+                          <span className="text-[10px] bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 font-bold px-2.5 py-0.5 rounded-full border border-red-200 dark:border-red-800 flex items-center gap-1">
+                            <XCircle className="w-3 h-3" />
+                            Đã Từ Chối
+                          </span>
+                        ) : (
+                          <span className="text-[10px] bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 font-bold px-2.5 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
+                            Chờ Chuyên Gia Phê Duyệt
+                          </span>
+                        )}
                         <span className="text-[10px] text-gray-400 font-semibold flex items-center gap-1">
                           <Clock className="w-3 h-3" /> {recipeDetails.cookTime || 30} phút
                         </span>
@@ -190,23 +206,35 @@ export default function ExpertDashboardPage() {
                       )}
                     </div>
 
-                    {/* Action buttons */}
-                    <div className="pt-3 border-t border-gray-100 dark:border-gray-700/60 flex gap-3">
-                      <button
-                        onClick={() => handleApprove(item.id)}
-                        className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-500/10 flex items-center justify-center gap-1.5"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        Chấp Thuận & Phát Hành
-                      </button>
-                      <button
-                        onClick={() => setRejectingRecipe(item)}
-                        className="px-4 py-2.5 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-red-200 dark:border-red-800"
-                      >
-                        <XCircle className="w-4 h-4" />
-                        Từ Chối
-                      </button>
-                    </div>
+                    {/* Action buttons — only show for pending items */}
+                    {!item._reviewedStatus ? (
+                      <div className="pt-3 border-t border-gray-100 dark:border-gray-700/60 flex gap-3">
+                        <button
+                          onClick={() => handleApprove(item.id)}
+                          className="flex-1 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all shadow-md shadow-emerald-500/10 flex items-center justify-center gap-1.5"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          Chấp Thuận & Phát Hành
+                        </button>
+                        <button
+                          onClick={() => setRejectingRecipe(item)}
+                          className="px-4 py-2.5 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 hover:bg-red-100 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-red-200 dark:border-red-800"
+                        >
+                          <XCircle className="w-4 h-4" />
+                          Từ Chối
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="pt-3 border-t border-gray-100 dark:border-gray-700/60">
+                        <p className={`text-xs font-bold text-center py-2 rounded-xl ${
+                          item._reviewedStatus === 'approved' 
+                            ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600'
+                            : 'bg-red-50 dark:bg-red-900/20 text-red-500'
+                        }`}>
+                          {item._reviewedStatus === 'approved' ? '✅ Đã phê duyệt & phát hành' : '❌ Đã từ chối công thức'}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 );
               })}
