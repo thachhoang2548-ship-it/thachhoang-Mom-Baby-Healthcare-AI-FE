@@ -33,6 +33,7 @@ const mapFastApiRecipe = (slotName, recipe, timeStr, emojiStr) => {
     emoji: emojiStr,
     kcal: Math.round(recipe.total_calories || 150),
     time: timeStr,
+    status: recipe.status ?? 0,
     tags: recipe.tags || ['Dinh dưỡng', 'Chuẩn WHO'],
     ingredients: mappedIngredients.length > 0 ? mappedIngredients : [
       { name: 'Gạo tẻ ngon', amount: '25', unit: 'g' },
@@ -419,10 +420,22 @@ export default function BabyMenuPage() {
                   </h4>
                   
                   <div className="mt-1 flex items-center">
-                    <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-amber-500/95 text-white px-2 py-0.5 rounded-full shadow-sm animate-pulse">
-                      <Clock className="w-2.5 h-2.5" />
-                      Chờ chuyên gia duyệt
-                    </span>
+                    {r.status === 1 ? (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-momGreen text-white px-2 py-0.5 rounded-full shadow-sm">
+                        <Check className="w-2.5 h-2.5" />
+                        Đã được chuyên gia duyệt
+                      </span>
+                    ) : r.status === 2 ? (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-red-500/90 text-white px-2 py-0.5 rounded-full shadow-sm">
+                        <X className="w-2.5 h-2.5" />
+                        Đã từ chối
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-amber-500/95 text-white px-2 py-0.5 rounded-full shadow-sm animate-pulse">
+                        <Clock className="w-2.5 h-2.5" />
+                        Chờ chuyên gia duyệt
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-4 text-[10px] text-gray-450 mt-3 font-semibold">

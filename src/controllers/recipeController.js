@@ -48,10 +48,13 @@ export const useRecipeController = create((set, get) => ({
       };
       const res = await recipeService.generateRecipes(formattedPrefs);
       if (res.success && res.data) {
-        set({
-          recipes: res.data.recipes || [],
-          currentProfile: res.data.profile || null
-        });
+        // Fetch fresh list from DB which includes the newly generated recipes with valid IDs and Status
+        await get().fetchMyRecipes();
+        
+        if (res.data.profile) {
+            set({ currentProfile: res.data.profile });
+        }
+        
         toast.success("Đã tạo công thức dinh dưỡng mới thành công! 🍳");
         return res.data;
       } else {
@@ -69,7 +72,7 @@ export const useRecipeController = create((set, get) => ({
   fetchMyRecipes: async (filters = {}) => {
     set({ isFetching: true, error: null });
     try {
-      const res = await recipeService.fetchMyRecipes(filters);
+      const res = await recipeService.fetchMyRecipes({ category: 0, ...filters });
       if (res.success && res.data) {
         set({ recipes: res.data.items || [] });
       }
