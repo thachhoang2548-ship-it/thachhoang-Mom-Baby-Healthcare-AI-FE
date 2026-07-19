@@ -58,11 +58,16 @@ export default function RecipeCard({ recipe, onSave, onView }) {
           ⭐ {difficulty}
         </span>
 
-        {/* Expert Approved badge */}
-        {(recipe.isApproved || recipe.status === 1 || recipe.Status === 1) && (
+        {/* Expert Status badges */}
+        {(recipe.isApproved || recipe.status === 1 || recipe.Status === 1 || recipe.status === 'Approved' || recipe.Status === 'Approved') ? (
           <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/95 text-white shadow-sm flex items-center gap-1">
             <ShieldCheck className="w-3 h-3" />
-            Đã được chấp thuận ✓
+            Đã duyệt ✓
+          </span>
+        ) : (
+          <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/95 text-white shadow-sm flex items-center gap-1 animate-pulse">
+            <Clock className="w-3 h-3" />
+            Chờ chuyên gia duyệt
           </span>
         )}
       </div>

@@ -22,36 +22,6 @@ export default function BabyDashPage() {
     loadBabies();
   }, []);
 
-  const loadDailyMenu = async (babyId) => {
-    try {
-      const res = await babyService.getDailyMenu(babyId);
-      if (res.success && res.data) {
-        const mealsData = res.data.meals || [];
-        const mappedMeals = mealsData.map((meal, index) => {
-          let time = "07:30";
-          let emoji = "🥣";
-          if (meal.meal_slot.toLowerCase().includes("trưa")) { time = "11:30"; emoji = "🍲"; }
-          else if (meal.meal_slot.toLowerCase().includes("chiều") || meal.meal_slot.toLowerCase().includes("phụ")) { time = "15:30"; emoji = "🍌"; }
-          else if (meal.meal_slot.toLowerCase().includes("tối")) { time = "18:30"; emoji = "🥣"; }
-
-          return {
-            slot: meal.meal_slot,
-            recipe: meal.recipe_name + (meal.is_alternative ? " (Tránh dị ứng)" : ""),
-            emoji: emoji,
-            kcal: meal.calories || 180,
-            time: time,
-            isAlternative: meal.is_alternative
-          };
-        });
-        if (mappedMeals.length > 0) {
-          setDailyMenu(mappedMeals);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to load daily menu from FastAPI:", e);
-    }
-  };
-
   const loadBabies = async () => {
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
@@ -206,22 +176,22 @@ export default function BabyDashPage() {
         if (meal.slot.includes('Sáng')) {
           return {
             ...meal,
-            recipe: 'Cháo gạo lứt hạt chia sữa hạt (Tránh dị ứng)',
-            kcal: 140
+            recipe: 'Cháo gạo rây bí đỏ sữa hạt (Tránh dị ứng)',
+            kcal: 120
           };
         }
         if (meal.slot.includes('Trưa')) {
           return {
             ...meal,
-            recipe: 'Súp lườn gà khoai tây cà rốt (Tránh dị ứng)',
-            kcal: 210
+            recipe: 'Súp lườn gà khoai tây bông cải (Tránh dị ứng)',
+            kcal: 175
           };
         }
         if (meal.slot.includes('Chiều')) {
           return {
             ...meal,
-            recipe: 'Táo nghiền lê ngọt hấp chín (Tránh dị ứng)',
-            kcal: 90
+            recipe: 'Đu đủ chín nghiền sữa chua (Tránh dị ứng)',
+            kcal: 85
           };
         }
         if (meal.slot.includes('Tối')) {

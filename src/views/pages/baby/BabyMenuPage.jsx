@@ -417,6 +417,13 @@ export default function BabyMenuPage() {
                     <span className="text-xl">{r.emoji}</span>
                     {r.name}
                   </h4>
+                  
+                  <div className="mt-1 flex items-center">
+                    <span className="inline-flex items-center gap-1 text-[9px] font-bold bg-amber-500/95 text-white px-2 py-0.5 rounded-full shadow-sm animate-pulse">
+                      <Clock className="w-2.5 h-2.5" />
+                      Chờ chuyên gia duyệt
+                    </span>
+                  </div>
 
                   <div className="flex items-center gap-4 text-[10px] text-gray-450 mt-3 font-semibold">
                     <span className="flex items-center gap-1">

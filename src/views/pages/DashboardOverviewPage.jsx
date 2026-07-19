@@ -66,6 +66,7 @@ export default function DashboardOverviewPage() {
           actions: [
             { label: 'Nhật ký thai kỳ', path: '/pregnancy' },
             { label: 'Thực đơn mẹ bầu', path: '/pregnancy/meals' },
+            { label: 'Thực đơn thông minh AI', path: '/diet-recipes' },
             { label: 'Bài tập thai giáo', path: '/pregnancy/exercises' },
           ],
         };

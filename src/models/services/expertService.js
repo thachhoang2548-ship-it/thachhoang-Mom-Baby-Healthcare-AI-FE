@@ -14,6 +14,18 @@ const expertService = {
     }
   },
 
+  // Get ALL recipes grouped by category (Mom/Baby) for the expert dashboard
+  getAllRecipes: async () => {
+    try {
+      const res = await axiosClient.get("/api/expert/recipes/all");
+      return res.data;
+    } catch (error) {
+      const errMsg = error.response?.data?.message || "Không thể tải danh sách thực đơn.";
+      toast.error(errMsg);
+      throw error;
+    }
+  },
+
   // Review (Approve or Reject) a recipe
   reviewRecipe: async (recipeId, isApproved, note = "") => {
     try {

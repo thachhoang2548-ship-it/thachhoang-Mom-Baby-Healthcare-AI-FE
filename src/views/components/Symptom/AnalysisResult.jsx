@@ -184,13 +184,7 @@ export default function AnalysisResult({ analysis }) {
               </ul>
             </div>
 
-            <Link
-              to="/diet-recipes"
-              className="inline-flex items-center gap-1.5 text-xs font-black text-amber-500 hover:text-amber-600 mt-4 self-start group transition-colors duration-200"
-            >
-              Xem công thức phù hợp
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
+
           </div>
         )}
 

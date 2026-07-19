@@ -79,12 +79,9 @@ export default function RecipePage() {
     }
   };
 
-  // A recipe counts as approved when the backend has set Status = Approved (1)
-  const isRecipeApproved = (r) => r.isApproved || r.status === 1 || r.Status === 1;
-
   const displayedRecipes = filterType === "saved" 
-    ? recipes.filter(r => r.isSaved && isRecipeApproved(r)) 
-    : recipes.filter(r => isRecipeApproved(r));
+    ? recipes.filter(r => r.isSaved) 
+    : recipes;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 font-sans">
