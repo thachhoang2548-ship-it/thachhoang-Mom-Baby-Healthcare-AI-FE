@@ -19,6 +19,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   const {
     register,
@@ -30,6 +31,7 @@ export default function LoginPage() {
 
   const onSubmit = async (data) => {
     setLoading(true);
+    setLoginError(''); // Reset errors
     try {
       const res = await login(data.email, data.password);
       if (res.isSuccess) {
@@ -68,11 +70,11 @@ export default function LoginPage() {
           navigate('/profile');
         }
       } else {
-        toast.error(res.message || 'Đăng nhập không thành công');
+        setLoginError(res.message || 'Sai tài khoản hoặc mật khẩu. Vui lòng kiểm tra lại!');
       }
     } catch (err) {
       console.error(err);
-      toast.error('Sai tài khoản hoặc mật khẩu. Vui lòng kiểm tra lại!');
+      setLoginError('Sai tài khoản hoặc mật khẩu. Vui lòng kiểm tra lại!');
     } finally {
       setLoading(false);
     }
@@ -143,6 +145,11 @@ export default function LoginPage() {
             {errors.password && (
               <p className="text-[10px] text-red-500 font-bold mt-1 pl-1">
                 {errors.password.message}
+              </p>
+            )}
+            {loginError && (
+              <p className="text-[10.5px] text-red-505 bg-red-50/50 border border-red-200/50 p-2.5 rounded-xl font-extrabold mt-2 pl-2">
+                ⚠️ {loginError}
               </p>
             )}
           </div>
