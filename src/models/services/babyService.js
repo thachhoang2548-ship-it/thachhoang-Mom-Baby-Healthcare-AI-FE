@@ -110,8 +110,9 @@ const babyService = {
   },
 
   // ─── Nutrition menus ──────────────────────────────────────────────
-  getDailyMenu: async (babyId) => {
-    const response = await axiosClient.get(`/api/baby/${babyId}/menu/daily`);
+  getDailyMenu: async (babyId, forceRefresh = false) => {
+    const url = `/api/baby/${babyId}/menu/daily${forceRefresh ? '?force=true' : ''}`;
+    const response = await axiosClient.get(url);
     return response.data;
   },
 

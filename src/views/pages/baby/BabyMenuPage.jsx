@@ -132,129 +132,11 @@ export default function BabyMenuPage() {
     loadAllData();
   }, []);
 
-  // Filter out avoided ingredients and provide alternatives
-  const getFilteredRecipes = () => {
-    return recipes.map((recipe) => {
-      const isAvoided = allergies.some((avoidItem) => {
-        const avoidLower = avoidItem.toLowerCase().trim();
-        if (!avoidLower) return false;
-        
-        return (
-          recipe.name.toLowerCase().includes(avoidLower) ||
-          avoidLower.includes(recipe.name.toLowerCase()) ||
-          recipe.ingredients.some(ing => ing.name.toLowerCase().includes(avoidLower)) ||
-          (avoidLower.includes('yến mạch') && recipe.name.toLowerCase().includes('yến mạch')) ||
-          (avoidLower.includes('thịt bò') && recipe.name.toLowerCase().includes('thịt bò')) ||
-          (avoidLower.includes('bò') && recipe.name.toLowerCase().includes('thịt bò')) ||
-          (avoidLower.includes('cá hồi') && recipe.name.toLowerCase().includes('cá hồi'))
-        );
-      });
-
-      if (isAvoided) {
-        if (recipe.slot.includes('Sáng')) {
-          return {
-            ...recipe,
-            name: 'Cháo gạo rây bí đỏ sữa hạt (Tránh dị ứng)',
-            emoji: '🥣',
-            kcal: 120,
-            tags: ['dễ tiêu', 'an toàn', 'tránh dị ứng'],
-            ingredients: [
-              { name: 'Gạo tẻ thơm', amount: '30', unit: 'g' },
-              { name: 'Bí đỏ ngọt chín', amount: '20', unit: 'g' },
-              { name: 'Sữa mẹ hoặc sữa công thức', amount: '100', unit: 'ml' }
-            ],
-            steps: [
-              { desc: 'Ninh nhừ gạo tẻ với nước theo tỷ lệ 1:10.', time: '15 phút' },
-              { desc: 'Hấp chín bí đỏ rồi nghiền nhuyễn qua rây.', time: '7 phút' },
-              { desc: 'Trộn cháo rây mịn với bí đỏ nghiền và thêm sữa ấm trước khi bé ăn.', time: '3 phút' }
-            ]
-          };
-        }
-        if (recipe.slot.includes('Trưa')) {
-          return {
-            ...recipe,
-            name: 'Súp lườn gà khoai tây bông cải (Tránh dị ứng)',
-            emoji: '🍲',
-            kcal: 175,
-            tags: ['giàu đạm', 'an toàn', 'tránh dị ứng'],
-            ingredients: [
-              { name: 'Lườn ức gà sạch', amount: '25', unit: 'g' },
-              { name: 'Khoai tây nhỏ', amount: '20', unit: 'g' },
-              { name: 'Bông cải xanh', amount: '15', unit: 'g' },
-              { name: 'Dầu ô liu dặm bé', amount: '1', unit: 'thìa cà phê' }
-            ],
-            steps: [
-              { desc: 'Hấp chín lườn gà rồi đem xay nhuyễn hoặc rây thật mịn.', time: '10 phút' },
-              { desc: 'Hấp chín bông cải xanh và khoai tây cho chín mềm.', time: '10 phút' },
-              { desc: 'Xay nhuyễn toàn bộ các nguyên liệu rồi thêm dầu ô liu khuấy đều cữ ăn cho bé.', time: '5 phút' }
-            ]
-          };
-        }
-        if (recipe.slot.includes('Chiều')) {
-          return {
-            ...recipe,
-            name: 'Đu đủ chín nghiền sữa chua (Tránh dị ứng)',
-            emoji: '🍹',
-            kcal: 85,
-            tags: ['thanh mát', 'dồi dào vitamin', 'tránh dị ứng'],
-            ingredients: [
-              { name: 'Đu đủ chín ngọt', amount: '50', unit: 'g' },
-              { name: 'Sữa chua không đường cho bé', amount: '1', unit: 'hộp' }
-            ],
-            steps: [
-              { desc: 'Gọt vỏ đu đủ, bỏ hạt rồi dùng thìa dầm nhuyễn.', time: '3 phút' },
-              { desc: 'Trộn đều sữa chua không đường với đu đủ dầm nhuyễn.', time: '2 phút' }
-            ]
-          };
-        }
-        if (recipe.slot.includes('Tối')) {
-          return {
-            ...recipe,
-            name: 'Cháo chim bồ câu hạt sen bí ngô (Tránh dị ứng)',
-            emoji: '🥣',
-            kcal: 195,
-            tags: ['ngủ ngon', 'giàu kẽm', 'tránh dị ứng'],
-            ingredients: [
-              { name: 'Thịt chim bồ câu lọc xương', amount: '20', unit: 'g' },
-              { name: 'Hạt sen khô', amount: '10', unit: 'g' },
-              { name: 'Bí đỏ', amount: '20', unit: 'g' },
-              { name: 'Cháo trắng ninh sẵn', amount: '1', unit: 'bát' }
-            ],
-            steps: [
-              { desc: 'Thịt bồ câu hấp chín băm nhuyễn mịn.', time: '10 phút' },
-              { desc: 'Ninh nhừ hạt sen, bí đỏ rồi rây mịn.', time: '10 phút' },
-              { desc: 'Cho cháo trắng vào nồi nhỏ, trút thịt chim bồ câu, hạt sen và bí đỏ vào quấy nóng.', time: '5 phút' }
-            ]
-          };
-        }
-      }
-      return recipe;
-    });
-  };
-
-  const activeRecipes = dailyMenu.length > 0 ? dailyMenu : getFilteredRecipes();
+  const activeRecipes = dailyMenu;
 
   // Filter 7-day weekly menu stages
   const getFilteredWeeklyMeals = () => {
-    return weeklyMeals.map((meal) => {
-      const isAvoided = allergies.some((avoidItem) => {
-        const avoidLower = avoidItem.toLowerCase().trim();
-        if (!avoidLower) return false;
-        return (
-          meal.stage.toLowerCase().includes(avoidLower) ||
-          avoidLower.includes(meal.stage.toLowerCase()) ||
-          (avoidLower.includes('thịt bò') && meal.stage.toLowerCase().includes('thịt bò')) ||
-          (avoidLower.includes('bò') && meal.stage.toLowerCase().includes('thịt bò'))
-        );
-      });
-
-      if (isAvoided) {
-        if (meal.slot === 'Trưa') {
-          return { ...meal, stage: 'Cháo lườn gà cà rốt (Tránh dị ứng)' };
-        }
-      }
-      return meal;
-    });
+    return weeklyMeals; // Removed hardcoded weekly logic for now, or just let AI backend handle it
   };
 
   const activeWeeklyMeals = getFilteredWeeklyMeals();
@@ -294,8 +176,31 @@ export default function BabyMenuPage() {
     toast.success('Đã cập nhật trạng thái ăn của bé! 😋');
   };
 
-  const handleRegenerateMenu = () => {
-    toast.success('Đang tạo thực đơn ăn dặm mới phù hợp với độ tuổi và tránh dị ứng... 🔄');
+  const handleRegenerateMenu = async () => {
+    toast.loading('Đang tạo thực đơn ăn dặm mới phù hợp với độ tuổi và tránh dị ứng...', { id: 'regen' });
+    try {
+      const res = await babyService.getProfiles();
+      if ((res.success || res.isSuccess) && res.data && res.data.length > 0) {
+        const babyId = res.data[0].id;
+        const dailyRes = await babyService.getDailyMenu(babyId, true);
+        if ((dailyRes.success || dailyRes.isSuccess) && dailyRes.data) {
+          const meals = dailyRes.data.meals || {};
+          const mappedToday = [];
+          if (meals.breakfast) mappedToday.push(mapFastApiRecipe("Sáng ☀️", meals.breakfast, "07:30", "🥣"));
+          if (meals.lunch) mappedToday.push(mapFastApiRecipe("Trưa 🍲", meals.lunch, "11:30", "🍲"));
+          if (meals.snack) mappedToday.push(mapFastApiRecipe("Chiều 🍌", meals.snack, "15:30", "🍌"));
+          if (meals.dinner) mappedToday.push(mapFastApiRecipe("Tối 🌙", meals.dinner, "18:30", "🥣"));
+          if (meals.supplementary_snack) mappedToday.push(mapFastApiRecipe("Phụ 🍼", meals.supplementary_snack, "20:00", "🍼"));
+          setDailyMenu(mappedToday);
+          setMenuError(null);
+          toast.success('Đã tạo xong thực đơn mới!', { id: 'regen' });
+        } else {
+          toast.error('Có lỗi xảy ra khi tạo thực đơn.', { id: 'regen' });
+        }
+      }
+    } catch (err) {
+      toast.error('Có lỗi xảy ra khi tạo thực đơn.', { id: 'regen' });
+    }
   };
 
   const handleOpenRecipe = (recipe) => {
