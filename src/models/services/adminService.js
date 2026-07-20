@@ -62,6 +62,42 @@ const adminService = {
     }
   },
 
+  // Update business rule
+  updateBusinessRule: async (id, ruleDto) => {
+    try {
+      const res = await axiosClient.put(`/api/admin/rules/${id}`, ruleDto);
+      return res.data;
+    } catch (error) {
+      const errMsg = error.response?.data?.message || "Không thể cập nhật quy tắc.";
+      toast.error(errMsg);
+      throw error;
+    }
+  },
+
+  // Create business rule
+  createBusinessRule: async (ruleDto) => {
+    try {
+      const res = await axiosClient.post("/api/admin/rules", ruleDto);
+      return res.data;
+    } catch (error) {
+      const errMsg = error.response?.data?.message || "Không thể tạo quy tắc mới.";
+      toast.error(errMsg);
+      throw error;
+    }
+  },
+
+  // Delete business rule
+  deleteBusinessRule: async (id) => {
+    try {
+      const res = await axiosClient.delete(`/api/admin/rules/${id}`);
+      return res.data;
+    } catch (error) {
+      const errMsg = error.response?.data?.message || "Không thể xóa quy tắc.";
+      toast.error(errMsg);
+      throw error;
+    }
+  },
+
   // Get high-risk users
   getUsersAtRisk: async () => {
     try {
@@ -81,6 +117,18 @@ const adminService = {
       return res.data;
     } catch (error) {
       const errMsg = error.response?.data?.message || "Không thể tải báo cáo hệ thống.";
+      toast.error(errMsg);
+      throw error;
+    }
+  },
+
+  // Sync USDA nutrition data
+  syncUsdaData: async (query, maxItems = 10) => {
+    try {
+      const res = await axiosClient.post("/api/admin/usda/sync", { query, maxItems });
+      return res.data;
+    } catch (error) {
+      const errMsg = error.response?.data?.message || "Không thể đồng bộ dữ liệu USDA.";
       toast.error(errMsg);
       throw error;
     }
