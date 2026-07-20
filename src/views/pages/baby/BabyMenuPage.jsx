@@ -132,7 +132,109 @@ export default function BabyMenuPage() {
     loadAllData();
   }, []);
 
-  const activeRecipes = dailyMenu;
+  // Filter out avoided ingredients and provide alternatives
+  const getFilteredRecipes = () => {
+    return dailyMenu.map((recipe) => {
+      const isAvoided = allergies.some((avoidItem) => {
+        const avoidLower = avoidItem.toLowerCase().trim();
+        if (!avoidLower) return false;
+        
+        return (
+          recipe.name.toLowerCase().includes(avoidLower) ||
+          avoidLower.includes(recipe.name.toLowerCase()) ||
+          recipe.ingredients.some(ing => ing.name.toLowerCase().includes(avoidLower)) ||
+          (avoidLower.includes('yến mạch') && recipe.name.toLowerCase().includes('yến mạch')) ||
+          (avoidLower.includes('thịt bò') && recipe.name.toLowerCase().includes('thịt bò')) ||
+          (avoidLower.includes('bò') && recipe.name.toLowerCase().includes('thịt bò')) ||
+          (avoidLower.includes('cá hồi') && recipe.name.toLowerCase().includes('cá hồi')) ||
+          (avoidLower.includes('tôm') && recipe.name.toLowerCase().includes('tôm')) ||
+          (avoidLower.includes('cá') && recipe.name.toLowerCase().includes('cá'))
+        );
+      });
+
+      if (isAvoided) {
+        if (recipe.slot.includes('Sáng')) {
+          return {
+            ...recipe,
+            name: 'Cháo gạo rây bí đỏ sữa hạt (Tránh dị ứng)',
+            emoji: '🥣',
+            kcal: 120,
+            tags: ['dễ tiêu', 'an toàn', 'tránh dị ứng'],
+            ingredients: [
+              { name: 'Gạo tẻ thơm', amount: '30', unit: 'g' },
+              { name: 'Bí đỏ ngọt chín', amount: '20', unit: 'g' },
+              { name: 'Sữa mẹ hoặc sữa công thức', amount: '100', unit: 'ml' }
+            ],
+            steps: [
+              { desc: 'Ninh nhừ gạo tẻ với nước theo tỷ lệ 1:10.', time: '15 phút' },
+              { desc: 'Hấp chín bí đỏ rồi nghiền nhuyễn qua rây.', time: '7 phút' },
+              { desc: 'Trộn cháo rây mịn với bí đỏ nghiền và thêm sữa ấm trước khi bé ăn.', time: '3 phút' }
+            ]
+          };
+        }
+        if (recipe.slot.includes('Trưa')) {
+          return {
+            ...recipe,
+            name: 'Súp lườn gà khoai tây bông cải (Tránh dị ứng)',
+            emoji: '🍲',
+            kcal: 175,
+            tags: ['giàu đạm', 'an toàn', 'tránh dị ứng'],
+            ingredients: [
+              { name: 'Lườn ức gà sạch', amount: '25', unit: 'g' },
+              { name: 'Khoai tây nhỏ', amount: '20', unit: 'g' },
+              { name: 'Bông cải xanh', amount: '15', unit: 'g' },
+              { name: 'Dầu ô liu dặm bé', amount: '1', unit: 'thìa cà phê' }
+            ],
+            steps: [
+              { desc: 'Hấp chín lườn gà rồi đem xay nhuyễn hoặc rây thật mịn.', time: '10 phút' },
+              { desc: 'Hấp chín bông cải xanh và khoai tây cho chín mềm.', time: '10 phút' },
+              { desc: 'Xay nhuyễn toàn bộ các nguyên liệu rồi thêm dầu ô liu khuấy đều cữ ăn cho bé.', time: '5 phút' }
+            ]
+          };
+        }
+        if (recipe.slot.includes('Chiều')) {
+          return {
+            ...recipe,
+            name: 'Đu đủ chín nghiền sữa chua (Tránh dị ứng)',
+            emoji: '🍹',
+            kcal: 85,
+            tags: ['thanh mát', 'dồi dào vitamin', 'tránh dị ứng'],
+            ingredients: [
+              { name: 'Đu đủ chín ngọt', amount: '50', unit: 'g' },
+              { name: 'Sữa chua không đường cho bé', amount: '1', unit: 'hộp' }
+            ],
+            steps: [
+              { desc: 'Gọt vỏ đu đủ, bỏ hạt rồi dùng thìa dầm nhuyễn.', time: '3 phút' },
+              { desc: 'Trộn đều sữa chua không đường với đu đủ dầm nhuyễn.', time: '2 phút' }
+            ]
+          };
+        }
+        if (recipe.slot.includes('Tối')) {
+          return {
+            ...recipe,
+            name: 'Cháo chim bồ câu hạt sen bí ngô (Tránh dị ứng)',
+            emoji: '🥣',
+            kcal: 195,
+            tags: ['ngủ ngon', 'giàu kẽm', 'tránh dị ứng'],
+            ingredients: [
+              { name: 'Thịt chim bồ câu lọc xương', amount: '20', unit: 'g' },
+              { name: 'Hạt sen khô', amount: '10', unit: 'g' },
+              { name: 'Bí đỏ', amount: '20', unit: 'g' },
+              { name: 'Cháo trắng ninh sẵn', amount: '1', unit: 'bát' }
+            ],
+            steps: [
+              { desc: 'Thịt bồ câu hấp chín băm nhuyễn mịn.', time: '10 phút' },
+              { desc: 'Ninh nhừ hạt sen, bí đỏ rồi rây mịn.', time: '10 phút' },
+              { desc: 'Cho cháo trắng vào nồi nhỏ, trút thịt chim bồ câu, hạt sen và bí đỏ vào quấy nóng.', time: '5 phút' }
+            ]
+          };
+        }
+      }
+      return recipe;
+    });
+  };
+
+  const activeRecipes = getFilteredRecipes();
 
   // Filter 7-day weekly menu stages
   const getFilteredWeeklyMeals = () => {

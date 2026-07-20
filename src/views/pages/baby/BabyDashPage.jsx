@@ -155,7 +155,60 @@ export default function BabyDashPage() {
   // BR07: cảnh báo khi % sắt THẬT (tổng thực đơn / mục tiêu WHO) dưới 60%
   const isIronLow = ironPct !== null && ironPct < 60;
 
-  const activeMeals = todayMeals;
+  // Filter out avoided ingredients and provide alternatives
+  const getFilteredMeals = () => {
+    const avoidList = selectedBaby?.allergies || [];
+    return todayMeals.map((meal) => {
+      const isAvoided = avoidList.some((avoidItem) => {
+        const avoidLower = avoidItem.toLowerCase().trim();
+        if (!avoidLower) return false;
+        return (
+          meal.recipe.toLowerCase().includes(avoidLower) ||
+          avoidLower.includes(meal.recipe.toLowerCase()) ||
+          (avoidLower.includes('yến mạch') && meal.recipe.toLowerCase().includes('yến mạch')) ||
+          (avoidLower.includes('thịt bò') && meal.recipe.toLowerCase().includes('thịt bò')) ||
+          (avoidLower.includes('bò') && meal.recipe.toLowerCase().includes('thịt bò')) ||
+          (avoidLower.includes('cá hồi') && meal.recipe.toLowerCase().includes('cá hồi')) ||
+          (avoidLower.includes('tôm') && meal.recipe.toLowerCase().includes('tôm')) ||
+          (avoidLower.includes('cá') && meal.recipe.toLowerCase().includes('cá'))
+        );
+      });
+
+      if (isAvoided) {
+        if (meal.slot.includes('Sáng')) {
+          return {
+            ...meal,
+            recipe: 'Cháo gạo rây bí đỏ sữa hạt (Tránh dị ứng)',
+            kcal: 120
+          };
+        }
+        if (meal.slot.includes('Trưa')) {
+          return {
+            ...meal,
+            recipe: 'Súp lườn gà khoai tây bông cải (Tránh dị ứng)',
+            kcal: 175
+          };
+        }
+        if (meal.slot.includes('Chiều')) {
+          return {
+            ...meal,
+            recipe: 'Đu đủ chín nghiền sữa chua (Tránh dị ứng)',
+            kcal: 85
+          };
+        }
+        if (meal.slot.includes('Tối')) {
+          return {
+            ...meal,
+            recipe: 'Cháo chim bồ câu hạt sen bí ngô (Tránh dị ứng)',
+            kcal: 195
+          };
+        }
+      }
+      return meal;
+    });
+  };
+
+  const activeMeals = getFilteredMeals();
 
   return (
     <div className="space-y-6">
