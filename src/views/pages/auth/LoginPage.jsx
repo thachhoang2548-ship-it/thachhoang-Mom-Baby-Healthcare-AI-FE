@@ -57,18 +57,7 @@ export default function LoginPage() {
           return;
         }
 
-        // Fetch profile for standard users (Mom)
-        const profile = await fetchProfile();
-        if (profile) {
-          if (profile.stage === 'Pregnant') {
-            navigate('/pregnancy');
-          } else {
-            navigate('/fertility');
-          }
-        } else {
-          // No profile yet, go to profile setup
-          navigate('/profile');
-        }
+        navigate('/dashboard');
       } else {
         setLoginError(res.message || 'Sai tài khoản hoặc mật khẩu. Vui lòng kiểm tra lại!');
       }
