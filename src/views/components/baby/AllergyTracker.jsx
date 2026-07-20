@@ -42,6 +42,56 @@ export default function AllergyTracker({ baby }) {
     severity: 'mild'
   });
 
+  // Danh sách thực phẩm phổ biến cho bé ăn dặm (whitelist)
+  const KNOWN_FOODS = [
+    'gà', 'thịt gà', 'ức gà', 'lườn gà', 'gà ta',
+    'bò', 'thịt bò', 'bê',
+    'heo', 'thịt heo', 'lợn', 'thịt lợn', 'sườn',
+    'cá', 'cá hồi', 'cá thu', 'cá basa', 'cá lóc', 'cá diêu hồng', 'cá chép', 'cá trê',
+    'tôm', 'cua', 'mực', 'hải sản', 'nghêu', 'sò', 'ốc', 'trai',
+    'trứng', 'trứng gà', 'trứng vịt', 'trứng cút',
+    'sữa', 'sữa bò', 'sữa mẹ', 'sữa công thức', 'sữa chua', 'phô mai',
+    'gạo', 'cháo', 'bột gạo', 'cơm', 'bún', 'mì', 'phở', 'nui',
+    'khoai', 'khoai tây', 'khoai lang', 'khoai môn', 'khoai sọ',
+    'bí', 'bí đỏ', 'bí ngô', 'bí xanh', 'bầu', 'mướp',
+    'cà rốt', 'cà chua', 'cà tím',
+    'rau', 'rau cải', 'cải bó xôi', 'cải ngọt', 'cải thìa', 'rau mồng tơi', 'rau dền', 'rau ngót',
+    'bông cải', 'bông cải xanh', 'súp lơ',
+    'đậu', 'đậu xanh', 'đậu đen', 'đậu đỏ', 'đậu nành', 'đậu hũ', 'tàu hũ', 'đậu phụ',
+    'đậu phộng', 'lạc',
+    'hành', 'hành tây', 'hành lá', 'tỏi', 'gừng', 'sả',
+    'chuối', 'táo', 'lê', 'cam', 'quýt', 'bưởi', 'xoài', 'đu đủ', 'dưa hấu', 'nho',
+    'thanh long', 'bơ', 'dâu', 'dâu tây', 'kiwi', 'việt quất', 'mận', 'đào', 'mít', 'sầu riêng',
+    'yến mạch', 'bột yến mạch', 'ngũ cốc',
+    'hạt sen', 'hạt điều', 'hạt óc chó', 'hạnh nhân', 'mè', 'vừng',
+    'dầu', 'dầu ô liu', 'dầu mè', 'bơ thực vật',
+    'nấm', 'nấm hương', 'nấm rơm', 'nấm kim châm',
+    'măng', 'ngô', 'bắp',
+    'chim bồ câu', 'thịt bồ câu',
+    'gan', 'gan gà', 'gan heo',
+    'tía tô', 'rau mùi', 'thì là', 'húng quế',
+    'mật ong', 'đường',
+    'gluten', 'lúa mì', 'tiểu mạch'
+  ];
+
+  // Kiểm tra xem tên có phải thực phẩm hợp lệ không
+  const isValidFoodName = (name) => {
+    const lower = name.toLowerCase().trim();
+    // 1. Quá ngắn (< 2 ký tự)
+    if (lower.length < 2) return false;
+    // 2. Chứa số → không phải thực phẩm
+    if (/\d/.test(lower)) return false;
+    // 3. Chỉ chứa ký tự Latin không dấu và không khớp whitelist → khả năng cao là gibberish
+    if (/^[a-z]+$/.test(lower) && lower.length <= 4 && !KNOWN_FOODS.includes(lower)) return false;
+    // 4. Kiểm tra whitelist (match chính xác hoặc chứa trong whitelist)
+    const matchesKnown = KNOWN_FOODS.some(f => 
+      lower === f || lower.includes(f) || f.includes(lower)
+    );
+    // 5. Nếu không match whitelist, kiểm tra xem có chứa ký tự tiếng Việt (dấu) không
+    const hasVietnamese = /[àáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]/i.test(lower);
+    return matchesKnown || hasVietnamese;
+  };
+
   const handleAddFood = async (e) => {
     e.preventDefault();
     if (!baby) {
@@ -54,6 +104,12 @@ export default function AllergyTracker({ baby }) {
     }
 
     const trimmedName = foodName.trim();
+
+    // Kiểm tra tên thực phẩm hợp lệ
+    if (!isValidFoodName(trimmedName)) {
+      toast.error(`"${trimmedName}" không phải tên thực phẩm hợp lệ. Vui lòng nhập tên thực phẩm thật (ví dụ: Tôm, Cá, Trứng...)`);
+      return;
+    }
 
     // Check duplicate
     if (introducedFoods.some((f) => f.name.toLowerCase() === trimmedName.toLowerCase())) {
