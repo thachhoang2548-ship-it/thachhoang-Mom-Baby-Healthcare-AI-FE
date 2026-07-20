@@ -34,6 +34,9 @@ const mapFastApiRecipe = (slotName, recipe, timeStr, emojiStr) => {
     kcal: Math.round(recipe.total_calories || 150),
     time: timeStr,
     status: recipe.status ?? 0,
+    // FastAPI trả total_protein_g / total_iron_mg (không phải protein/iron)
+    protein: recipe.total_protein_g != null ? `${Math.round(recipe.total_protein_g * 10) / 10}g` : '—',
+    iron: recipe.total_iron_mg != null ? `${Math.round(recipe.total_iron_mg * 10) / 10}mg` : '—',
     tags: recipe.tags || ['Dinh dưỡng', 'Chuẩn WHO'],
     ingredients: mappedIngredients.length > 0 ? mappedIngredients : [
       { name: 'Gạo tẻ ngon', amount: '25', unit: 'g' },
@@ -70,7 +73,6 @@ export default function BabyMenuPage() {
 
   // Recipes come from the FastAPI nutrition engine (via the .NET proxy).
   // No hardcoded menu: when the API is unavailable we show an explicit notice instead.
-  const [recipes, setRecipes] = useState([]);
   const [menuError, setMenuError] = useState(null);
 
   const [allergies, setAllergies] = useState([]);
@@ -272,9 +274,7 @@ export default function BabyMenuPage() {
 
   const handleMarkEaten = (id) => {
     const toggle = (prev) => prev.map((r) => (r.id === id ? { ...r, eaten: !r.eaten } : r));
-    // Menu hiển thị có thể đến từ API (dailyMenu) hoặc state recipes — toggle cả hai.
     setDailyMenu(toggle);
-    setRecipes(toggle);
     toast.success('Đã cập nhật trạng thái ăn của bé! 😋');
   };
 
@@ -300,7 +300,7 @@ export default function BabyMenuPage() {
           toast.error('Có lỗi xảy ra khi tạo thực đơn.', { id: 'regen' });
         }
       }
-    } catch (err) {
+    } catch {
       toast.error('Có lỗi xảy ra khi tạo thực đơn.', { id: 'regen' });
     }
   };

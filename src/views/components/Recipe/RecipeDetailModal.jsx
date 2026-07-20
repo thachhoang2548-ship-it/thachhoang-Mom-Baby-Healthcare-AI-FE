@@ -29,9 +29,11 @@ export default function RecipeDetailModal({ recipe, onClose }) {
   };
 
   // Parsing nutrient grams
-  const parseGrams = (str) => {
-    if (!str) return 0;
-    return parseInt(str.replace(/[^0-9]/g, "")) || 0;
+  const parseGrams = (value) => {
+    if (!value) return 0;
+    // Giá trị có thể là số (12) hoặc chuỗi ("12g") tuỳ nguồn dữ liệu
+    if (typeof value === "number") return value;
+    return parseInt(String(value).replace(/[^0-9]/g, "")) || 0;
   };
 
   const pVal = parseGrams(nutritionInfo?.protein);
