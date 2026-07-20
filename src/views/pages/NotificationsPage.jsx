@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import NotificationFilters from "../components/Notification/NotificationFilters";
 import NotificationsList from "../components/Notification/NotificationsList";
 import { useAlertController } from "../../controllers/alertController";
+import { CheckCheck, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 
 const NotificationsPage = () => {
@@ -36,13 +37,26 @@ const NotificationsPage = () => {
             </p>
           </div>
 
-          <button
-            onClick={markAllAsResolved}
-            className="w-full sm:w-auto flex h-10 sm:h-11 items-center justify-center gap-2 rounded-full bg-primary px-4 sm:px-6 text-sm font-bold text-white transition-transform active:scale-95 hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-900"
-          >
-            <span className="material-symbols-outlined text-lg sm:text-xl">done_all</span>
-            <span className="whitespace-nowrap">Đánh dấu tất cả là đã đọc</span>
-          </button>
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            <button
+              onClick={() => {
+                fetchAlerts();
+                toast.success("Đã cập nhật danh sách thông báo!");
+              }}
+              className="flex h-10 sm:h-11 items-center justify-center gap-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 px-4 text-sm font-bold transition-all active:scale-95"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <span className="whitespace-nowrap">Làm mới</span>
+            </button>
+
+            <button
+              onClick={markAllAsResolved}
+              className="w-full sm:w-auto flex h-10 sm:h-11 items-center justify-center gap-2 rounded-full bg-primary px-4 sm:px-6 text-sm font-bold text-white transition-transform active:scale-95 hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+            >
+              <CheckCheck className="w-5 h-5" />
+              <span className="whitespace-nowrap">Đánh dấu tất cả là đã đọc</span>
+            </button>
+          </div>
         </div>
 
         <NotificationFilters filters={filters} setFilters={setFilters} />

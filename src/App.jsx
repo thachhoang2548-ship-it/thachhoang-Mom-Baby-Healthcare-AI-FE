@@ -27,7 +27,6 @@ import StaffDashboardPage from "./views/pages/staff/StaffDashboardPage";
 // Postpartum (Module 3) & Baby Nutrition (Module 4)
 import PostpartumDashPage from "./views/pages/postpartum/PostpartumDashPage";
 import EpdsPage from "./views/pages/postpartum/EpdsPage";
-import VoiceJournalPage from "./views/pages/postpartum/VoiceJournalPage";
 import BabyDashPage from "./views/pages/baby/BabyDashPage";
 import BabyMenuPage from "./views/pages/baby/BabyMenuPage";
 import GrowthChartPage from "./views/pages/baby/GrowthChartPage";
@@ -87,7 +86,6 @@ function AppContent() {
           {/* Postpartum (Module 3) */}
           <Route path="/postpartum" element={<PostpartumDashPage />} />
           <Route path="/postpartum/epds" element={<EpdsPage />} />
-          <Route path="/postpartum/voice" element={<VoiceJournalPage />} />
 
           {/* Baby Nutrition (Module 4) */}
           <Route path="/baby-nutrition" element={<BabyDashPage />} />

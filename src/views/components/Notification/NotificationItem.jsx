@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useAlertController } from "../../../controllers/alertController";
+import { Stethoscope, Bell, AlertTriangle, CheckCircle } from "lucide-react";
 
 const severityColors = {
   low: { border: "border-green-500", bg: "bg-green-100", text: "text-green-600", label: "Thấp" },
@@ -12,8 +13,11 @@ const severityColors = {
 const NotificationItem = ({ alert, setAlerts }) => {
   const [expanded, setExpanded] = useState(false);
 
+  const isStaffConsult = alert.message?.includes("TƯ VẤN TỪ CARE STAFF") || alert.message?.includes("BÁC SĨ");
+
   let sevKey = typeof alert.severity === "string" ? alert.severity.toLowerCase() : alert.severity;
   if (alert.type === "symptom") sevKey = "high";
+  if (isStaffConsult) sevKey = "low";
 
   const sev = severityColors[sevKey] || severityColors.low;
 
@@ -21,7 +25,7 @@ const NotificationItem = ({ alert, setAlerts }) => {
 
   const markResolved = async () => {
     try {
-      await markAsResolved(alert._id);
+      await markAsResolved(alert.id || alert._id);
     } catch (err) {
       console.error(err);
     }
@@ -29,27 +33,31 @@ const NotificationItem = ({ alert, setAlerts }) => {
 
   return (
     <div
-      className={`group flex flex-col cursor-pointer rounded-xl border-l-4 ${sev.border} bg-white p-4 sm:p-5 shadow-sm transition-all duration-200 hover:shadow-md dark:bg-gray-800/50`}
+      className={`group flex flex-col cursor-pointer rounded-xl border-l-4 ${isStaffConsult ? 'border-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/20' : `${sev.border} bg-white dark:bg-gray-800/50`} p-4 sm:p-5 shadow-sm transition-all duration-200 hover:shadow-md`}
     >
       <div className="flex flex-col sm:flex-row sm:items-start gap-4" onClick={() => setExpanded((prev) => !prev)}>
         <div className="flex flex-grow items-start gap-3 sm:gap-4">
-          <div className={`flex size-10 sm:size-12 shrink-0 items-center justify-center rounded-lg ${sev.bg} ${sev.text}`}>
-            <span className="material-symbols-outlined text-2xl sm:text-3xl">
-              {alert.type === "medication" ? "notifications_active" : "report"}
-            </span>
+          <div className={`flex size-10 sm:size-12 shrink-0 items-center justify-center rounded-lg ${isStaffConsult ? 'bg-emerald-100 text-emerald-600' : `${sev.bg} ${sev.text}`}`}>
+            {isStaffConsult ? (
+              <Stethoscope className="w-6 h-6" />
+            ) : alert.type === "medication" ? (
+              <Bell className="w-6 h-6" />
+            ) : (
+              <AlertTriangle className="w-6 h-6" />
+            )}
           </div>
 
           <div className="flex flex-1 flex-col justify-center gap-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <p className="text-sm sm:text-base font-bold text-gray-900 dark:text-white truncate">
-                Cảnh báo {alert.type === "medication" ? "uống thuốc" : "triệu chứng"}
+                {isStaffConsult ? "Lời khuyên từ Care Staff 🩺" : `Cảnh báo ${alert.type === "medication" ? "uống thuốc" : "triệu chứng"}`}
               </p>
-              <div className={`inline-flex rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider ${sev.bg} ${sev.text}`}>
-                {sev.label}
+              <div className={`inline-flex rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider ${isStaffConsult ? 'bg-emerald-100 text-emerald-700' : `${sev.bg} ${sev.text}`}`}>
+                {isStaffConsult ? "Tư vấn Y tế" : sev.label}
               </div>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">{alert.message}</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{new Date(alert.createdAt).toLocaleString()}</p>
+            <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-line font-medium leading-relaxed">{alert.message}</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{alert.createdAt ? new Date(alert.createdAt).toLocaleString() : 'Vừa xong'}</p>
           </div>
         </div>
 
@@ -60,9 +68,9 @@ const NotificationItem = ({ alert, setAlerts }) => {
                 e.stopPropagation();
                 markResolved();
               }}
-              className="flex h-8 sm:h-9 items-center justify-center rounded-full bg-primary/10 hover:bg-primary text-primary hover:text-white px-3 sm:px-4 text-xs sm:text-sm font-bold transition-colors duration-200"
+              className="flex h-8 sm:h-9 items-center justify-center gap-1.5 rounded-full bg-primary/10 hover:bg-primary text-primary hover:text-white px-3 sm:px-4 text-xs sm:text-sm font-bold transition-colors duration-200"
             >
-              <span className="material-symbols-outlined mr-1.5 text-base">check_circle</span>
+              <CheckCircle className="w-4 h-4" />
               Đã đọc
             </button>
           </div>

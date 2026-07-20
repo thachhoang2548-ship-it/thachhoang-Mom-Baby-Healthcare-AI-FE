@@ -3,7 +3,7 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthController } from '../../../controllers/authController';
 import { useProfileController } from '../../../controllers/profileController';
 
-import { Calendar, Heart, Baby, Sparkles, LogOut, RefreshCw, Activity, MessageSquare, LayoutDashboard, User, Settings, ShieldCheck, HeartPulse } from 'lucide-react';
+import { Calendar, Heart, Baby, Sparkles, LogOut, RefreshCw, Activity, MessageSquare, LayoutDashboard, User, Settings, ShieldCheck, HeartPulse, Bell } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function AppShell() {
@@ -137,13 +137,18 @@ export default function AppShell() {
     });
 
     items.push({
+      label: 'Thông Báo 🔔',
+      path: '/notifications',
+      icon: Bell,
+      color: 'text-amber-500',
+    });
+
+    items.push({
       label: 'Hồ Sơ Mẹ',
       path: '/profile',
       icon: User,
       color: 'text-momPink',
     });
-
-
 
     return items;
   };

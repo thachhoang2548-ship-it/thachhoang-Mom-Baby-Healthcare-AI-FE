@@ -18,6 +18,17 @@ const alertService = {
     const res = await axiosClient.patch(`/api/alerts/${alertId}/resolve`);
     return res.data;
   },
+
+  sendConsultationMessage: async (targetUserId, message) => {
+    const res = await axiosClient.post("/api/alerts", {
+      targetUserId: targetUserId,
+      type: 0,
+      severity: 10,
+      message: message,
+      channels: ["app"]
+    });
+    return res.data;
+  }
 };
 
 export default alertService;
