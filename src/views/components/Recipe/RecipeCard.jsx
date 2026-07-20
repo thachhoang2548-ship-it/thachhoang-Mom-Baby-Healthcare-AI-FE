@@ -1,5 +1,4 @@
-import React from "react";
-import { Clock, Flame, Bookmark, Sparkles, ChefHat, ShieldCheck } from "lucide-react";
+import { Clock, Flame, Bookmark, Sparkles, ChefHat, ShieldCheck, X } from "lucide-react";
 
 export default function RecipeCard({ recipe, onSave, onView }) {
   const { title, description, nutritionInfo, tags, imageUrl, isSaved } = recipe;
@@ -63,6 +62,11 @@ export default function RecipeCard({ recipe, onSave, onView }) {
           <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/95 text-white shadow-sm flex items-center gap-1">
             <ShieldCheck className="w-3 h-3" />
             Đã duyệt ✓
+          </span>
+        ) : (recipe.status === 'Rejected' || recipe.Status === 'Rejected' || recipe.status === 2 || recipe.Status === 2) ? (
+          <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/95 text-white shadow-sm flex items-center gap-1">
+            <X className="w-3 h-3" />
+            Đã từ chối ✗
           </span>
         ) : (
           <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/95 text-white shadow-sm flex items-center gap-1 animate-pulse">

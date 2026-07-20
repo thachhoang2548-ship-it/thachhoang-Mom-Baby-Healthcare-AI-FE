@@ -79,9 +79,27 @@ export default function RecipePage() {
     }
   };
 
+  // Lọc riêng các món bị từ chối (Rejected)
+  const rejectedRecipes = recipes.filter(
+    (r) =>
+      r.status === "Rejected" ||
+      r.Status === "Rejected" ||
+      r.status === 2 ||
+      r.Status === 2
+  );
+
+  // Các món chưa bị từ chối (Chờ duyệt hoặc Đã duyệt) để hiển thị trong Gợi ý dành cho bạn
+  const recommendedRecipes = recipes.filter(
+    (r) =>
+      r.status !== "Rejected" &&
+      r.Status !== "Rejected" &&
+      r.status !== 2 &&
+      r.Status !== 2
+  );
+
   const displayedRecipes = filterType === "saved" 
     ? recipes.filter(r => r.isSaved) 
-    : recipes;
+    : recommendedRecipes;
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20 font-sans">
@@ -357,6 +375,31 @@ export default function RecipePage() {
                 onView={setSelectedRecipe}
               />
             ))}
+          </div>
+        )}
+
+        {/* Rejected Recipes Section */}
+        {!isGenerating && filterType !== "saved" && rejectedRecipes.length > 0 && (
+          <div className="space-y-4 pt-8 border-t border-gray-200 mt-10">
+            <div className="flex items-center gap-2 text-rose-600">
+              <AlertCircle className="w-5 h-5 flex-shrink-0" />
+              <h2 className="font-extrabold text-sm uppercase tracking-wider">
+                Món ăn bị chuyên gia từ chối ({rejectedRecipes.length})
+              </h2>
+            </div>
+            <p className="text-xs text-gray-500 font-medium">
+              Các công thức này không phù hợp với thể trạng hiện tại của bạn dựa trên đánh giá của chuyên gia y tế.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 opacity-70">
+              {rejectedRecipes.map((recipe) => (
+                <RecipeCard
+                  key={recipe._id}
+                  recipe={recipe}
+                  onSave={toggleSave}
+                  onView={setSelectedRecipe}
+                />
+              ))}
+            </div>
           </div>
         )}
 
