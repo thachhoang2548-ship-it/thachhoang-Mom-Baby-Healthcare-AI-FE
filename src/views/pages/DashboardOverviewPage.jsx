@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthController } from '../../controllers/authController';
 import { useProfileController } from '../../controllers/profileController';
-import { getTierNameVi } from '../../utils/tierHelpers';
 import {
   Heart,
   Calendar,
@@ -19,7 +18,7 @@ import {
 import toast from 'react-hot-toast';
 
 export default function DashboardOverviewPage() {
-  const { user, tier } = useAuthController();
+  const { user } = useAuthController();
   const { journeyStage, momProfile } = useProfileController();
   const navigate = useNavigate();
 
@@ -112,18 +111,6 @@ export default function DashboardOverviewPage() {
             <p className="text-xs text-gray-400 dark:text-gray-405 font-semibold leading-relaxed">
               Chúc mẹ một ngày ngập tràn niềm vui và sức khỏe. Hãy đồng hành cùng Mom Ơi để chăm sóc sức khỏe tốt nhất cho cả mẹ và bé yêu nhé.
             </p>
-          </div>
-
-          <div className="shrink-0 flex items-center gap-3 bg-white/70 dark:bg-gray-900/60 p-4 rounded-3xl border border-white/60 dark:border-gray-850 shadow-sm">
-            <div className="w-10 h-10 rounded-2xl bg-momPurple/15 flex items-center justify-center text-momPurple font-bold">
-              👑
-            </div>
-            <div>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Hội viên hiện tại</p>
-              <h4 className="text-sm font-extrabold text-momPurple-dark dark:text-purple-400 mt-0.5">
-                {getTierNameVi(tier)}
-              </h4>
-            </div>
           </div>
         </div>
       </div>
