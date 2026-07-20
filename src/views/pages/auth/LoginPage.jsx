@@ -74,7 +74,8 @@ export default function LoginPage() {
       }
     } catch (err) {
       console.error(err);
-      setLoginError('Sai tài khoản hoặc mật khẩu. Vui lòng kiểm tra lại!');
+      const serverMsg = err.response?.data?.message || err.response?.data;
+      setLoginError(typeof serverMsg === 'string' ? serverMsg : 'Sai tài khoản hoặc mật khẩu. Vui lòng kiểm tra lại!');
     } finally {
       setLoading(false);
     }
