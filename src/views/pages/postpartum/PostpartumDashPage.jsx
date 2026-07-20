@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useProfileController as useActualProfileController } from '../../../controllers/profileController';
 import postpartumService from '../../../models/services/postpartumService';
 import dailyMonitoringService from '../../../models/services/dailyMonitoringService';
-import FeedingLog from '../../components/postpartum/FeedingLog';
 import TierGate from '../../components/layout/TierGate';
 import { Heart, Activity, Calendar, Sparkles, Smile, ArrowRight, BookOpen, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -355,10 +354,6 @@ export default function PostpartumDashPage() {
         {/* Right column: Breastfeeding & Screening Gated Features */}
         <div className="space-y-6">
           
-          {/* Breastfeeding Tracker (Gated MomHienDai) */}
-          <TierGate requiredTier="MomHienDai">
-            <FeedingLog />
-          </TierGate>
 
           {/* Screening & Dialog Cards */}
           <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-pink-100/50 dark:border-gray-700/50 shadow-sm space-y-4">
@@ -384,20 +379,6 @@ export default function PostpartumDashPage() {
                     <p className="text-[9px] text-gray-500 font-semibold leading-relaxed">Khảo sát 10 câu hỏi chuẩn y khoa để tự đánh giá sức khỏe tâm lý.</p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-pink-500" />
-                </button>
-              </TierGate>
-
-              {/* AI Voice Journal (Gated SuperMomVip) */}
-              <TierGate requiredTier="SuperMomVip">
-                <button
-                  onClick={() => navigate('/postpartum/voice')}
-                  className="w-full flex items-center justify-between p-4 bg-gradient-to-tr from-purple-50/50 to-purple-100/20 hover:from-purple-100/35 border border-momPurple/20 rounded-2xl text-left transition shadow-sm"
-                >
-                  <div className="space-y-0.5 max-w-[200px]">
-                    <h4 className="text-xs font-extrabold text-momPurple-dark">Nhật ký giọng nói AI 🎙️</h4>
-                    <p className="text-[9px] text-gray-500 font-semibold leading-relaxed">Ghi âm cảm xúc và trò chuyện với Gemini để phân tích tâm trạng tức thì.</p>
-                  </div>
-                  <ArrowRight className="w-5 h-5 text-momPurple-dark" />
                 </button>
               </TierGate>
             </div>
