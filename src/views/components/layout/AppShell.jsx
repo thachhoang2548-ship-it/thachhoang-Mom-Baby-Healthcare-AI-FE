@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthController } from '../../../controllers/authController';
 import { useProfileController } from '../../../controllers/profileController';
+import momOiLogo from '../../../assets/Logo/mom-oi-submark-cropped.png';
 
 import { Calendar, Heart, Baby, Sparkles, LogOut, RefreshCw, Activity, MessageSquare, LayoutDashboard, User, Settings, ShieldCheck, HeartPulse, Bell } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -193,11 +194,13 @@ export default function AppShell() {
       {/* Top Header Bar */}
       <header className="sticky top-0 z-30 bg-white/60 dark:bg-gray-900/50 backdrop-blur-xl border-b border-white/50 dark:border-gray-850 py-3.5 px-4 sm:px-8 flex items-center justify-between relative">
         <div onClick={handleLogoClick} className="cursor-pointer flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-momPink to-momPurple flex items-center justify-center text-white shadow-[0_4px_15px_rgba(236,72,153,0.3)] transition-transform duration-300 group-hover:scale-105">
-            <span className="font-extrabold text-sm">MƠ</span>
-          </div>
+          <img
+            src={momOiLogo}
+            alt="Mom Ơi!"
+            className="h-11 w-11 rounded-full object-cover shadow-[0_4px_15px_rgba(236,72,153,0.18)] transition-transform duration-300 group-hover:scale-105"
+          />
           <div>
-            <h1 className="text-base font-extrabold tracking-tight bg-gradient-to-r from-momPink-dark to-momPurple-dark dark:from-pink-400 dark:to-purple-400 bg-clip-text text-transparent">
+            <h1 className="font-brand text-2xl font-extrabold leading-none tracking-normal bg-gradient-to-r from-momPink-dark to-momPurple-dark dark:from-pink-400 dark:to-purple-400 bg-clip-text text-transparent">
               Mom Ơi!
             </h1>
             <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">

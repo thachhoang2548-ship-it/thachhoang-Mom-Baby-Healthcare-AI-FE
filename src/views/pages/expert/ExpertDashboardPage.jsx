@@ -165,8 +165,9 @@ export default function ExpertDashboardPage() {
         try {
           const res = await expertService.getAllRecipes();
           if ((res.isSuccess || res.success) && res.data) {
-            setMomRecipes(res.data.momRecipes || []);
-            setBabyRecipes(res.data.babyRecipes || []);
+            const payload = res.data.momRecipes ? res.data : (res.data.data || {});
+            setMomRecipes(payload.momRecipes || []);
+            setBabyRecipes(payload.babyRecipes || []);
             return;
           }
         } catch {

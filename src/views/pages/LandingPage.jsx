@@ -1,20 +1,99 @@
-import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { useAuthController } from '../../controllers/authController';
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
-  Heart,
-  Calendar,
-  Baby,
-  MessageSquare,
   Activity,
-  Sparkles,
+  Baby,
+  Calendar,
   ChevronRight,
-  TrendingUp,
-  Smile,
+  Heart,
+  MessageSquare,
   ShieldCheck,
-  Star,
-  Users,
+  Sparkles,
+  TrendingUp,
 } from 'lucide-react';
+import { useAuthController } from '../../controllers/authController';
+import babyHeroMascot from '../../assets/baby-hero-mascot.png';
+import momOiLogo from '../../assets/Logo/mom-oi-submark-cropped.png';
+
+function HeroBabyMascot() {
+  const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0, x: 0, y: 0 });
+
+  const handlePointerMove = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const offsetX = (event.clientX - rect.left) / rect.width - 0.5;
+    const offsetY = (event.clientY - rect.top) / rect.height - 0.5;
+
+    setTilt({
+      rotateX: offsetY * -12,
+      rotateY: offsetX * 16,
+      x: offsetX * 14,
+      y: offsetY * 12,
+    });
+  };
+
+  const resetTilt = () => {
+    setTilt({ rotateX: 0, rotateY: 0, x: 0, y: 0 });
+  };
+
+  return (
+    <div
+      className="relative mx-auto flex min-h-[360px] w-full max-w-[520px] items-center justify-center overflow-visible [perspective:1000px] sm:min-h-[460px]"
+      onPointerMove={handlePointerMove}
+      onPointerLeave={resetTilt}
+    >
+      <div className="absolute inset-x-8 bottom-8 h-14 rounded-[50%] bg-[#22332F]/12 blur-2xl" />
+
+      <div
+        className="relative z-10 will-change-transform"
+        style={{
+          transform: `translate3d(${tilt.x}px, ${tilt.y}px, 36px) rotateX(${tilt.rotateX}deg) rotateY(${tilt.rotateY}deg)`,
+          transition: 'transform 140ms ease-out',
+          transformStyle: 'preserve-3d',
+        }}
+      >
+        <img
+          src={babyHeroMascot}
+          alt="Linh vật em bé 3D của Mom Ơi"
+          className="hero-baby-idle w-[300px] select-none drop-shadow-[0_28px_45px_rgba(43,58,50,0.2)] sm:w-[410px] lg:w-[455px]"
+          draggable="false"
+        />
+      </div>
+
+      <div
+        className="absolute left-0 top-16 z-20 flex items-center gap-2 rounded-lg border border-white/80 bg-white/85 px-3 py-2 text-xs font-bold text-[#27564C] shadow-lg shadow-emerald-900/5 backdrop-blur-md"
+        style={{
+          transform: `translate3d(${tilt.x * -0.8}px, ${tilt.y * -0.4}px, 72px)`,
+          transition: 'transform 160ms ease-out',
+        }}
+      >
+        <Activity className="h-4 w-4 text-momGreen" />
+        Theo dõi tăng trưởng
+      </div>
+
+      <div
+        className="absolute right-0 top-28 z-20 flex items-center gap-2 rounded-lg border border-white/80 bg-white/85 px-3 py-2 text-xs font-bold text-[#7A334A] shadow-lg shadow-rose-900/5 backdrop-blur-md"
+        style={{
+          transform: `translate3d(${tilt.x * -0.55}px, ${tilt.y * 0.45}px, 72px)`,
+          transition: 'transform 160ms ease-out',
+        }}
+      >
+        <Heart className="h-4 w-4 text-momPink" />
+        Gợi ý chăm sóc
+      </div>
+
+      <div
+        className="absolute bottom-14 left-8 z-20 flex items-center gap-2 rounded-lg border border-white/80 bg-white/85 px-3 py-2 text-xs font-bold text-[#4B3D73] shadow-lg shadow-violet-900/5 backdrop-blur-md"
+        style={{
+          transform: `translate3d(${tilt.x * 0.65}px, ${tilt.y * -0.5}px, 72px)`,
+          transition: 'transform 160ms ease-out',
+        }}
+      >
+        <MessageSquare className="h-4 w-4 text-momPurple" />
+        AI hỏi đáp 24/7
+      </div>
+    </div>
+  );
+}
 
 export default function LandingPage() {
   const { user } = useAuthController();
@@ -22,255 +101,241 @@ export default function LandingPage() {
 
   const features = [
     {
-      title: 'Hỗ Trợ Thụ Thai Tự Nhiên',
-      desc: 'Theo dõi chu kỳ kinh nguyệt thông minh, dự đoán ngày rụng trứng và gợi ý thời điểm thụ thai lý tưởng cho mami.',
+      title: 'Hỗ trợ thụ thai tự nhiên',
+      desc: 'Theo dõi chu kỳ, dự đoán ngày rụng trứng và gợi ý thời điểm phù hợp cho từng hồ sơ sức khỏe.',
       icon: Calendar,
-      color: 'from-pink-400 to-rose-500',
+      color: 'bg-rose-100 text-rose-600',
       badge: 'Giai đoạn 1',
     },
     {
-      title: 'Chăm Sóc Thai Kỳ Toàn Diện',
-      desc: 'Cập nhật sự phát triển của bé theo tuần, cung cấp thực đơn dinh dưỡng riêng biệt và bài tập Yoga an toàn cho mẹ bầu.',
+      title: 'Chăm sóc thai kỳ',
+      desc: 'Cập nhật phát triển của bé theo tuần, dinh dưỡng cá nhân hóa và nhắc lịch theo dõi quan trọng.',
       icon: Heart,
-      color: 'from-purple-400 to-indigo-500',
+      color: 'bg-violet-100 text-violet-600',
       badge: 'Giai đoạn 2',
     },
     {
-      title: 'Hồi Phục Sau Sinh & Tâm Lý Mẹ',
-      desc: 'Nhật ký phục hồi thể trạng, bài test EPDS giúp phát hiện sớm và phòng tránh trầm cảm sau sinh (PPD).',
-      icon: Smile,
-      color: 'from-emerald-450 to-teal-500',
+      title: 'Hồi phục sau sinh',
+      desc: 'Theo dõi thể trạng, tinh thần và các dấu hiệu cần chú ý để mẹ phục hồi vững vàng hơn.',
+      icon: ShieldCheck,
+      color: 'bg-emerald-100 text-emerald-600',
       badge: 'Giai đoạn 3',
     },
     {
-      title: 'Chăm Sóc & Dinh Dưỡng Cho Bé',
-      desc: 'Theo dõi chỉ số chiều cao, cân nặng, giấc ngủ của bé và gợi ý thực đơn ăn dặm khoa học theo độ tuổi.',
+      title: 'Dinh dưỡng cho bé',
+      desc: 'Lưu hồ sơ tăng trưởng, giấc ngủ và thực đơn ăn dặm khoa học theo từng độ tuổi.',
       icon: Baby,
-      color: 'from-amber-400 to-orange-500',
+      color: 'bg-amber-100 text-amber-600',
       badge: 'Giai đoạn 4',
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FCF8F8] via-[#FFF3F5] to-[#F3EDF7] dark:from-[#0E0C0F] dark:via-[#19111C] dark:to-[#0F0C1B] text-gray-800 dark:text-gray-100 font-sans relative overflow-x-hidden selection:bg-momPink/30">
-      {/* Decorative Blur Messes */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute top-[-10%] left-[-15%] w-[50%] aspect-square rounded-full bg-gradient-to-br from-pink-300/20 to-purple-400/20 blur-[130px]"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] aspect-square rounded-full bg-gradient-to-br from-purple-300/15 to-pink-400/15 blur-[140px]"></div>
-      </div>
-
-      {/* Top Header Bar */}
-      <header className="sticky top-0 z-50 bg-white/40 dark:bg-gray-900/30 backdrop-blur-xl border-b border-white/40 dark:border-gray-850/50 py-4 px-6 sm:px-12 flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-momPink to-momPurple flex items-center justify-center text-white shadow-md">
-            <span className="font-extrabold text-sm">MƠ</span>
+    <div className="min-h-screen overflow-x-hidden bg-[#FFF8F6] text-gray-800 selection:bg-momPink/25">
+      <header className="sticky top-0 z-50 border-b border-rose-100/80 bg-[#FFF8F6]/85 px-5 py-4 backdrop-blur-xl sm:px-10">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <img
+              src={momOiLogo}
+              alt="Mom Ơi!"
+              className="h-12 w-12 rounded-full object-cover shadow-md shadow-rose-200"
+            />
+            <div>
+              <h1 className="font-brand text-2xl font-extrabold leading-none tracking-normal text-[#252033]">
+                Mom Ơi!
+              </h1>
+              <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-gray-400">Mẹ khỏe, bé vui</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-lg font-extrabold tracking-tight bg-gradient-to-r from-momPink-dark to-momPurple-dark dark:from-pink-400 dark:to-purple-400 bg-clip-text text-transparent">
-              Mom Ơi!
-            </h1>
-            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Super-App Cho Mẹ & Bé</p>
-          </div>
-        </div>
 
-        <div className="flex items-center gap-4">
-          {user ? (
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="px-5 py-2.5 bg-gradient-to-r from-momPink to-momPurple text-white text-xs font-bold rounded-full shadow-lg shadow-momPink/20 hover:scale-105 active:scale-95 transition-all duration-300"
-            >
-              Vào Dashboard 🌸
-            </button>
-          ) : (
-            <>
-              <Link
-                to="/login"
-                className="text-xs font-bold text-gray-600 dark:text-gray-300 hover:text-momPink transition-colors"
-              >
-                Đăng nhập
-              </Link>
+          <div className="flex items-center gap-3">
+            {user ? (
               <button
-                onClick={() => navigate('/register')}
-                className="px-5 py-2.5 bg-gradient-to-r from-momPink to-momPurple text-white text-xs font-bold rounded-full shadow-lg shadow-momPink/20 hover:scale-105 active:scale-95 transition-all duration-300"
+                onClick={() => navigate('/dashboard')}
+                className="inline-flex items-center gap-2 rounded-lg bg-gray-950 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-gray-950/10 transition hover:-translate-y-0.5"
               >
-                Đăng ký ngay
+                Dashboard
+                <ChevronRight className="h-4 w-4" />
               </button>
-            </>
-          )}
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="text-xs font-bold text-gray-600 transition hover:text-momPink-dark"
+                >
+                  Đăng nhập
+                </Link>
+                <button
+                  onClick={() => navigate('/register')}
+                  className="inline-flex items-center gap-2 rounded-lg bg-gray-950 px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-gray-950/10 transition hover:-translate-y-0.5"
+                >
+                  Đăng ký
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative max-w-7xl mx-auto px-6 pt-16 pb-20 text-center space-y-8">
-        <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-momPink-light/80 dark:bg-momPink/20 text-momPink-dark dark:text-pink-300">
-          <Sparkles className="w-3.5 h-3.5 text-momPink animate-pulse" /> Trợ lý chẩn đoán AI đồng hành suốt 4 giai đoạn làm mẹ
-        </span>
+      <main>
+        <section className="relative border-b border-rose-100/70 bg-[linear-gradient(135deg,#FFF8F6_0%,#FFF2F5_48%,#EFFAF5_100%)]">
+          <div className="mx-auto grid min-h-[calc(100vh-76px)] max-w-7xl items-center gap-8 px-5 pb-12 pt-10 sm:px-10 lg:grid-cols-[0.95fr_1.05fr] lg:pb-16">
+            <div className="relative z-10 max-w-2xl text-center lg:text-left">
+              <span className="inline-flex items-center gap-2 rounded-lg border border-rose-100 bg-white/75 px-3 py-2 text-[11px] font-black uppercase tracking-[0.14em] text-momPink-dark shadow-sm">
+                <Sparkles className="h-4 w-4" />
+                Trợ lý AI cho mẹ và bé
+              </span>
 
-        <h1 className="text-4xl sm:text-6xl font-extrabold text-gray-900 dark:text-white leading-tight tracking-tight max-w-4xl mx-auto font-display">
-          Chăm Sóc Sức Khỏe Mẹ & Bé Khỏe Mạnh Với{' '}
-          <span className="bg-gradient-to-r from-momPink via-rose-500 to-momPurple bg-clip-text text-transparent">Trí Tuệ Nhân Tạo AI</span>
-        </h1>
+              <h2 className="mt-6 text-4xl font-black leading-[1.05] tracking-tight text-gray-950 sm:text-6xl">
+                Chăm sóc mẹ và bé dễ hơn mỗi ngày
+              </h2>
 
-        <p className="text-xs sm:text-sm text-gray-505 dark:text-gray-400 font-semibold max-w-2xl mx-auto leading-relaxed">
-          Mom Ơi! là siêu ứng dụng cá nhân hóa trọn vẹn từ lúc mẹ chuẩn bị mang thai, theo dõi thai kỳ, hồi phục thể trạng sau sinh cho đến việc chăm sóc dinh dưỡng từng ngày cho bé yêu.
-        </p>
+              <p className="mx-auto mt-5 max-w-xl text-sm font-semibold leading-7 text-gray-600 sm:text-base lg:mx-0">
+                Mom Ơi! giúp mẹ theo dõi hành trình thụ thai, thai kỳ, sau sinh và dinh dưỡng cho bé trong một không gian nhẹ nhàng, cá nhân hóa và dễ dùng trên điện thoại.
+              </p>
 
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-4 pt-4">
-          {user ? (
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-momPink to-momPurple text-white text-sm font-bold rounded-full shadow-xl hover:shadow-momPink/25 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2"
-            >
-              <span>Vào trang quản trị</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={() => navigate('/register')}
-                className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-momPink to-momPurple text-white text-sm font-bold rounded-full shadow-xl hover:shadow-momPink/25 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center justify-center gap-2"
-              >
-                <span>Bắt đầu miễn phí ngay</span>
-                <ChevronRight className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => navigate('/login')}
-                className="w-full sm:w-auto px-8 py-4 bg-white/80 dark:bg-gray-900/60 hover:bg-white dark:hover:bg-gray-900 border border-white/60 dark:border-gray-850 text-gray-700 dark:text-gray-200 text-sm font-bold rounded-full shadow-sm hover:scale-105 active:scale-95 transition-all duration-300"
-              >
-                Đăng nhập tài khoản
-              </button>
-            </>
-          )}
-        </div>
-      </section>
+              <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row lg:items-start">
+                <button
+                  onClick={() => navigate(user ? '/dashboard' : '/register')}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#F05F82] px-6 py-4 text-sm font-black text-white shadow-xl shadow-rose-300/40 transition hover:-translate-y-0.5 sm:w-auto"
+                >
+                  {user ? 'Vào dashboard' : 'Bắt đầu miễn phí'}
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+                {!user && (
+                  <button
+                    onClick={() => navigate('/login')}
+                    className="inline-flex w-full items-center justify-center rounded-lg border border-gray-200 bg-white/80 px-6 py-4 text-sm font-black text-gray-700 shadow-sm transition hover:-translate-y-0.5 hover:bg-white sm:w-auto"
+                  >
+                    Tôi đã có tài khoản
+                  </button>
+                )}
+              </div>
 
-      {/* Modules Overview */}
-      <section className="max-w-7xl mx-auto px-6 py-16 space-y-12">
-        <div className="text-center space-y-2">
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white font-display">
-            Giải Pháp Cải Thiện Sức Khỏe Cho 4 Giai Đoạn Vàng
-          </h2>
-          <p className="text-xs text-gray-450 dark:text-gray-400 font-semibold max-w-lg mx-auto">
-            Hệ sinh thái tính năng được thiết kế chuyên biệt để hỗ trợ mẹ trong từng bước đi nhỏ nhất.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {features.map((feat) => {
-            const Icon = feat.icon;
-            return (
-              <div
-                key={feat.title}
-                className="bg-white/40 dark:bg-gray-850/20 backdrop-blur-md p-6 rounded-[2rem] border border-white/60 dark:border-gray-800/80 shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300 flex flex-col justify-between"
-              >
-                <div className="space-y-4">
-                  <span className="inline-block text-[9px] font-bold text-momPink bg-momPink-light/60 dark:bg-momPink/25 px-2.5 py-0.5 rounded-full uppercase">
-                    {feat.badge}
-                  </span>
-                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-tr ${feat.color} flex items-center justify-center text-white shadow-md`}>
-                    <Icon className="w-6 h-6" />
+              <div className="mt-9 grid grid-cols-3 gap-3 text-left">
+                {[
+                  ['4', 'giai đoạn chăm sóc'],
+                  ['24/7', 'AI đồng hành'],
+                  ['98%', 'phản hồi hữu ích'],
+                ].map(([value, label]) => (
+                  <div key={label} className="rounded-lg border border-white/80 bg-white/65 p-3 shadow-sm backdrop-blur">
+                    <p className="text-xl font-black text-gray-950">{value}</p>
+                    <p className="mt-1 text-[10px] font-bold uppercase leading-4 tracking-wide text-gray-400">{label}</p>
                   </div>
-                  <h3 className="text-sm font-extrabold text-gray-900 dark:text-white leading-snug">
-                    {feat.title}
-                  </h3>
-                  <p className="text-[11px] text-gray-505 dark:text-gray-400 font-semibold leading-relaxed">
-                    {feat.desc}
-                  </p>
+                ))}
+              </div>
+            </div>
+
+            <HeroBabyMascot />
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-5 py-14 sm:px-10">
+          <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-momPink-dark">Hệ sinh thái chăm sóc</p>
+              <h2 className="mt-2 text-2xl font-black tracking-tight text-gray-950 sm:text-3xl">
+                Theo sát từng giai đoạn của mẹ và bé
+              </h2>
+            </div>
+            <p className="max-w-md text-sm font-semibold leading-6 text-gray-500">
+              Các module được thiết kế để dùng nhanh trên mobile, dễ quét thông tin và không làm mẹ bị quá tải.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {features.map((feature) => {
+              const Icon = feature.icon;
+              return (
+                <article
+                  key={feature.title}
+                  className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                >
+                  <div className="mb-5 flex items-center justify-between gap-3">
+                    <div className={`flex h-11 w-11 items-center justify-center rounded-lg ${feature.color}`}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <span className="rounded-md bg-gray-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-gray-500">
+                      {feature.badge}
+                    </span>
+                  </div>
+                  <h3 className="text-base font-black text-gray-950">{feature.title}</h3>
+                  <p className="mt-3 text-sm font-semibold leading-6 text-gray-500">{feature.desc}</p>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="bg-white">
+          <div className="mx-auto grid max-w-7xl gap-8 px-5 py-14 sm:px-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-lg bg-violet-50 px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-violet-600">
+                <Sparkles className="h-4 w-4" />
+                AI hỗ trợ sàng lọc
+              </span>
+              <h2 className="mt-5 text-3xl font-black tracking-tight text-gray-950">
+                Hỏi nhanh các dấu hiệu sức khỏe thường gặp
+              </h2>
+              <p className="mt-4 text-sm font-semibold leading-7 text-gray-500">
+                Mẹ có thể mô tả triệu chứng hoặc tải ảnh để nhận gợi ý chăm sóc ban đầu, sau đó quyết định khi nào cần gặp chuyên gia.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <span className="inline-flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700">
+                  <ShieldCheck className="h-4 w-4" />
+                  Bảo mật hồ sơ
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-lg bg-rose-50 px-3 py-2 text-xs font-black text-rose-700">
+                  <TrendingUp className="h-4 w-4" />
+                  Theo dõi tiến triển
+                </span>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-gray-100 bg-[#F8FBFA] p-4 shadow-sm">
+              <div className="rounded-lg bg-white p-4">
+                <div className="mb-4 flex items-center gap-3 border-b border-gray-100 pb-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600">
+                    <MessageSquare className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-gray-950">Trợ lý Mom Ơi</h3>
+                    <p className="text-xs font-semibold text-gray-400">Phản hồi tham khảo, không thay thế bác sĩ</p>
+                  </div>
+                </div>
+                <div className="space-y-3 text-sm font-semibold leading-6">
+                  <div className="ml-auto max-w-[82%] rounded-lg bg-gray-100 p-3 text-gray-700">
+                    Bé bị nổi mẩn nhẹ ở má, mẹ nên theo dõi gì?
+                  </div>
+                  <div className="max-w-[90%] rounded-lg bg-emerald-50 p-3 text-emerald-800">
+                    Mẹ nên giữ vùng da sạch, tránh sản phẩm có hương liệu và theo dõi sốt, lan rộng hoặc bé quấy khóc nhiều. Nếu có dấu hiệu nặng, hãy đưa bé đi khám.
+                  </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* AI Integrated Features */}
-      <section className="max-w-7xl mx-auto px-6 py-16">
-        <div className="bg-gradient-to-r from-momPink/5 via-momPurple/5 to-pink-100/5 dark:from-momPink/5 dark:to-transparent border border-white/50 dark:border-gray-850 p-8 sm:p-12 rounded-[3rem] shadow-[0_8px_30px_rgb(0,0,0,0.01)] backdrop-blur-md flex flex-col lg:flex-row items-center justify-between gap-10">
-          <div className="space-y-6 max-w-xl">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-momPurple/10 text-momPurple-dark dark:text-purple-300">
-              <Sparkles className="w-3.5 h-3.5 text-momPurple" /> Tích Hợp AI Chuyên Sâu
-            </span>
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-gray-900 dark:text-white leading-tight font-display">
-              Chẩn Đoán Sức Khỏe AI Nhanh Chóng & Chuẩn Xác
-            </h2>
-            <p className="text-xs sm:text-sm text-gray-505 dark:text-gray-400 font-semibold leading-relaxed">
-              Nhờ sự trợ giúp đắc lực của công nghệ AI, mẹ có thể tải lên hình ảnh hoặc mô tả dấu hiệu sức khỏe bất thường của cả mẹ và bé (như phát ban, chàm sữa, rôm sảy) để nhận gợi ý chăm sóc sơ bộ và định hướng chuyên khoa tức thì 24/7.
-            </p>
-            <div className="flex gap-4">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-momGreen" />
-                <span className="text-xs font-bold text-gray-700 dark:text-gray-200">An toàn & Bảo mật</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-momPink" />
-                <span className="text-xs font-bold text-gray-700 dark:text-gray-200">Thông tin chuẩn y tế</span>
-              </div>
             </div>
           </div>
+        </section>
 
-          <div className="w-full lg:w-96 bg-white/70 dark:bg-gray-900/60 p-6 rounded-[2.5rem] border border-white/60 dark:border-gray-850 shadow-md space-y-4">
-            <div className="flex items-center gap-3 pb-3 border-b border-gray-100 dark:border-gray-800">
-              <div className="w-9 h-9 rounded-full bg-emerald-100 text-momGreen flex items-center justify-center font-bold">
-                🩺
-              </div>
-              <div>
-                <h4 className="text-xs font-extrabold text-gray-800 dark:text-white">Chẩn đoán triệu chứng AI</h4>
-                <p className="text-[9px] text-gray-400 font-semibold">Phân tích dấu hiệu sức khỏe</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="p-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-2xl rounded-tr-sm text-[10px] font-bold max-w-[85%] ml-auto">
-                📸 [Tải lên ảnh má bé bị phát ban đỏ]
-              </div>
-              <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 rounded-2xl rounded-tl-sm text-[10px] font-bold max-w-[90%]">
-                Mami thân mến! Hình ảnh gợi ý dấu hiệu của chàm sữa nhẹ. Mẹ nên vệ sinh má bé sạch sẽ bằng nước ấm, tránh các sản phẩm tắm rửa chứa chất kích ứng và duy trì độ ẩm cho bé nhé.
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+        <section className="mx-auto max-w-4xl px-5 py-16 text-center sm:px-10">
+          <h2 className="text-3xl font-black tracking-tight text-gray-950">
+            Sẵn sàng đồng hành cùng bé cưng?
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-sm font-semibold leading-7 text-gray-500">
+            Bắt đầu với hồ sơ sức khỏe của mẹ và bé để nhận các gợi ý cá nhân hóa hơn.
+          </p>
+          <button
+            onClick={() => navigate(user ? '/dashboard' : '/register')}
+            className="mt-7 inline-flex items-center justify-center gap-2 rounded-lg bg-gray-950 px-7 py-4 text-sm font-black text-white shadow-xl shadow-gray-950/10 transition hover:-translate-y-0.5"
+          >
+            {user ? 'Tiếp tục chăm sóc' : 'Tạo tài khoản'}
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </section>
+      </main>
 
-      {/* Statistics Section */}
-      <section className="max-w-7xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 bg-white/20 dark:bg-gray-900/10 backdrop-blur-md border border-white/40 dark:border-gray-850 p-8 rounded-[2.5rem] shadow-sm text-center">
-          <div className="space-y-1">
-            <h4 className="text-2xl sm:text-3xl font-black text-momPink">10,000+</h4>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Mẹ bầu tin dùng</p>
-          </div>
-          <div className="space-y-1">
-            <h4 className="text-2xl sm:text-3xl font-black text-momPurple">98%</h4>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">AI Phản hồi hữu ích</p>
-          </div>
-          <div className="space-y-1">
-            <h4 className="text-2xl sm:text-3xl font-black text-momGreen">24/7</h4>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tư vấn y tế tức thì</p>
-          </div>
-          <div className="space-y-1">
-            <h4 className="text-2xl sm:text-3xl font-black text-momAmber">4.9 ★</h4>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Đánh giá hài lòng</p>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Final */}
-      <section className="max-w-4xl mx-auto px-6 py-20 text-center space-y-6">
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white font-display">
-          Đồng Hành Cùng Bé Cưng Khôn Lớn Mỗi Ngày!
-        </h2>
-        <p className="text-xs text-gray-505 dark:text-gray-400 font-semibold max-w-xl mx-auto">
-          Nhận thông tin chu kỳ thụ thai, nhật ký thai kỳ, thực đơn ăn dặm khoa học và trợ lý chẩn đoán triệu chứng AI ngay hôm nay.
-        </p>
-        <button
-          onClick={() => navigate('/register')}
-          className="px-10 py-4 bg-gradient-to-r from-momPink to-momPurple text-white text-sm font-extrabold rounded-full shadow-xl hover:shadow-momPink/30 hover:scale-105 active:scale-95 transition-all duration-300"
-        >
-          Đăng Ký Tài Khoản Ngay 🌸
-        </button>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-gray-150 dark:border-gray-850 bg-white/20 dark:bg-gray-950/20 backdrop-blur-md py-8 text-center text-[10px] text-gray-450 font-bold">
-        <p>© 2026 Mom Ơi! - Trợ Lý Chăm Sóc Sức Khỏe Mẹ và Bé Toàn Diện Bằng AI. Bảo lưu mọi quyền.</p>
+      <footer className="border-t border-rose-100 bg-white/70 py-7 text-center text-xs font-bold text-gray-400">
+        © 2026 Mom Ơi! Trợ lý chăm sóc sức khỏe mẹ và bé bằng AI.
       </footer>
     </div>
   );

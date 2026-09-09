@@ -17,6 +17,7 @@ export default {
       },
       fontFamily: {
         display: ["Manrope", "sans-serif"],
+        brand: ['"Baloo 2"', "Manrope", "sans-serif"],
       },
       borderRadius: {
         DEFAULT: "1rem",

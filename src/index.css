@@ -99,10 +99,29 @@ body {
   to { transform: translateY(0); opacity: 1; }
 }
 
+@keyframes hero-baby-idle {
+  0%, 100% {
+    transform: translateY(0) rotateZ(-0.7deg);
+  }
+  50% {
+    transform: translateY(-10px) rotateZ(0.7deg);
+  }
+}
+
 .animate-fade-in {
   animation: fade-in 0.3s ease-out forwards;
 }
 
 .animate-slide-in {
   animation: slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.hero-baby-idle {
+  animation: hero-baby-idle 4.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-baby-idle {
+    animation: none;
+  }
 }
