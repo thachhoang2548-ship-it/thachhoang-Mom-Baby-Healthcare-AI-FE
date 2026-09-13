@@ -4,6 +4,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { ArrowLeft, RefreshCw, Calendar, Check, BookOpen, Clock, Flame, Award, ChevronRight, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import babyService from '../../../models/services/babyService';
+import ScientificEvidenceFooter from '../../components/common/ScientificEvidenceFooter';
 
 const mapFastApiRecipe = (slotName, recipe, timeStr, emojiStr) => {
   if (!recipe) return null;
@@ -535,6 +536,9 @@ export default function BabyMenuPage() {
           <p className="text-[10px] text-gray-400 font-semibold">Chưa ghi nhận lịch sử ăn dặm nào trước đó của bé.</p>
         </div>
       )}
+
+      {/* BẢO CHỨNG KHOA HỌC THỰC ĐƠN ĂN DẶM AI (NGHIÊN CỨU FPT / WHO / USDA) */}
+      <ScientificEvidenceFooter variant="menu-addon" />
 
       {/* RECIPE DETAIL MODAL */}
       {selectedRecipe && (

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useProfileController } from "../../controllers/profileController";
 import { useAuthController } from "../../controllers/authController";
-import { Heart, Activity, Calendar, Baby, ArrowLeft, Save, Sparkles } from "lucide-react";
+import { getTierNameVi } from "../../utils/tierHelpers";
+import { Heart, Activity, Calendar, Baby, ArrowLeft, Save, Sparkles, ChevronRight, Award } from "lucide-react";
 import toast from "react-hot-toast";
 
 // Helper to format Date objects to YYYY-MM-DD for input elements
@@ -21,7 +22,7 @@ const COMMON_CONDITIONS = ["Cao huyết áp", "Thiếu máu", "Suy nhược", "D
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { user } = useAuthController();
+  const { user, tier } = useAuthController();
   const { momProfile, fetchProfile, updateProfile, updateWeightLog, isLoading } = useProfileController();
 
   // Local Form States
@@ -198,6 +199,35 @@ export default function ProfilePage() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         
+        {/* Card 0: Gói dịch vụ & Quyền lợi hội viên */}
+        <div className="bg-gradient-to-br from-pink-50/70 via-purple-50/40 to-white dark:from-gray-800 dark:to-gray-850 rounded-3xl border border-pink-100 dark:border-gray-700/60 p-5 sm:p-6 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-momPink to-momPurple flex items-center justify-center text-2xl text-white shadow-md">
+              💎
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                  Gói dịch vụ hiện tại
+                </span>
+                <span className="text-[10px] bg-momPink-light/80 dark:bg-momPink/30 text-momPink-dark dark:text-pink-300 px-2 py-0.5 rounded-full font-extrabold">
+                  Đang kích hoạt
+                </span>
+              </div>
+              <h3 className="text-base sm:text-lg font-black text-gray-900 dark:text-white mt-0.5">
+                {getTierNameVi(tier)}
+              </h3>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/upgrade")}
+            className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-momPink to-momPurple text-white text-xs font-bold shadow-md hover:shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 shrink-0"
+          >
+            <Sparkles className="w-4 h-4" /> Nâng cấp đặc quyền <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
         {/* Card 1: Giai đoạn hành trình */}
         <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700/60 p-6 shadow-sm space-y-4">
           <h3 className="font-extrabold text-sm text-gray-900 dark:text-white uppercase tracking-wider flex items-center gap-2">

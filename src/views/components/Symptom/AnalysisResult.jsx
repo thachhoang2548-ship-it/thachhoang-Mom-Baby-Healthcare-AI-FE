@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { AlertTriangle, CheckCircle2, Leaf, Stethoscope, Info, ArrowRight, ShieldAlert } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Leaf, Stethoscope, Info, ArrowRight, ShieldAlert, Phone } from "lucide-react";
+import DoctorConsultationCard from "./DoctorConsultationCard";
 
 export default function AnalysisResult({ analysis }) {
   if (!analysis) return null;
@@ -96,15 +97,24 @@ export default function AnalysisResult({ analysis }) {
 
       {/* Section F: See Doctor Referral */}
       {shouldSeeDoctor && (
-        <div className="bg-red-50/50 border-2 border-red-200/60 rounded-3xl p-5 flex items-start gap-3.5 shadow-sm">
-          <Stethoscope className="w-6 h-6 text-red-500 mt-0.5 flex-shrink-0" />
-          <div>
-            <h4 className="font-bold text-sm text-red-900">Khuyến nghị gặp chuyên gia y tế</h4>
-            <p className="text-xs text-red-800 font-semibold mt-1">
-              Bạn nên sắp xếp lịch khám hoặc tư vấn trực tiếp với bác sĩ chuyên khoa:{" "}
-              <span className="underline font-bold text-red-950">{specialistType || "Đa khoa / Phù hợp"}</span>
-            </p>
+        <div className="bg-red-50/70 border-2 border-red-200/90 rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 shadow-sm">
+          <div className="flex items-start gap-3.5">
+            <Stethoscope className="w-6 h-6 text-red-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <h4 className="font-bold text-sm text-red-900">Khuyến nghị gặp chuyên gia y tế</h4>
+              <p className="text-xs text-red-800 font-semibold mt-1">
+                Bạn nên sắp xếp lịch khám hoặc tư vấn trực tiếp với bác sĩ chuyên khoa:{" "}
+                <span className="underline font-bold text-red-950">{specialistType || "Đa khoa / Sản - Nhi"}</span>
+              </p>
+            </div>
           </div>
+          <a
+            href="tel:0985544534"
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs font-bold rounded-full shadow-sm flex-shrink-0 transition-all"
+          >
+            <Phone className="w-3.5 h-3.5 animate-pulse" />
+            <span>Gọi BS. Thu ngay (0985 544 534)</span>
+          </a>
         </div>
       )}
 
@@ -183,22 +193,30 @@ export default function AnalysisResult({ analysis }) {
                 ))}
               </ul>
             </div>
-
-
           </div>
         )}
 
       </div>
 
+      {/* Section: Doctor Consultation & Verification Card */}
+      <DoctorConsultationCard
+        variant="full"
+        urgent={shouldSeeDoctor || urgencyText === "Khẩn cấp" || urgencyText === "Cao"}
+      />
+
       {/* Section G: Disclaimer */}
-      {disclaimer && (
-        <div className="bg-gray-100 rounded-2xl p-4 border border-gray-200/40">
-          <p className="text-[10px] text-gray-400 font-bold leading-relaxed flex gap-2">
-            <ShieldAlert className="w-4.5 h-4.5 text-gray-400 flex-shrink-0 mt-0.5" />
-            <span className="italic">{disclaimer}</span>
+      <div className="bg-gray-100 rounded-2xl p-4 border border-gray-200/60">
+        <div className="flex gap-2.5 items-start">
+          <ShieldAlert className="w-4.5 h-4.5 text-gray-500 flex-shrink-0 mt-0.5" />
+          <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+            <strong className="text-gray-700">Tuyên bố miễn trừ trách nhiệm y tế: </strong>
+            <span className="italic">
+              {disclaimer || "Thông tin này chỉ mang tính chất gợi ý tham khảo và không thay thế cho lời khuyên, chẩn đoán hoặc điều trị y tế chuyên nghiệp."}
+            </span>{" "}
+            Chủ đề sức khỏe mẹ & bé là lĩnh vực nhạy cảm, bạn hãy liên hệ trực tiếp với <strong>BS. Thu (0985 544 534)</strong> hoặc cơ sở y tế uy tín để được chẩn đoán và điều trị chính xác nhất.
           </p>
         </div>
-      )}
+      </div>
 
     </div>
   );

@@ -5,6 +5,15 @@ import autoprefixer from 'autoprefixer'
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    proxy: {
+      '/sepay-api': {
+        target: 'https://my.sepay.vn',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/sepay-api/, ''),
+      },
+    },
+  },
   css: {
     postcss: {
       plugins: [tailwindcss(), autoprefixer()],

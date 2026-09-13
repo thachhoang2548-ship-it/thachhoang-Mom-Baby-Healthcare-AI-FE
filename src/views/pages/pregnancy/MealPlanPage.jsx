@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useProfileController } from '../../../controllers/profileController';
 import pregnancyService from '../../../models/services/pregnancyService';
 import TierGate from '../../components/layout/TierGate';
+import ScientificEvidenceFooter from '../../components/common/ScientificEvidenceFooter';
 import { ArrowLeft, Utensils, Award, Smile, CheckCircle, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -176,6 +177,9 @@ export default function MealPlanPage() {
 
         </div>
       </TierGate>
+
+      {/* BẢO CHỨNG KHOA HỌC THỰC ĐƠN THAI KỲ (WHO & USDA) */}
+      <ScientificEvidenceFooter variant="menu-addon" />
 
     </div>
   );

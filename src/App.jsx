@@ -18,6 +18,8 @@ import PregnancyDashPage from "./views/pages/pregnancy/PregnancyDashPage";
 import MealPlanPage from "./views/pages/pregnancy/MealPlanPage";
 import ExercisePlanPage from "./views/pages/pregnancy/ExercisePlanPage";
 import ProfilePage from "./views/pages/ProfilePage";
+import UpgradePage from "./views/pages/UpgradePage";
+import PaymentPage from "./views/pages/PaymentPage";
 
 // Role Portals (Admin, Expert, Staff)
 import AdminDashboardPage from "./views/pages/admin/AdminDashboardPage";
@@ -97,6 +99,11 @@ function AppContent() {
           <Route path="/baby/menu" element={<Navigate to="/baby-nutrition/menu" replace />} />
           <Route path="/baby/growth" element={<Navigate to="/baby-nutrition/growth" replace />} />
 
+          {/* Subscription & Membership Upgrade */}
+          <Route path="/upgrade" element={<UpgradePage />} />
+          <Route path="/subscription" element={<Navigate to="/upgrade" replace />} />
+          <Route path="/payment" element={<PaymentPage />} />
+          <Route path="/checkout" element={<Navigate to="/payment" replace />} />
           <Route path="/profile" element={<ProfilePage />} />
 
           {/* Role Portals (Admin, Expert, Staff) */}

@@ -14,6 +14,7 @@ import {
 import { useAuthController } from '../../controllers/authController';
 import babyHeroMascot from '../../assets/baby-hero-mascot.png';
 import momOiLogo from '../../assets/Logo/mom-oi-submark-cropped.png';
+import ScientificEvidenceFooter from '../components/common/ScientificEvidenceFooter';
 
 function HeroBabyMascot() {
   const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0, x: 0, y: 0 });
@@ -334,9 +335,8 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-rose-100 bg-white/70 py-7 text-center text-xs font-bold text-gray-400">
-        © 2026 Mom Ơi! Trợ lý chăm sóc sức khỏe mẹ và bé bằng AI.
-      </footer>
+      {/* FOOTER BẢO CHỨNG KHOA HỌC & BÀI BÁO NGHIÊN CỨU */}
+      <ScientificEvidenceFooter variant="full" />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useRecipeController } from "../../controllers/recipeController";
 import ProfileBadge from "../components/recipe/ProfileBadge";
 import RecipeCard from "../components/recipe/RecipeCard";
 import RecipeDetailModal from "../components/recipe/RecipeDetailModal";
+import ScientificEvidenceFooter from "../components/common/ScientificEvidenceFooter";
 import { SlidersHorizontal, Plus, X, ChefHat, Sparkles, AlertCircle, RefreshCw } from "lucide-react";
 
 export default function RecipePage() {
@@ -402,6 +403,9 @@ export default function RecipePage() {
             </div>
           </div>
         )}
+
+        {/* BẢO CHỨNG KHOA HỌC CHO THỰC ĐƠN AI (WHO / USDA / FPT RESEARCH) */}
+        <ScientificEvidenceFooter variant="menu-addon" />
 
       </div>
 

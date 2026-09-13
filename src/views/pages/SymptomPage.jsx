@@ -2,8 +2,9 @@ import React, { useEffect, useRef } from "react";
 import { useSymptomController } from "../../controllers/symptomController";
 import ImageDropzone from "../components/symptom/ImageDropzone";
 import AnalysisResult from "../components/symptom/AnalysisResult";
+import DoctorConsultationCard from "../components/symptom/DoctorConsultationCard";
 import { Link } from "react-router-dom";
-import { Stethoscope, History, Sparkles, RefreshCw, ArrowRight } from "lucide-react";
+import { Stethoscope, History, Sparkles, RefreshCw } from "lucide-react";
 
 export default function SymptomPage() {
   const {
@@ -11,7 +12,6 @@ export default function SymptomPage() {
     isAnalyzing,
     uploadedImage,
     textDescription,
-    error,
     setTextDescription,
     setUploadedImage,
     removeImage,
@@ -76,6 +76,9 @@ export default function SymptomPage() {
             Lịch sử ({useSymptomController.getState().history.length || "Xem"})
           </Link>
         </header>
+
+        {/* Doctor Advisory & Authenticity Trust Banner */}
+        <DoctorConsultationCard variant="banner" />
 
         {/* Input Form Card */}
         <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-5">

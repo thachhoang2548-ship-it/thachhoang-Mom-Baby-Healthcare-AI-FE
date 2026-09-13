@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthController } from '../../controllers/authController';
 import { useProfileController } from '../../controllers/profileController';
+import { getTierNameVi } from '../../utils/tierHelpers';
 import {
   Heart,
   Calendar,
@@ -18,7 +19,7 @@ import {
 import toast from 'react-hot-toast';
 
 export default function DashboardOverviewPage() {
-  const { user } = useAuthController();
+  const { user, tier } = useAuthController();
   const { journeyStage, momProfile } = useProfileController();
   const navigate = useNavigate();
 
@@ -111,6 +112,25 @@ export default function DashboardOverviewPage() {
             <p className="text-xs text-gray-400 dark:text-gray-405 font-semibold leading-relaxed">
               Chúc mẹ một ngày ngập tràn niềm vui và sức khỏe. Hãy đồng hành cùng Mom Ơi để chăm sóc sức khỏe tốt nhất cho cả mẹ và bé yêu nhé.
             </p>
+          </div>
+
+          {/* User Membership Status Badge */}
+          <div
+            onClick={() => navigate('/upgrade')}
+            className="shrink-0 flex items-center gap-3.5 bg-white/85 dark:bg-gray-900/80 backdrop-blur-xl p-4 px-5 rounded-3xl border border-white/80 dark:border-gray-800 shadow-[0_4px_20px_-4px_rgba(236,72,153,0.12)] hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer group"
+          >
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-pink-500/15 via-purple-500/15 to-pink-500/20 dark:from-pink-500/25 dark:to-purple-500/25 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">
+              👑
+            </div>
+            <div>
+              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                Gói hội viên <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" />
+              </p>
+              <h4 className="text-sm font-black text-momPurple-dark dark:text-purple-300 mt-0.5 group-hover:text-momPink transition-colors">
+                {getTierNameVi(tier)}
+              </h4>
+            </div>
+            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-momPink group-hover:translate-x-0.5 transition-all ml-1" />
           </div>
         </div>
       </div>

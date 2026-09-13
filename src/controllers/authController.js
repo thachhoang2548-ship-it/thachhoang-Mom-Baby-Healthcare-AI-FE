@@ -94,16 +94,17 @@ export const useAuthController = create((set, get) => ({
 
   upgradeTier: async (targetTier) => {
     let tierVal = targetTier;
-    if (targetTier === 'MomHienDai') tierVal = 1;
-    if (targetTier === 'SuperMomVip') tierVal = 2;
+    if (targetTier === 'Free' || targetTier === 0) tierVal = 0;
+    else if (targetTier === 'MomHienDai' || targetTier === 1) tierVal = 1;
+    else if (targetTier === 'SuperMomVip' || targetTier === 2) tierVal = 2;
 
     const response = await axiosClient.post(`/api/user-profile/upgrade?tier=${tierVal}`);
-    if (response.data.isSuccess && response.data.data) {
+    if (response.data && (response.data.isSuccess || response.data.success) && response.data.data) {
       const userRes = response.data.data;
-      const tierName = mapTier(userRes.tier);
+      const tierName = mapTier(userRes.tier !== undefined ? userRes.tier : tierVal);
 
       const currentUser = get().user || {};
-      const updatedUser = { ...currentUser, id: userRes.id, email: userRes.email, tier: userRes.tier };
+      const updatedUser = { ...currentUser, id: userRes.id, email: userRes.email, tier: userRes.tier ?? tierVal };
 
       localStorage.setItem('user', JSON.stringify(updatedUser));
       localStorage.setItem('tier', tierName);
@@ -112,6 +113,13 @@ export const useAuthController = create((set, get) => ({
         user: updatedUser,
         tier: tierName,
       });
+
+      // Tự động làm mới JWT token để cập nhật claim "tier" đồng bộ với SubscriptionTierMiddleware phía Backend
+      try {
+        await get().refreshTokenAction();
+      } catch (refreshErr) {
+        console.warn('Làm mới token sau nâng cấp không thành công:', refreshErr);
+      }
     }
     return response.data;
   },

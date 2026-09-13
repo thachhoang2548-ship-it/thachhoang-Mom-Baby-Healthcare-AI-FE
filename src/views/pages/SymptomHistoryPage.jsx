@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useSymptomController } from "../../controllers/symptomController";
 import { Link } from "react-router-dom";
 import { ChevronLeft, Calendar, FileImage, ShieldAlert } from "lucide-react";
+import DoctorConsultationCard from "../components/symptom/DoctorConsultationCard";
 
 export default function SymptomHistoryPage() {
   const { history, fetchHistory } = useSymptomController();
@@ -74,6 +75,9 @@ export default function SymptomHistoryPage() {
             </span>
           </div>
         </header>
+
+        {/* Doctor Advisory Trust Banner */}
+        <DoctorConsultationCard variant="banner" />
 
         {/* History List */}
         {history.length === 0 ? (

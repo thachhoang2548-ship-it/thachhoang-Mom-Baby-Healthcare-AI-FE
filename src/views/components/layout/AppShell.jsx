@@ -3,8 +3,9 @@ import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthController } from '../../../controllers/authController';
 import { useProfileController } from '../../../controllers/profileController';
 import momOiLogo from '../../../assets/Logo/mom-oi-submark-cropped.png';
+import { getTierNameVi } from '../../../utils/tierHelpers';
 
-import { Calendar, Heart, Baby, Sparkles, LogOut, RefreshCw, Activity, MessageSquare, LayoutDashboard, User, Settings, ShieldCheck, HeartPulse, Bell } from 'lucide-react';
+import { Calendar, Heart, Baby, Sparkles, LogOut, RefreshCw, Activity, MessageSquare, LayoutDashboard, User, Settings, ShieldCheck, HeartPulse, Bell, Microscope, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function AppShell() {
@@ -145,6 +146,13 @@ export default function AppShell() {
     });
 
     items.push({
+      label: 'Gói Dịch Vụ ✨',
+      path: '/upgrade',
+      icon: Sparkles,
+      color: 'text-amber-500',
+    });
+
+    items.push({
       label: 'Hồ Sơ Mẹ',
       path: '/profile',
       icon: User,
@@ -181,7 +189,7 @@ export default function AppShell() {
     if (isAdmin) return 'Quản Trị Viên';
     if (isExpert) return 'Chuyên Gia';
     if (isStaff) return 'Nhân Viên';
-    return 'Thành Viên';
+    return getTierNameVi(tier);
   };
 
   return (
@@ -270,24 +278,71 @@ export default function AppShell() {
                 {user.email}
               </p>
               
-              {/* Profile edit links for Mom users */}
+              {/* Profile and subscription status for Mom users */}
               {!isAdmin && !isExpert && !isStaff && (
-                <div className="mt-2.5 pt-2 border-t border-gray-100 dark:border-gray-800/60 flex justify-between items-center">
-                  <Link to="/profile" className="text-[10px] font-bold text-momPink hover:text-momPink-dark hover:underline transition-all">
-                    Chỉnh sửa hồ sơ
-                  </Link>
-                  <Link to="/profile" className="text-[10px] font-bold text-gray-400 hover:text-gray-600 hover:underline transition-all">
-                    Đổi lộ trình
-                  </Link>
-                </div>
+                <>
+                  <div className="mt-3 flex justify-between items-center bg-white/70 dark:bg-gray-900/60 p-2.5 rounded-xl border border-white/50 dark:border-gray-850">
+                    <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Gói dịch vụ
+                    </span>
+                    <Link
+                      to="/upgrade"
+                      className="text-xs font-black text-momPink-dark dark:text-pink-400 hover:text-momPurple transition-colors flex items-center gap-1 group"
+                      title="Bấm để xem và nâng cấp gói"
+                    >
+                      <span>{getTierNameVi(tier)}</span>
+                      <span className="text-[9px] bg-momPink-light/80 dark:bg-momPink/30 text-momPink-dark dark:text-pink-300 px-1.5 py-0.5 rounded-full font-bold group-hover:scale-105 transition-transform">
+                        Đổi
+                      </span>
+                    </Link>
+                  </div>
+                  <div className="mt-2.5 pt-2 border-t border-gray-100 dark:border-gray-800/60 flex justify-between items-center">
+                    <Link to="/profile" className="text-[10px] font-bold text-momPink hover:text-momPink-dark hover:underline transition-all">
+                      Chỉnh sửa hồ sơ
+                    </Link>
+                    <Link to="/profile" className="text-[10px] font-bold text-gray-400 hover:text-gray-600 hover:underline transition-all">
+                      Đổi lộ trình
+                    </Link>
+                  </div>
+                </>
               )}
             </div>
           )}
         </aside>
 
         {/* Content Viewport */}
-        <main className="flex-1 min-w-0 p-6 sm:p-8 overflow-y-auto">
-          <Outlet />
+        <main className="flex-1 min-w-0 p-6 sm:p-8 overflow-y-auto flex flex-col justify-between">
+          <div>
+            <Outlet />
+          </div>
+
+          {/* Dòng trích dẫn khoa học bảo chứng ở chân trang cho người dùng */}
+          <div className="mt-14 pt-5 border-t border-gray-150 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-gray-400 font-medium">
+            <div className="flex items-center gap-2 flex-wrap text-center sm:text-left">
+              <span className="inline-flex items-center gap-1 font-bold text-gray-700 dark:text-gray-300">
+                <Microscope className="w-3.5 h-3.5 text-momPink" /> MomBaby Care AI
+              </span>
+              <span>• Khuyến nghị dinh dưỡng & phác đồ chuẩn hóa theo WHO DRIs & USDA FoodData</span>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <a
+                href="https://www.who.int/nutrition/publications/infantfeeding/924156209X/en/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-momPink transition-colors inline-flex items-center gap-1"
+              >
+                WHO Guidelines <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+              <a
+                href="https://fdc.nal.usda.gov/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-momPink transition-colors inline-flex items-center gap-1"
+              >
+                USDA FoodData <ExternalLink className="w-2.5 h-2.5" />
+              </a>
+            </div>
+          </div>
         </main>
       </div>
 
