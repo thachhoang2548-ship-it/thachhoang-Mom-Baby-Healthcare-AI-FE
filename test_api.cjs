@@ -1,10 +1,12 @@
 const axios = require('axios');
 const fs = require('fs');
 
+const API_BASE_URL = process.env.VITE_API_URL || 'https://momoi-api-production.up.railway.app';
+
 async function test() {
   try {
     // 1. Get token
-    const loginRes = await axios.post('http://localhost:5265/api/auth/login', {
+    const loginRes = await axios.post(`${API_BASE_URL}/api/auth/login`, {
       email: 'thachhoang2548@gmail.com',
       password: 'Password123!'
     });
@@ -12,14 +14,14 @@ async function test() {
     console.log("Token:", token.substring(0, 20) + "...");
 
     // 2. Get baby profiles
-    const profilesRes = await axios.get('http://localhost:5265/api/baby', {
+    const profilesRes = await axios.get(`${API_BASE_URL}/api/baby`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const babyId = profilesRes.data.data[0].id;
     console.log("Baby ID:", babyId);
 
     // 3. Get daily menu
-    const menuRes = await axios.get(`http://localhost:5265/api/baby/${babyId}/menu/daily`, {
+    const menuRes = await axios.get(`${API_BASE_URL}/api/baby/${babyId}/menu/daily`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     
@@ -27,7 +29,7 @@ async function test() {
     console.log("Menu written to menu_debug.json");
     
     // 4. Get recipes from DB to see what titles exist
-    const recipesRes = await axios.get(`http://localhost:5265/api/recipes/my?category=1`, {
+    const recipesRes = await axios.get(`${API_BASE_URL}/api/recipes/my?category=1`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     

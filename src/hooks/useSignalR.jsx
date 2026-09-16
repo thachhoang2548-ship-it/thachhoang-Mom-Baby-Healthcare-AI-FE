@@ -5,6 +5,8 @@ import { useAlertController } from '../controllers/alertController';
 import toast from 'react-hot-toast';
 import React from 'react';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://momoi-api-production.up.railway.app';
+
 export function useSignalR() {
   const token = useAuthController((state) => state.token);
   const isAuthenticated = useAuthController((state) => state.isAuthenticated);
@@ -28,7 +30,7 @@ export function useSignalR() {
       return;
     }
 
-    const hubUrl = `${import.meta.env.VITE_API_URL || 'http://localhost:5265'}/hubs/alerts`;
+    const hubUrl = `${API_BASE_URL}/hubs/alerts`;
 
     const connection = new signalR.HubConnectionBuilder()
       .withUrl(hubUrl, {

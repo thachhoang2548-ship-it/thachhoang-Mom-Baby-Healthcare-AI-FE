@@ -4,13 +4,15 @@ import { Link } from "react-router-dom";
 import { ChevronLeft, Calendar, FileImage, ShieldAlert } from "lucide-react";
 import DoctorConsultationCard from "../components/symptom/DoctorConsultationCard";
 
+const ASSET_BASE_URL = import.meta.env.VITE_NODE_API_URL || "https://momoi-api-production.up.railway.app";
+
 export default function SymptomHistoryPage() {
   const { history, fetchHistory } = useSymptomController();
 
   const getImageUrl = (url) => {
     if (!url) return "";
     if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) return url;
-    const baseUrl = import.meta.env.VITE_NODE_API_URL || "http://localhost:5000";
+    const baseUrl = ASSET_BASE_URL;
     return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
   };
 

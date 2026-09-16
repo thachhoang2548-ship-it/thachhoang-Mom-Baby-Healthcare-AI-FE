@@ -115,8 +115,8 @@ npm install
 ### 3. Tạo Cấu Hình Môi Trường (.env)
 Tạo một file `.env` ở thư mục gốc của dự án (hoặc nhân bản từ file `.env.example`) và định cấu hình cổng kết nối tới API Backend:
 ```env
-VITE_API_URL=http://localhost:5265
-VITE_NODE_API_URL=http://localhost:5265
+VITE_API_URL=https://momoi-api-production.up.railway.app
+VITE_NODE_API_URL=https://momoi-api-production.up.railway.app
 ```
 
 ### 4. Khởi Chạy Dự Án Chế Độ Phát Triển (Development)

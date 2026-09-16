@@ -8,12 +8,14 @@ const severityColors = {
   high: "bg-red-100 text-red-700 border border-red-300",
 };
 
+const ASSET_BASE_URL = import.meta.env.VITE_NODE_API_URL || "https://momoi-api-production.up.railway.app";
+
 const ResultCard = ({ result }) => {
   if (!result) return null;
 
   const severity = result?.severity_level || "low";
   const condition = result?.predicted_condition || "Tình trạng chưa xác định";
-  const baseUrl = import.meta.env.VITE_NODE_API_URL || "http://localhost:5000";
+  const baseUrl = ASSET_BASE_URL;
   const imageUrl = result.images && result.images.length > 0 
     ? `${baseUrl}/${result.images[0]}` 
     : null;

@@ -4,6 +4,8 @@ import { useSymptomController } from "../../controllers/symptomController";
 import AnalysisResult from "../components/symptom/AnalysisResult";
 import { ChevronLeft, Calendar, FileText, RefreshCw, AlertCircle } from "lucide-react";
 
+const ASSET_BASE_URL = import.meta.env.VITE_NODE_API_URL || "https://momoi-api-production.up.railway.app";
+
 export default function SymptomDetailPage() {
   const { id } = useParams();
   const { fetchAnalysisById } = useSymptomController();
@@ -14,7 +16,7 @@ export default function SymptomDetailPage() {
   const getImageUrl = (url) => {
     if (!url) return "";
     if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) return url;
-    const baseUrl = import.meta.env.VITE_NODE_API_URL || "http://localhost:5000";
+    const baseUrl = ASSET_BASE_URL;
     return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
   };
 

@@ -13,6 +13,8 @@ import axios from 'axios';
 import authService from '../models/services/authService';
 import axiosClient, { injectAuthStore } from '../models/api/axiosClient';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://momoi-api-production.up.railway.app';
+
 const mapTier = (tierValue) => {
   if (tierValue === 1 || tierValue === 'MomHienDai') return 'MomHienDai';
   if (tierValue === 2 || tierValue === 'SuperMomVip') return 'SuperMomVip';
@@ -93,6 +95,10 @@ export const useAuthController = create((set, get) => ({
   },
 
   upgradeTier: async (targetTier) => {
+    if (targetTier === 'MomHienDai' || targetTier === 'SuperMomVip' || targetTier === 1 || targetTier === 2) {
+      throw new Error('Paid tier upgrades must go through verified payment.');
+    }
+
     let tierVal = targetTier;
     if (targetTier === 'Free' || targetTier === 0) tierVal = 0;
     else if (targetTier === 'MomHienDai' || targetTier === 1) tierVal = 1;
@@ -148,7 +154,7 @@ export const useAuthController = create((set, get) => ({
       return null;
     }
     try {
-      const url = `${import.meta.env.VITE_API_URL || 'http://localhost:5265'}/api/auth/refresh`;
+      const url = `${API_BASE_URL}/api/auth/refresh`;
       const refreshResponse = await axios.post(url, {
         refreshToken: storedRefreshToken,
       });

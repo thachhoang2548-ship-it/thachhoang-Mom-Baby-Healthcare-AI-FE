@@ -14,6 +14,8 @@
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://momoi-api-production.up.railway.app';
+
 let authStore = null;
 export const injectAuthStore = (store) => {
   authStore = store;
@@ -42,7 +44,7 @@ const getAuthState = () => {
 };
 
 const axiosClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5265',
+  baseURL: API_BASE_URL,
   // Các endpoint gọi AI (phân tích triệu chứng, sinh thực đơn...) mất khoảng 8-15s.
   // Giữ 15s sẽ khiến request bị huỷ giữa chừng (ECONNABORTED), nên nới lên 60s
   // cho khớp với timeout của HttpClient phía backend.
@@ -135,7 +137,7 @@ axiosClient.interceptors.response.use(
       }
 
       try {
-        const url = `${import.meta.env.VITE_API_URL || 'http://localhost:5265'}/api/auth/refresh`;
+        const url = `${API_BASE_URL}/api/auth/refresh`;
         const refreshResponse = await axios.post(url, {
           refreshToken: storedRefreshToken,
         });

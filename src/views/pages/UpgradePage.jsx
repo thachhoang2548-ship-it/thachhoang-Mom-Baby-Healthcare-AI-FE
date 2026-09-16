@@ -96,6 +96,7 @@ export default function UpgradePage() {
       subtitle: 'Lựa chọn thông thái & tối ưu cho mẹ',
       price: '99.000đ',
       period: '/ tháng',
+      sixMonthPrice: '499.000đ / 6 tháng',
       icon: Zap,
       badge: 'Phổ biến nhất 🔥',
       badgeColor: 'bg-gradient-to-r from-momPink to-pink-600 text-white shadow-md shadow-pink-500/20',
@@ -117,6 +118,7 @@ export default function UpgradePage() {
       subtitle: 'Đặc quyền chăm sóc toàn diện 24/7',
       price: '199.000đ',
       period: '/ tháng',
+      sixMonthPrice: '999.000đ / 6 tháng',
       icon: Crown,
       badge: 'Đặc quyền VIP 👑',
       badgeColor: 'bg-gradient-to-r from-momPurple to-purple-800 text-white shadow-md shadow-purple-500/20',
@@ -267,6 +269,11 @@ export default function UpgradePage() {
                       {t.period}
                     </span>
                   </div>
+                  {t.sixMonthPrice && (
+                    <p className="mt-2 text-xs font-bold text-momPink-dark dark:text-pink-300">
+                      {t.sixMonthPrice}
+                    </p>
+                  )}
                 </div>
 
                 {/* Features List */}
