@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useSymptomController } from "../../controllers/symptomController";
-import AnalysisResult from "../components/symptom/AnalysisResult";
+import AnalysisResult from "../components/Symptom/AnalysisResult";
 import { ChevronLeft, Calendar, FileText, RefreshCw, AlertCircle } from "lucide-react";
 
 const ASSET_BASE_URL = import.meta.env.VITE_NODE_API_URL || "https://momoi-api-production.up.railway.app";

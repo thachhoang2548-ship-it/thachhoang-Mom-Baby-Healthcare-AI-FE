@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import { useSymptomController } from "../../controllers/symptomController";
-import ImageDropzone from "../components/symptom/ImageDropzone";
-import AnalysisResult from "../components/symptom/AnalysisResult";
-import DoctorConsultationCard from "../components/symptom/DoctorConsultationCard";
+import ImageDropzone from "../components/Symptom/ImageDropzone";
+import AnalysisResult from "../components/Symptom/AnalysisResult";
+import DoctorConsultationCard from "../components/Symptom/DoctorConsultationCard";
 import { Link } from "react-router-dom";
 import { Stethoscope, History, Sparkles, RefreshCw } from "lucide-react";
 

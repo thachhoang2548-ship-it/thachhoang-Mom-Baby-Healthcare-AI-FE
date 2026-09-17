@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useSymptomController } from "../../controllers/symptomController";
 import { Link } from "react-router-dom";
 import { ChevronLeft, Calendar, FileImage, ShieldAlert } from "lucide-react";
-import DoctorConsultationCard from "../components/symptom/DoctorConsultationCard";
+import DoctorConsultationCard from "../components/Symptom/DoctorConsultationCard";
 
 const ASSET_BASE_URL = import.meta.env.VITE_NODE_API_URL || "https://momoi-api-production.up.railway.app";
 

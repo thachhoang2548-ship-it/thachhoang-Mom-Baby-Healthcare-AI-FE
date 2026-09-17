@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useRecipeController } from "../../controllers/recipeController";
-import ProfileBadge from "../components/recipe/ProfileBadge";
-import RecipeCard from "../components/recipe/RecipeCard";
-import RecipeDetailModal from "../components/recipe/RecipeDetailModal";
+import ProfileBadge from "../components/Recipe/ProfileBadge";
+import RecipeCard from "../components/Recipe/RecipeCard";
+import RecipeDetailModal from "../components/Recipe/RecipeDetailModal";
 import ScientificEvidenceFooter from "../components/common/ScientificEvidenceFooter";
 import { SlidersHorizontal, Plus, X, ChefHat, Sparkles, AlertCircle, RefreshCw } from "lucide-react";
 
