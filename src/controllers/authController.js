@@ -94,6 +94,21 @@ export const useAuthController = create((set, get) => ({
     set(updates);
   },
 
+  syncVerifiedTier: (targetTier) => {
+    const tierName = mapTier(targetTier);
+    const currentUser = get().user || JSON.parse(localStorage.getItem('user')) || {};
+    const updatedUser = { ...currentUser, tier: tierName };
+
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+    localStorage.setItem('tier', tierName);
+
+    set({
+      user: updatedUser,
+      tier: tierName,
+      isAuthenticated: true,
+    });
+  },
+
   upgradeTier: async (targetTier) => {
     if (targetTier === 'MomHienDai' || targetTier === 'SuperMomVip' || targetTier === 1 || targetTier === 2) {
       throw new Error('Paid tier upgrades must go through verified payment.');
@@ -147,10 +162,11 @@ export const useAuthController = create((set, get) => ({
   },
 
   // Thực hiện làm mới token âm thầm
-  refreshTokenAction: async () => {
+  refreshTokenAction: async (options = {}) => {
+    const logoutOnFailure = options.logoutOnFailure !== false;
     const storedRefreshToken = get().refreshToken;
     if (!storedRefreshToken) {
-      await get().logout();
+      if (logoutOnFailure) await get().logout();
       return null;
     }
     try {
@@ -169,7 +185,7 @@ export const useAuthController = create((set, get) => ({
     } catch (err) {
       console.error('Silent token refresh in authController failed:', err);
     }
-    await get().logout();
+    if (logoutOnFailure) await get().logout();
     return null;
   },
 }));

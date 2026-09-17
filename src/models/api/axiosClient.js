@@ -115,6 +115,7 @@ axiosClient.interceptors.response.use(
 
     // Xử lý 401 Unauthorized (Token Refresh)
     if (status === 401 && !originalRequest._retry && !originalRequest.url?.includes('/api/auth/')) {
+      const shouldLogoutOnFailure = originalRequest.logoutOnAuthFailure !== false;
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -131,7 +132,7 @@ axiosClient.interceptors.response.use(
 
       const storedRefreshToken = getAuthState().refreshToken;
       if (!storedRefreshToken) {
-        getAuthState().logout();
+        if (shouldLogoutOnFailure) getAuthState().logout();
         isRefreshing = false;
         return Promise.reject(error);
       }
@@ -151,13 +152,13 @@ axiosClient.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${token}`;
           return axiosClient(originalRequest);
         } else {
-          getAuthState().logout();
+          if (shouldLogoutOnFailure) getAuthState().logout();
           processQueue(new Error('Token refresh response failed'));
           isRefreshing = false;
           return Promise.reject(error);
         }
       } catch (refreshError) {
-        getAuthState().logout();
+        if (shouldLogoutOnFailure) getAuthState().logout();
         processQueue(refreshError);
         isRefreshing = false;
         return Promise.reject(refreshError);

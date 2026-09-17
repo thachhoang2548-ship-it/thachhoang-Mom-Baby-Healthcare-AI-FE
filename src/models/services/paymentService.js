@@ -56,7 +56,9 @@ export async function createBankTransferPayment({ targetTier, months }) {
 }
 
 export async function getPaymentStatus(orderCode) {
-  const response = await axiosClient.get(`/api/payment/status/${encodeURIComponent(orderCode)}`);
+  const response = await axiosClient.get(`/api/payment/status/${encodeURIComponent(orderCode)}`, {
+    logoutOnAuthFailure: false,
+  });
   return response.data?.data || response.data;
 }
 

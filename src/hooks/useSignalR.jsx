@@ -85,8 +85,8 @@ export function useSignalR() {
         const errMsg = err.toString();
         if (errMsg.includes('401') || errMsg.includes('Unauthorized')) {
           console.warn('SignalR unauthorized (401), attempting token refresh...');
-          // Trigger a token refresh. If it succeeds, useEffect will re-run automatically since 'token' changes.
-          const newToken = await useAuthController.getState().refreshTokenAction();
+          // SignalR is a background channel; a hub negotiation failure must not log the user out.
+          const newToken = await useAuthController.getState().refreshTokenAction({ logoutOnFailure: false });
           if (newToken) {
             console.log('Token refreshed successfully. Re-running hook.');
           }

@@ -37,7 +37,7 @@ export const useProfileController = create((set, get) => ({
   fetchProfile: async () => {
     set({ isLoading: true });
     try {
-      const response = await axiosClient.get('/api/user-profile');
+      const response = await axiosClient.get('/api/user-profile', { logoutOnAuthFailure: false });
       const isSuccessful = response.data && (response.data.isSuccess || response.data.success || response.data.Success);
       if (isSuccessful && response.data.data) {
         const profile = response.data.data;

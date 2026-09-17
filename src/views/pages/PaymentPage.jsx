@@ -39,7 +39,7 @@ export default function PaymentPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
-  const { user, tier, refreshTokenAction } = useAuthController();
+  const { user, tier, refreshTokenAction, syncVerifiedTier } = useAuthController();
 
   const initialTier =
     location.state?.targetTier ||
@@ -104,9 +104,10 @@ export default function PaymentPage() {
     if (completed) return;
     setCompleted(true);
     setPaymentStatus(statusData.status);
+    syncVerifiedTier(selectedTier);
 
     try {
-      await refreshTokenAction();
+      await refreshTokenAction({ logoutOnFailure: false });
     } catch (error) {
       console.warn('Silent refresh after payment failed:', error);
     }
