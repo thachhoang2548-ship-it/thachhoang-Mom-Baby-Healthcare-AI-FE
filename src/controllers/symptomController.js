@@ -54,13 +54,54 @@ export const useSymptomController = create((set, get) => ({
       let imageMimeType = null;
 
       if (uploadedImage?.file) {
-        imageUrl = await new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(uploadedImage.file);
-        });
-        imageMimeType = uploadedImage.file.type;
+        // If file already has a small size, read directly; if large, scale down to prevent huge payload
+        if (uploadedImage.file.size < 1024 * 1024) {
+          imageUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(uploadedImage.file);
+          });
+          imageMimeType = uploadedImage.file.type || "image/jpeg";
+        } else {
+          imageUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              const img = new Image();
+              img.onload = () => {
+                let { width, height } = img;
+                const maxDim = 1600;
+                if (width > maxDim || height > maxDim) {
+                  if (width > height) {
+                    height = Math.round((height * maxDim) / width);
+                    width = maxDim;
+                  } else {
+                    width = Math.round((width * maxDim) / height);
+                    height = maxDim;
+                  }
+                }
+                const canvas = document.createElement("canvas");
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const targetMime = uploadedImage.file.type === "image/png"
+                  ? "image/png"
+                  : uploadedImage.file.type === "image/webp"
+                  ? "image/webp"
+                  : "image/jpeg";
+
+                resolve(canvas.toDataURL(targetMime, 0.85));
+              };
+              img.onerror = () => resolve(e.target.result);
+              img.src = e.target.result;
+            };
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(uploadedImage.file);
+          });
+          imageMimeType = uploadedImage.file.type || "image/jpeg";
+        }
       }
 
       const payload = {

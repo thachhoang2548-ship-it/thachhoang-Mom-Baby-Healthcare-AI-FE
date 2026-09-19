@@ -19,9 +19,9 @@ export default function ImageDropzone({ value, onChange, onRemove }) {
     if (!file) return;
 
     // Type validation
-    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/avif"];
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
-      toast.error("Chỉ chấp nhận các định dạng PNG, JPG, JPEG, WEBP hoặc AVIF.");
+      toast.error("Chỉ chấp nhận các định dạng PNG, JPG, JPEG hoặc WEBP.");
       return;
     }
 
@@ -67,7 +67,7 @@ export default function ImageDropzone({ value, onChange, onRemove }) {
         type="file"
         ref={fileInputRef}
         onChange={handleFileSelect}
-        accept="image/png, image/jpeg, image/jpg, image/webp, image/avif"
+        accept="image/png, image/jpeg, image/jpg, image/webp"
         className="hidden"
       />
 
@@ -88,7 +88,7 @@ export default function ImageDropzone({ value, onChange, onRemove }) {
             <span className="text-amber-500">Tải lên tệp</span> hoặc kéo và thả
           </p>
           <p className="text-xs text-gray-400 mt-1.5 font-medium">
-            PNG, JPG, WEBP, AVIF tối đa 10MB
+            PNG, JPG, WEBP tối đa 10MB
           </p>
         </div>
       ) : (

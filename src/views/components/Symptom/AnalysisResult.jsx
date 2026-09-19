@@ -80,6 +80,27 @@ export default function AnalysisResult({ analysis }) {
         </div>
       </div>
 
+      {/* Uploaded Symptom Image Preview if available */}
+      {(doc.imageUrl || (doc.images && doc.images.length > 0)) && (
+        <div className="bg-white border border-gray-100 rounded-3xl p-4 shadow-sm flex items-center gap-4">
+          <div className="w-16 h-16 rounded-2xl overflow-hidden border border-gray-200/60 bg-gray-50 flex-shrink-0 shadow-inner">
+            <img
+              src={doc.imageUrl || doc.images[0]}
+              alt="Hình ảnh triệu chứng"
+              className="w-full h-full object-cover"
+            />
+          </div>
+          <div className="overflow-hidden">
+            <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60">
+              Hình ảnh triệu chứng đã phân tích
+            </span>
+            <p className="text-xs text-gray-700 font-semibold mt-1 truncate">
+              {doc.textDescription || "Ảnh chụp triệu chứng"}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Thông báo khi AI chưa phân tích được (bản ghi cũ hoặc AI lỗi) */}
       {!hasAiDetails && (
         <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 flex items-start gap-3.5 shadow-sm">
