@@ -5,11 +5,11 @@ import { useProfileController } from '../../../controllers/profileController';
 import momOiLogo from '../../../assets/Logo/mom-oi-submark-cropped.png';
 import { getTierNameVi } from '../../../utils/tierHelpers';
 
-import { Calendar, Heart, Baby, Sparkles, LogOut, RefreshCw, Activity, MessageSquare, LayoutDashboard, User, Settings, ShieldCheck, HeartPulse, Bell, Microscope, ExternalLink } from 'lucide-react';
+import { Calendar, Heart, Baby, Sparkles, LogOut, RefreshCw, Activity, MessageSquare, LayoutDashboard, User, Settings, ShieldCheck, HeartPulse, Bell, Microscope, ExternalLink, Headphones, LifeBuoy, ReceiptText } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function AppShell() {
-  const { user, tier, logout, token, isAuthenticated } = useAuthController();
+  const { user, tier, tierExpiresAt, logout, token, isAuthenticated } = useAuthController();
   const { journeyStage, fetchProfile, momProfile } = useProfileController();
   const navigate = useNavigate();
   const location = useLocation();
@@ -159,10 +159,50 @@ export default function AppShell() {
       color: 'text-momPink',
     });
 
+    items.push({
+      label: 'Lịch chăm sóc',
+      path: '/care-calendar',
+      icon: Calendar,
+      color: 'text-momPink',
+    });
+
+    items.push({
+      label: 'Thư giãn',
+      path: '/relax',
+      icon: Headphones,
+      color: 'text-momPurple',
+    });
+
+    items.push({
+      label: 'Lịch sử gói',
+      path: '/subscription-history',
+      icon: ReceiptText,
+      color: 'text-emerald-500',
+    });
+
+    items.push({
+      label: 'Hỗ trợ',
+      path: '/feedback',
+      icon: MessageSquare,
+      color: 'text-blue-500',
+    });
+
+    items.push({
+      label: 'Khẩn cấp',
+      path: '/emergency',
+      icon: LifeBuoy,
+      color: 'text-red-500',
+    });
+
     return items;
   };
 
   const navItems = getNavItems();
+  const tierExpiryDate = tierExpiresAt ? new Date(tierExpiresAt) : null;
+  const tierDaysLeft = tierExpiryDate
+    ? Math.ceil((tierExpiryDate.getTime() - Date.now()) / 86400000)
+    : null;
+  const shouldShowExpiryNotice = !isAdmin && !isExpert && !isStaff && tier !== 'Free' && tierDaysLeft !== null && tierDaysLeft <= 7;
 
   const getStageNameVi = (stage) => {
     if (stage === 'PrePregnancy') return 'Kế hoạch thụ thai';
@@ -313,6 +353,19 @@ export default function AppShell() {
         {/* Content Viewport */}
         <main className="flex-1 min-w-0 p-6 sm:p-8 overflow-y-auto flex flex-col justify-between">
           <div>
+            {shouldShowExpiryNotice && (
+              <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black text-amber-800 uppercase tracking-wider">Gói của bạn sắp hết hạn</p>
+                  <p className="text-xs font-semibold text-amber-700 mt-1">
+                    Còn {Math.max(tierDaysLeft, 0)} ngày. Gia hạn để giữ quyền truy cập các tính năng nâng cao.
+                  </p>
+                </div>
+                <Link to="/upgrade" className="px-4 py-2 rounded-xl bg-amber-500 text-white text-xs font-black text-center">
+                  Gia hạn
+                </Link>
+              </div>
+            )}
             <Outlet />
           </div>
 

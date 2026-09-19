@@ -2,11 +2,12 @@ import React, { useState, useEffect } from "react";
 import adminService from "../../../models/services/adminService";
 import alertService from "../../../models/services/alertService";
 import expertService from "../../../models/services/expertService";
-import { Activity, ShieldAlert, HeartPulse, UserCheck, CheckCircle, MessageSquare, FileText, Send, Utensils, ThumbsUp, ThumbsDown, X, User } from "lucide-react";
+import AdminFeedbackPanel from "../admin/AdminFeedbackPanel";
+import { Activity, ShieldAlert, HeartPulse, UserCheck, CheckCircle, MessageSquare, FileText, Send, Utensils, ThumbsUp, ThumbsDown, X, User, MessageSquareHeart } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function StaffDashboardPage() {
-  const [activeTab, setActiveTab] = useState("risk_monitoring"); // "risk_monitoring" | "weaning_requests"
+  const [activeTab, setActiveTab] = useState("risk_monitoring"); // "risk_monitoring" | "weaning_requests" | "feedback"
   const [riskUsers, setRiskUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -189,6 +190,16 @@ export default function StaffDashboardPage() {
         >
           <Utensils className="w-4 h-4" /> Duyệt Món Ăn Dặm Mới ({weaningRequests.length})
         </button>
+        <button
+          onClick={() => setActiveTab("feedback")}
+          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-extrabold text-xs transition-all ${
+            activeTab === "feedback"
+              ? "bg-emerald-600 text-white shadow-md"
+              : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          }`}
+        >
+          <MessageSquareHeart className="w-4 h-4" /> Phản hồi người dùng
+        </button>
       </div>
 
       {/* TAB 1: Risk Monitoring & Consultation */}
@@ -308,6 +319,10 @@ export default function StaffDashboardPage() {
             </div>
           )}
         </div>
+      )}
+
+      {activeTab === "feedback" && (
+        <AdminFeedbackPanel />
       )}
 
       {/* MODAL: Mom Detailed Profile & Consultation (Diagram 3) */}

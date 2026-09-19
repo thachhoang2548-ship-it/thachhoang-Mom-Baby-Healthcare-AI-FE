@@ -370,6 +370,41 @@ export default function PostpartumDashPage() {
               </div>
             )}
           </div>
+
+          <div className="bg-gradient-to-br from-white via-pink-50/45 to-violet-50/45 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 rounded-3xl p-5 border border-pink-100/60 dark:border-gray-700/50 shadow-sm space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-extrabold text-gray-850 dark:text-white uppercase tracking-wider">
+                  Nhịp hồi phục của mami
+                </h3>
+                <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
+                  Những mốc nhỏ giúp một ngày hậu sản nhẹ hơn.
+                </p>
+              </div>
+              <Heart className="w-5 h-5 text-momPink fill-momPink/20" />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {[
+                { title: 'Nghỉ ngơi', value: '2-3', note: 'giấc ngắn' },
+                { title: 'Uống nước', value: '2L', note: 'chia đều ngày' },
+                { title: 'Vận động', value: '10-15', note: 'phút nhẹ' },
+              ].map((item) => (
+                <div key={item.title} className="rounded-2xl bg-white/80 dark:bg-gray-900/40 border border-pink-100/70 dark:border-gray-700 p-3">
+                  <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">{item.title}</p>
+                  <p className="text-lg font-black text-gray-900 dark:text-white mt-1">{item.value}</p>
+                  <p className="text-[10px] font-semibold text-gray-500">{item.note}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="rounded-2xl bg-white/70 dark:bg-gray-900/40 border border-violet-100 dark:border-gray-700 p-3 flex items-start gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+              <p className="text-[11px] text-gray-600 dark:text-gray-300 font-semibold leading-relaxed">
+                Nếu hôm nay mami chỉ làm được một việc, hãy ưu tiên ăn một bữa đủ chất và ngủ bù khi bé ngủ.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-6">

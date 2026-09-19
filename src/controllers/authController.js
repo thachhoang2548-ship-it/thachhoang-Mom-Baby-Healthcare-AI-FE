@@ -27,6 +27,7 @@ export const useAuthController = create((set, get) => ({
   token: localStorage.getItem('token') || null,
   refreshToken: localStorage.getItem('refreshToken') || null,
   tier: localStorage.getItem('tier') || 'Free',
+  tierExpiresAt: localStorage.getItem('tierExpiresAt') || null,
   isAuthenticated: !!localStorage.getItem('token'),
 
   // ─── Actions ───
@@ -41,12 +42,15 @@ export const useAuthController = create((set, get) => ({
       localStorage.setItem('refreshToken', refreshToken);
       localStorage.setItem('user', JSON.stringify(user));
       localStorage.setItem('tier', tierName);
+      if (user.tierExpiresAt) localStorage.setItem('tierExpiresAt', user.tierExpiresAt);
+      else localStorage.removeItem('tierExpiresAt');
 
       set({
         token,
         refreshToken,
         user,
         tier: tierName,
+        tierExpiresAt: user.tierExpiresAt || null,
         isAuthenticated: true,
       });
     }
@@ -67,12 +71,14 @@ export const useAuthController = create((set, get) => ({
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
     localStorage.removeItem('tier');
+    localStorage.removeItem('tierExpiresAt');
 
     set({
       token: null,
       refreshToken: null,
       user: null,
       tier: 'Free',
+      tierExpiresAt: null,
       isAuthenticated: false,
     });
   },
@@ -87,8 +93,11 @@ export const useAuthController = create((set, get) => ({
       localStorage.setItem('user', JSON.stringify(user));
       const tierName = mapTier(user.tier);
       localStorage.setItem('tier', tierName);
+      if (user.tierExpiresAt) localStorage.setItem('tierExpiresAt', user.tierExpiresAt);
+      else localStorage.removeItem('tierExpiresAt');
       updates.user = user;
       updates.tier = tierName;
+      updates.tierExpiresAt = user.tierExpiresAt || null;
     }
 
     set(updates);
@@ -105,6 +114,7 @@ export const useAuthController = create((set, get) => ({
     set({
       user: updatedUser,
       tier: tierName,
+      tierExpiresAt: updatedUser.tierExpiresAt || get().tierExpiresAt || null,
       isAuthenticated: true,
     });
   },

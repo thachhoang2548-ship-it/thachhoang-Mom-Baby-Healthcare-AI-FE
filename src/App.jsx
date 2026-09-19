@@ -20,6 +20,11 @@ import ExercisePlanPage from "./views/pages/pregnancy/ExercisePlanPage";
 import ProfilePage from "./views/pages/ProfilePage";
 import UpgradePage from "./views/pages/UpgradePage";
 import PaymentPage from "./views/pages/PaymentPage";
+import SubscriptionHistoryPage from "./views/pages/SubscriptionHistoryPage";
+import CareCalendarPage from "./views/pages/CareCalendarPage";
+import EmergencyHelpPage from "./views/pages/EmergencyHelpPage";
+import FeedbackPage from "./views/pages/FeedbackPage";
+import RelaxMusicPage from "./views/pages/RelaxMusicPage";
 
 // Role Portals (Admin, Expert, Staff)
 import AdminDashboardPage from "./views/pages/admin/AdminDashboardPage";
@@ -46,12 +51,17 @@ import DailyMonitoringPage from "./views/pages/DailyMonitoringPage";
 
 import ProtectedRoute from "./views/components/ProtectedRoute";
 import AppShell from "./views/components/layout/AppShell";
+import TierGate from "./views/components/layout/TierGate";
 import SplashScreen from "./views/components/SplashScreen";
 import { useSignalR } from "./hooks/useSignalR";
 
 function AppContent() {
   // Mount the global SignalR listener hook inside a router sub-component
   useSignalR();
+
+  const modernTierOnly = (element) => (
+    <TierGate requiredTier="MomHienDai" showPreview={false}>{element}</TierGate>
+  );
 
   return (
     <>
@@ -90,11 +100,11 @@ function AppContent() {
           <Route path="/postpartum/epds" element={<EpdsPage />} />
 
           {/* Baby Nutrition (Module 4) */}
-          <Route path="/baby-nutrition" element={<BabyDashPage />} />
-          <Route path="/baby-nutrition/menu" element={<BabyMenuPage />} />
-          <Route path="/baby-nutrition/growth" element={<GrowthChartPage />} />
-          <Route path="/baby-nutrition/create-baby" element={<BabyProfileFormPage />} />
-          <Route path="/baby-nutrition/edit-baby" element={<BabyProfileFormPage />} />
+          <Route path="/baby-nutrition" element={modernTierOnly(<BabyDashPage />)} />
+          <Route path="/baby-nutrition/menu" element={modernTierOnly(<BabyMenuPage />)} />
+          <Route path="/baby-nutrition/growth" element={modernTierOnly(<GrowthChartPage />)} />
+          <Route path="/baby-nutrition/create-baby" element={modernTierOnly(<BabyProfileFormPage />)} />
+          <Route path="/baby-nutrition/edit-baby" element={modernTierOnly(<BabyProfileFormPage />)} />
           <Route path="/baby" element={<Navigate to="/baby-nutrition" replace />} />
           <Route path="/baby/menu" element={<Navigate to="/baby-nutrition/menu" replace />} />
           <Route path="/baby/growth" element={<Navigate to="/baby-nutrition/growth" replace />} />
@@ -103,6 +113,11 @@ function AppContent() {
           <Route path="/upgrade" element={<UpgradePage />} />
           <Route path="/subscription" element={<Navigate to="/upgrade" replace />} />
           <Route path="/payment" element={<PaymentPage />} />
+          <Route path="/subscription-history" element={<SubscriptionHistoryPage />} />
+          <Route path="/care-calendar" element={<CareCalendarPage />} />
+          <Route path="/emergency" element={<EmergencyHelpPage />} />
+          <Route path="/feedback" element={<FeedbackPage />} />
+          <Route path="/relax" element={<RelaxMusicPage />} />
           <Route path="/checkout" element={<Navigate to="/payment" replace />} />
           <Route path="/profile" element={<ProfilePage />} />
 

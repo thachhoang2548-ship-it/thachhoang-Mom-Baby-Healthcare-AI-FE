@@ -4,7 +4,7 @@ import { useAuthController } from '../../../controllers/authController';
 import { checkTierUnlocked, getTierNameVi } from '../../../utils/tierHelpers';
 import { Lock, Sparkles, ArrowRight } from 'lucide-react';
 
-export default function TierGate({ requiredTier = 'MomHienDai', children }) {
+export default function TierGate({ requiredTier = 'MomHienDai', children, showPreview = true }) {
   const userTier = useAuthController((state) => state.tier);
   const navigate = useNavigate();
   const isUnlocked = checkTierUnlocked(userTier, requiredTier);
@@ -16,16 +16,20 @@ export default function TierGate({ requiredTier = 'MomHienDai', children }) {
   const tierNameVi = getTierNameVi(requiredTier);
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-pink-100/80 dark:border-pink-900/20 shadow-sm my-4">
+    <div className="relative overflow-hidden rounded-3xl border border-pink-100/80 dark:border-pink-900/20 shadow-sm my-4 min-h-[260px]">
       {/* Blurred backdrop of actual premium content */}
-      <div className="blur-md select-none pointer-events-none filter brightness-95 dark:brightness-75 opacity-40 max-h-[350px] overflow-hidden">
-        {children}
-      </div>
+      {showPreview ? (
+        <div className="blur-md select-none pointer-events-none filter brightness-95 dark:brightness-75 opacity-40 min-h-[260px] max-h-[350px] overflow-hidden">
+          {children}
+        </div>
+      ) : (
+        <div className="min-h-[420px]" />
+      )}
 
       {/* Modern premium upgrade glass card */}
-      <div className="absolute inset-0 bg-white/75 dark:bg-gray-900/85 backdrop-blur-[4px] flex flex-col items-center justify-center p-6 text-center z-10">
-        <div className="w-14 h-14 rounded-3xl bg-gradient-to-tr from-momPink to-momPurple flex items-center justify-center text-white shadow-[0_8px_25px_rgba(236,72,153,0.35)] mb-3.5">
-          <Lock className="w-6 h-6" />
+      <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/85 backdrop-blur-[4px] flex flex-col items-center justify-center p-4 sm:p-6 text-center z-10 overflow-y-auto">
+        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-momPink to-momPurple flex items-center justify-center text-white shadow-[0_8px_25px_rgba(236,72,153,0.35)] mb-3">
+          <Lock className="w-5 h-5" />
         </div>
         <span className="text-[10px] font-extrabold uppercase tracking-widest bg-pink-100 dark:bg-pink-950/40 text-momPink px-3 py-1 rounded-full mb-2 flex items-center gap-1">
           <Sparkles className="w-3 h-3" /> Đặc quyền chuyên sâu

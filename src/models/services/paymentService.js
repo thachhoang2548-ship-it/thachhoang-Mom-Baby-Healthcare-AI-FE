@@ -62,9 +62,15 @@ export async function getPaymentStatus(orderCode) {
   return response.data?.data || response.data;
 }
 
+export async function getPaymentHistory() {
+  const response = await axiosClient.get('/api/payment/history');
+  return response.data?.data || response.data;
+}
+
 export default {
   TIERS_DATA,
   getPlanCode,
   createBankTransferPayment,
   getPaymentStatus,
+  getPaymentHistory,
 };

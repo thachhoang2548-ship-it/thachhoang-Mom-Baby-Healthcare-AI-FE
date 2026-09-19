@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import adminService from "../../../models/services/adminService";
+import AdminPaymentsPanel from "./AdminPaymentsPanel";
+import AdminFeedbackPanel from "./AdminFeedbackPanel";
 import { Users, Lock, Unlock, UserPlus, ShieldAlert, FileText, Settings, CheckCircle2, Database, RefreshCw, Edit, Plus, DollarSign, CreditCard, TrendingUp } from "lucide-react";
 import {
   Area,
@@ -445,6 +447,9 @@ export default function AdminDashboardPage() {
               </div>
             </div>
           )}
+
+          <AdminPaymentsPanel />
+          <AdminFeedbackPanel />
 
           <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
             <div className="overflow-x-auto">

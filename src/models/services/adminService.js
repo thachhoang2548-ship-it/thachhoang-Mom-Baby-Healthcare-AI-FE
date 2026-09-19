@@ -133,6 +133,28 @@ const adminService = {
     }
   },
 
+  getPaymentTransactions: async (filters = {}) => {
+    try {
+      const res = await axiosClient.get("/api/admin/payments/transactions", { params: filters });
+      return res.data;
+    } catch (error) {
+      const errMsg = error.response?.data?.message || "Không thể tải danh sách giao dịch.";
+      toast.error(errMsg);
+      throw error;
+    }
+  },
+
+  getFeedbackTickets: async () => {
+    try {
+      const res = await axiosClient.get("/api/admin/feedback");
+      return res.data;
+    } catch (error) {
+      const errMsg = error.response?.data?.message || "Không thể tải phản hồi người dùng.";
+      toast.error(errMsg);
+      throw error;
+    }
+  },
+
   // Sync USDA nutrition data
   syncUsdaData: async (query, maxItems = 10) => {
     try {
