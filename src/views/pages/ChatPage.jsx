@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useAuthController } from "../../controllers/authController";
+import { checkTierUnlocked } from "../../utils/tierHelpers";
 import ChatHeader from "../components/Chat/ChatHeader";
 import ChatMessage from "../components/Chat/ChatMessage";
 import ChatInput from "../components/Chat/ChatInput";
@@ -8,7 +9,7 @@ import { useChatController } from "../../controllers/chatController";
 import "../styles/ChatPageBackground.css";
 
 export default function ChatPage() {
-  const { user } = useAuthController();
+  const { tier } = useAuthController();
   const { messages, sessionId, fetchHistory, sendMessage, clearChat } = useChatController();
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSuccess, setRecordingSuccess] = useState(false);
@@ -49,7 +50,7 @@ export default function ChatPage() {
     }
   };
 
-  const isVip = user?.subscriptionTier === "vip";
+  const isVip = checkTierUnlocked(tier, "SuperMomVip");
 
   return (
     <div className="flex flex-col lg:flex-row h-[calc(100vh-190px)] lg:h-[calc(100vh-150px)] max-w-7xl mx-auto bg-gray-50 dark:bg-background-dark font-display rounded-3xl overflow-hidden border border-white/60 dark:border-gray-800 shadow-[0_8px_30px_rgb(0,0,0,0.02)]">

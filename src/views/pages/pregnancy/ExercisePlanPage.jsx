@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfileController } from '../../../controllers/profileController';
+import { useAuthController } from '../../../controllers/authController';
+import { checkTierUnlocked } from '../../../utils/tierHelpers';
 import pregnancyService from '../../../models/services/pregnancyService';
 import TierGate from '../../components/layout/TierGate';
 import { ArrowLeft, Footprints, AlertCircle, Dumbbell, ShieldAlert, Sparkles } from 'lucide-react';
@@ -8,8 +10,10 @@ import toast from 'react-hot-toast';
 
 export default function ExercisePlanPage() {
   const navigate = useNavigate();
-  const { momProfile } = useProfileController();
+  const { momProfile, fetchProfile } = useProfileController();
+  const { tier } = useAuthController();
   const [exercisePlan, setExercisePlan] = useState(null);
+  const [emptyMessage, setEmptyMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -19,9 +23,24 @@ export default function ExercisePlanPage() {
   const loadExercisePlan = async () => {
     setLoading(true);
     try {
+      if (!checkTierUnlocked(tier, 'MomHienDai')) {
+        setExercisePlan(null);
+        setEmptyMessage('');
+        return;
+      }
+
+      const profile = momProfile || await fetchProfile();
+      const isPregnant = profile?.stage === 'Pregnant' || profile?.stage === 1;
+      if (!isPregnant) {
+        setExercisePlan(null);
+        setEmptyMessage('Vui lòng chuyển hồ sơ sang giai đoạn đang mang thai để xem bài tập phù hợp.');
+        return;
+      }
+
       const res = await pregnancyService.getExercisePlan();
       if (res.isSuccess && res.data) {
         setExercisePlan(res.data);
+        setEmptyMessage('');
       }
     } catch (err) {
       console.error(err);
@@ -73,6 +92,17 @@ export default function ExercisePlanPage() {
               <div className="space-y-3 animate-pulse">
                 <div className="h-14 bg-gray-200 dark:bg-gray-755 rounded-xl"></div>
                 <div className="h-14 bg-gray-200 dark:bg-gray-755 rounded-xl"></div>
+                {false && emptyMessage && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/profile')}
+                      className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-momPink to-momPurple text-white text-xs font-bold shadow-md hover:scale-[1.01] active:scale-95 transition-all not-italic"
+                    >
+                      Cập nhật hồ sơ thai kỳ
+                    </button>
+                  </div>
+                )}
               </div>
             ) : exercisePlan?.exercises ? (
               <div className="space-y-3">
@@ -94,7 +124,23 @@ export default function ExercisePlanPage() {
                 ))}
               </div>
             ) : (
-              <div className="py-10 text-center text-xs text-gray-400 italic">
+              <div className="py-10 text-center text-xs text-gray-400 italic space-y-4">
+                {emptyMessage && (
+                  <p className="mx-auto max-w-sm text-gray-500 not-italic">
+                    {emptyMessage}
+                  </p>
+                )}
+                {emptyMessage && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => navigate('/profile')}
+                      className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-momPink to-momPurple text-white text-xs font-bold shadow-md hover:scale-[1.01] active:scale-95 transition-all not-italic"
+                    >
+                      Cập nhật hồ sơ thai kỳ
+                    </button>
+                  </div>
+                )}
                 Không tìm thấy bài tập thích hợp cho giai đoạn này.
               </div>
             )}

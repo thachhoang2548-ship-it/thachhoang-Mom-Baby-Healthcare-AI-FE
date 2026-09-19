@@ -122,6 +122,17 @@ const adminService = {
     }
   },
 
+  getRevenueSummary: async () => {
+    try {
+      const res = await axiosClient.get("/api/admin/revenue/summary");
+      return res.data;
+    } catch (error) {
+      const errMsg = error.response?.data?.message || "Không thể tải thống kê doanh thu.";
+      toast.error(errMsg);
+      throw error;
+    }
+  },
+
   // Sync USDA nutrition data
   syncUsdaData: async (query, maxItems = 10) => {
     try {

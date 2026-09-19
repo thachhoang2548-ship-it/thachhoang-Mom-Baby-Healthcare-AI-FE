@@ -10,8 +10,9 @@ import axiosClient from '../api/axiosClient';
 
 const fertilityService = {
   logCycle: async (periodStartDate, cycleLength = 28, symptoms = []) => {
+    const normalizedDate = new Date(`${periodStartDate}T00:00:00.000Z`).toISOString();
     const response = await axiosClient.post('/api/fertility/cycle-log', {
-      periodStartDate,
+      periodStartDate: normalizedDate,
       cycleLength: Number(cycleLength),
       symptoms
     });

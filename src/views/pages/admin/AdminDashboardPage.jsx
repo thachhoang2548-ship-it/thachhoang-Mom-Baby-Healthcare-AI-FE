@@ -1,6 +1,20 @@
 import React, { useState, useEffect } from "react";
 import adminService from "../../../models/services/adminService";
-import { Users, Lock, Unlock, UserPlus, ShieldAlert, FileText, Settings, CheckCircle2, Database, RefreshCw, Edit, Plus } from "lucide-react";
+import { Users, Lock, Unlock, UserPlus, ShieldAlert, FileText, Settings, CheckCircle2, Database, RefreshCw, Edit, Plus, DollarSign, CreditCard, TrendingUp } from "lucide-react";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart as RechartsBarChart,
+  CartesianGrid,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import toast from "react-hot-toast";
 
 export default function AdminDashboardPage() {
@@ -8,6 +22,7 @@ export default function AdminDashboardPage() {
   const [users, setUsers] = useState([]);
   const [riskUsers, setRiskUsers] = useState([]);
   const [businessRules, setBusinessRules] = useState([]);
+  const [revenueSummary, setRevenueSummary] = useState(null);
   const [loading, setLoading] = useState(true);
 
   // Modal create staff/expert
@@ -18,6 +33,22 @@ export default function AdminDashboardPage() {
     fullName: "",
     role: "Staff" // "Staff" | "Expert"
   });
+
+  const formatMoney = (amount) =>
+    Number(amount || 0).toLocaleString("vi-VN") + " đ";
+
+  const revenueChartData = (revenueSummary?.monthlyTrend || []).map((item) => ({
+    ...item,
+    label: item.month?.length === 10 ? item.month.slice(5).replace("-", "/") : item.month,
+  }));
+
+  const planChartData = (revenueSummary?.byPlan || []).map((item) => ({
+    ...item,
+    name: item.planCode || item.tier || "Gói dịch vụ",
+    value: Number(item.revenue || 0),
+  }));
+
+  const planColors = ["#ec4899", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b"];
 
   // USDA sync states
   const [usdaQuery, setUsdaQuery] = useState("milk");
@@ -114,6 +145,9 @@ export default function AdminDashboardPage() {
         const res = await adminService.getAllUsers();
         if (res.isSuccess && res.data) setUsers(res.data);
         else if (Array.isArray(res.data)) setUsers(res.data);
+
+        const revenueRes = await adminService.getRevenueSummary();
+        if (revenueRes.isSuccess && revenueRes.data) setRevenueSummary(revenueRes.data);
       } else if (activeTab === "risk") {
         const res = await adminService.getUsersAtRisk();
         if (res.isSuccess && res.data) setRiskUsers(res.data);
@@ -122,6 +156,10 @@ export default function AdminDashboardPage() {
         const res = await adminService.getBusinessRules();
         if (res.isSuccess && res.data) setBusinessRules(res.data);
         else if (Array.isArray(res.data)) setBusinessRules(res.data);
+      } else if (activeTab === "revenue") {
+        const res = await adminService.getRevenueSummary();
+        if (res.isSuccess && res.data) setRevenueSummary(res.data);
+        else setRevenueSummary(res.data || null);
       }
     } catch (err) {
       console.error("Failed to load admin data", err);
@@ -232,6 +270,181 @@ export default function AdminDashboardPage() {
               <UserPlus className="w-4 h-4" /> Tạo Nhân Viên / Chuyên Gia
             </button>
           </div>
+
+          {revenueSummary && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                {[
+                  { label: "Tổng doanh thu", value: formatMoney(revenueSummary.totalRevenue), icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50" },
+                  { label: "Tháng này", value: formatMoney(revenueSummary.monthlyRevenue), icon: TrendingUp, color: "text-blue-600", bg: "bg-blue-50" },
+                  { label: "Hôm nay", value: formatMoney(revenueSummary.todayRevenue), icon: CreditCard, color: "text-pink-600", bg: "bg-pink-50" },
+                  { label: "Khách đã mua", value: revenueSummary.payingUserCount || 0, icon: Users, color: "text-amber-600", bg: "bg-amber-50" },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.label} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">{item.label}</p>
+                          <p className="text-lg font-black text-gray-900 dark:text-white mt-1">{item.value}</p>
+                        </div>
+                        <div className={`w-10 h-10 rounded-2xl ${item.bg} ${item.color} flex items-center justify-center`}>
+                          <Icon className="w-5 h-5" />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
+                <div className="xl:col-span-3 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-5 shadow-sm">
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <div>
+                      <h3 className="text-xs font-black uppercase tracking-wider text-gray-500">Xu hướng doanh thu</h3>
+                      <p className="text-[11px] font-semibold text-gray-400 mt-1">Theo 14 ngày gần nhất</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-2xl bg-pink-50 text-pink-600 flex items-center justify-center">
+                      <TrendingUp className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <div className="h-72">
+                    {revenueChartData.length === 0 ? (
+                      <div className="h-full rounded-2xl bg-gray-50 dark:bg-gray-900/50 flex items-center justify-center text-xs font-bold text-gray-400">
+                        Chưa có dữ liệu doanh thu.
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={revenueChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                          <defs>
+                            <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#ec4899" stopOpacity={0.35} />
+                              <stop offset="95%" stopColor="#ec4899" stopOpacity={0.03} />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                          <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 700 }} />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 700 }} tickFormatter={(value) => `${Number(value) / 1000}k`} width={42} />
+                          <Tooltip formatter={(value) => [formatMoney(value), "Doanh thu"]} labelFormatter={(label) => `Ngày ${label}`} contentStyle={{ borderRadius: 16, border: "1px solid #fce7f3", boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)" }} />
+                          <Area type="monotone" dataKey="revenue" stroke="#ec4899" strokeWidth={3} fill="url(#revenueGradient)" />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                </div>
+
+                <div className="xl:col-span-2 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-5 shadow-sm">
+                  <div className="flex items-center justify-between gap-3 mb-4">
+                    <div>
+                      <h3 className="text-xs font-black uppercase tracking-wider text-gray-500">Cơ cấu gói</h3>
+                      <p className="text-[11px] font-semibold text-gray-400 mt-1">Tỷ trọng doanh thu</p>
+                    </div>
+                    <div className="w-10 h-10 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center">
+                      <CreditCard className="w-5 h-5" />
+                    </div>
+                  </div>
+                  <div className="h-72">
+                    {planChartData.length === 0 ? (
+                      <div className="h-full rounded-2xl bg-gray-50 dark:bg-gray-900/50 flex items-center justify-center text-xs font-bold text-gray-400">
+                        Chưa có dữ liệu gói.
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie data={planChartData} innerRadius={62} outerRadius={92} paddingAngle={3} dataKey="value" nameKey="name">
+                            {planChartData.map((entry, index) => (
+                              <Cell key={entry.name} fill={planColors[index % planColors.length]} />
+                            ))}
+                          </Pie>
+                          <Tooltip formatter={(value, name) => [formatMoney(value), name]} contentStyle={{ borderRadius: 16, border: "1px solid #ede9fe", boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)" }} />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                    {planChartData.slice(0, 4).map((plan, index) => (
+                      <div key={plan.name} className="flex items-center gap-2 text-[11px] font-bold text-gray-500 min-w-0">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: planColors[index % planColors.length] }} />
+                        <span className="truncate">{plan.name}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-5 shadow-sm">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div>
+                    <h3 className="text-xs font-black uppercase tracking-wider text-gray-500">Giao dịch theo gói</h3>
+                    <p className="text-[11px] font-semibold text-gray-400 mt-1">So sánh số lượt mua của từng gói</p>
+                  </div>
+                  <div className="w-10 h-10 rounded-2xl bg-cyan-50 text-cyan-600 flex items-center justify-center">
+                    <Database className="w-5 h-5" />
+                  </div>
+                </div>
+                <div className="h-64">
+                  {planChartData.length === 0 ? (
+                    <div className="h-full rounded-2xl bg-gray-50 dark:bg-gray-900/50 flex items-center justify-center text-xs font-bold text-gray-400">
+                      Chưa có dữ liệu giao dịch.
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RechartsBarChart data={planChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 700 }} />
+                        <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 700 }} width={36} />
+                        <Tooltip formatter={(value) => [value, "Lượt mua"]} contentStyle={{ borderRadius: 16, border: "1px solid #cffafe", boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)" }} />
+                        <Bar dataKey="transactionCount" radius={[10, 10, 0, 0]} fill="#06b6d4" barSize={34} />
+                      </RechartsBarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-5 shadow-sm">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-gray-500 mb-3">Doanh thu theo gói</h3>
+                  <div className="space-y-3">
+                    {(revenueSummary.byPlan || []).length === 0 ? (
+                      <p className="text-xs text-gray-400 font-semibold">Chưa có giao dịch hoàn tất.</p>
+                    ) : (
+                      revenueSummary.byPlan.map((plan) => (
+                        <div key={`${plan.planCode}-${plan.durationMonths}`} className="flex items-center justify-between gap-3 rounded-2xl bg-gray-50 dark:bg-gray-900/50 p-3">
+                          <div>
+                            <p className="text-xs font-black text-gray-900 dark:text-white">{plan.planCode}</p>
+                            <p className="text-[10px] text-gray-400 font-semibold">{plan.tier} · {plan.durationMonths} tháng · {plan.transactionCount} giao dịch</p>
+                          </div>
+                          <span className="text-xs font-black text-emerald-600">{formatMoney(plan.revenue)}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-5 shadow-sm">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-gray-500 mb-3">Giao dịch mới nhất</h3>
+                  <div className="space-y-3 max-h-80 overflow-y-auto">
+                    {(revenueSummary.recentTransactions || []).length === 0 ? (
+                      <p className="text-xs text-gray-400 font-semibold">Chưa có giao dịch hoàn tất.</p>
+                    ) : (
+                      revenueSummary.recentTransactions.map((txn) => (
+                        <div key={txn.id || txn.orderCode} className="rounded-2xl border border-gray-100 dark:border-gray-700 p-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-xs font-black text-gray-900 dark:text-white truncate">{txn.userName || txn.userEmail || "Người dùng"}</p>
+                              <p className="text-[10px] text-gray-400 font-semibold truncate">{txn.orderCode}</p>
+                              <p className="text-[10px] text-gray-400 font-semibold">{txn.planCode} · {txn.paymentMethod}</p>
+                            </div>
+                            <span className="text-xs font-black text-emerald-600 shrink-0">{formatMoney(txn.amount)}</span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
             <div className="overflow-x-auto">
