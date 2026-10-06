@@ -13,9 +13,14 @@ const babyService = {
   createProfile: async (babyProfileData) => {
     // Map frontend fields to match C# BabyProfile class properties:
     // BabyName (string), DateOfBirth (DateTime), Gender (string), CurrentWeightKg (float?), CurrentHeightCm (float?)
+    const dateOfBirth = babyProfileData.dateOfBirth || babyProfileData.birthDate;
+    // Không tự gán ngày hôm nay: bé sẽ bị tính 0 tháng tuổi và không nhận được thực đơn ăn dặm
+    if (!dateOfBirth) {
+      throw new Error('Thiếu ngày sinh của bé.');
+    }
     const backendPayload = {
       babyName: babyProfileData.babyName || babyProfileData.name || '',
-      dateOfBirth: babyProfileData.dateOfBirth || babyProfileData.birthDate || new Date().toISOString(),
+      dateOfBirth,
       gender: typeof babyProfileData.gender === 'number'
         ? babyProfileData.gender
         : ((babyProfileData.gender || '').toString().toLowerCase() === 'male' || babyProfileData.gender === 'boy' || babyProfileData.gender === 0 ? 0 : 1),

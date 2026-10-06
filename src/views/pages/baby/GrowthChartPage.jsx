@@ -90,7 +90,9 @@ export default function GrowthChartPage() {
   const [setupMode, setSetupMode] = useState(false);
   const [babyName, setBabyName] = useState('');
   const [babyGender, setBabyGender] = useState('boy');
-  const [birthDate, setBirthDate] = useState(new Date().toISOString().substring(0, 10));
+  // Không điền sẵn ngày hôm nay: nếu người dùng quên sửa, bé bị lưu là 0 tháng tuổi
+  // và BE từ chối sinh thực đơn ăn dặm (BABY_TOO_YOUNG_FOR_WEANING).
+  const [birthDate, setBirthDate] = useState('');
   const [birthWeight, setBirthWeight] = useState('3.2');
   const [birthHeight, setBirthHeight] = useState('50');
 
@@ -182,6 +184,14 @@ export default function GrowthChartPage() {
     e.preventDefault();
     if (!babyName.trim()) {
       toast.error('Vui lòng nhập tên bé');
+      return;
+    }
+    if (!birthDate) {
+      toast.error('Vui lòng chọn ngày sinh của bé');
+      return;
+    }
+    if (new Date(birthDate) > new Date()) {
+      toast.error('Ngày sinh không thể là ngày trong tương lai');
       return;
     }
 
@@ -453,6 +463,7 @@ export default function GrowthChartPage() {
               <input
                 type="date"
                 value={birthDate}
+                max={new Date().toISOString().substring(0, 10)}
                 onChange={(e) => setBirthDate(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 dark:bg-gray-900 rounded-xl text-xs font-bold focus:ring-1 focus:ring-momPink/30"
                 required
