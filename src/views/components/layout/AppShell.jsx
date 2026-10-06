@@ -1,31 +1,47 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthController } from '../../../controllers/authController';
 import { useProfileController } from '../../../controllers/profileController';
 import momOiLogo from '../../../assets/Logo/mom-oi-submark-cropped.png';
 import { getTierNameVi } from '../../../utils/tierHelpers';
+import { getFullName } from '../../../utils/displayName';
+import MedicalDisclaimer from '../common/MedicalDisclaimer';
 
-import { Calendar, Heart, Baby, Sparkles, LogOut, RefreshCw, Activity, MessageSquare, LayoutDashboard, User, Settings, ShieldCheck, HeartPulse, Bell, Microscope, ExternalLink, Headphones, LifeBuoy, ReceiptText } from 'lucide-react';
+import {
+  Calendar, Heart, Baby, Sparkles, LogOut, Activity, MessageSquare, Home, User, Settings,
+  ShieldCheck, HeartPulse, Bell, Microscope, ExternalLink, Headphones, Phone, ReceiptText,
+  Stethoscope, Menu, X,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
+
+const isPathActive = (pathname, path) =>
+  pathname === path || (path !== '/' && pathname.startsWith(path));
 
 export default function AppShell() {
   const { user, tier, tierExpiresAt, logout, token, isAuthenticated } = useAuthController();
   const { journeyStage, fetchProfile, momProfile } = useProfileController();
   const navigate = useNavigate();
   const location = useLocation();
+  // Menu "Thêm" gắn với trang đang mở: chuyển trang là tự đóng
+  const [moreOpenAt, setMoreOpenAt] = useState(null);
+  const moreOpen = moreOpenAt === location.pathname;
+  const setMoreOpen = (open) => setMoreOpenAt(open ? location.pathname : null);
+  const [now] = useState(() => Date.now());
 
   const userRoles = Array.isArray(user?.roles) ? user.roles : (user?.role ? [user.role] : []);
   const email = user?.email || '';
   const isAdmin = userRoles.some(r => r.includes('Admin')) || email.includes('admin');
   const isExpert = userRoles.some(r => r.includes('Expert')) || email.includes('expert');
   const isStaff = userRoles.some(r => r.includes('Staff')) || email.includes('staff');
+  const isMom = !isAdmin && !isExpert && !isStaff;
+  const fullName = getFullName(user, token);
 
   // 1. Fetch profile once when authenticated and profile is missing
   useEffect(() => {
-    if (isAuthenticated && token && !momProfile && !isAdmin && !isExpert && !isStaff) {
+    if (isAuthenticated && token && !momProfile && isMom) {
       fetchProfile();
     }
-  }, [isAuthenticated, token, momProfile, isAdmin, isExpert, isStaff, fetchProfile]);
+  }, [isAuthenticated, token, momProfile, isMom, fetchProfile]);
 
   // 2. Auto redirect special roles away from Mom pages to their respective portals
   useEffect(() => {
@@ -36,180 +52,79 @@ export default function AppShell() {
       navigate('/expert', { replace: true });
     } else if (isStaff && path !== '/staff') {
       navigate('/staff', { replace: true });
-    } else if (!isAdmin && !isExpert && !isStaff) {
+    } else if (isMom) {
       // Normal Mom users cannot access Admin, Expert, or Staff portals
       if (path === '/admin' || path === '/expert' || path === '/staff') {
         navigate('/dashboard', { replace: true });
       }
     }
-  }, [location.pathname, isAdmin, isExpert, isStaff, navigate]);
+  }, [location.pathname, isAdmin, isExpert, isStaff, isMom, navigate]);
 
   const handleLogout = async () => {
+    // Hỏi lại để mẹ không lỡ tay đăng xuất
+    if (!window.confirm('Mẹ có chắc muốn đăng xuất không?')) return;
     try {
       await logout();
-      toast.success('Đăng xuất thành công!');
+      toast.success('Đã đăng xuất. Hẹn gặp lại mẹ!');
       navigate('/login');
-    } catch (e) {
+    } catch {
       toast.error('Có lỗi xảy ra khi đăng xuất');
     }
   };
 
-  // Build navItems based on user roles
-  const getNavItems = () => {
-    // 1. If System Admin
-    if (isAdmin) {
-      return [
-        {
-          label: 'Quản Trị Admin ⚙️',
-          path: '/admin',
-          icon: Settings,
-          color: 'text-blue-500',
-        }
-      ];
-    }
+  // Menu chia nhóm, tên gọi đời thường, không biệt ngữ
+  const getNavGroups = () => {
+    if (isAdmin) return [{ title: null, items: [{ label: 'Quản trị hệ thống', path: '/admin', icon: Settings }] }];
+    if (isExpert) return [{ title: null, items: [{ label: 'Duyệt AI & tư vấn', path: '/expert', icon: ShieldCheck }] }];
+    if (isStaff) return [{ title: null, items: [{ label: 'Cổng chăm sóc', path: '/staff', icon: HeartPulse }] }];
 
-    // 2. If Medical Expert
-    if (isExpert) {
-      return [
-        {
-          label: 'Duyệt AI & Tư Vấn 🩺',
-          path: '/expert',
-          icon: ShieldCheck,
-          color: 'text-purple-500',
-        }
-      ];
-    }
-
-    // 3. If Care Staff
-    if (isStaff) {
-      return [
-        {
-          label: 'Cổng Care Staff 🏥',
-          path: '/staff',
-          icon: HeartPulse,
-          color: 'text-emerald-500',
-        }
-      ];
-    }
-
-    // 4. Standard User (Mom) - ONLY Mom features shown
-    const items = [
-      {
-        label: 'Tổng Quan',
-        path: '/dashboard',
-        icon: LayoutDashboard,
-        color: 'text-momPink',
-      }
-    ];
-
+    const daily = [{ label: 'Trang chủ', path: '/dashboard', icon: Home }];
     if (journeyStage === 'PrePregnancy') {
-      items.push({
-        label: 'Rụng Trứng',
-        path: '/fertility',
-        icon: Calendar,
-        color: 'text-momPink',
-      });
+      daily.push({ label: 'Lịch rụng trứng', path: '/fertility', icon: Calendar });
     } else if (journeyStage === 'Pregnant') {
-      items.push({
-        label: 'Thai Kỳ',
-        path: '/pregnancy',
-        icon: Heart,
-        color: 'text-momPurple',
-      });
+      daily.push({ label: 'Thai kỳ của mẹ', path: '/pregnancy', icon: Heart });
     } else if (journeyStage === 'Postpartum') {
-      items.push({
-        label: 'Hậu Sản 💙',
-        path: '/postpartum',
-        icon: Activity,
-        color: 'text-momPink',
-      });
-      items.push({
-        label: 'Bé Yêu 🧸',
-        path: '/baby-nutrition',
-        icon: Baby,
-        color: 'text-momGreen',
-      });
+      daily.push({ label: 'Sức khỏe của mẹ', path: '/postpartum', icon: Activity });
+      daily.push({ label: 'Chăm sóc bé', path: '/baby-nutrition', icon: Baby });
     }
+    daily.push({ label: 'Lịch chăm sóc', path: '/care-calendar', icon: Calendar });
+    daily.push({ label: 'Thông báo', path: '/notifications', icon: Bell });
 
-    items.push({
-      label: 'Chẩn đoán AI',
-      path: '/symptoms',
-      icon: Activity,
-      color: 'text-momGreen',
-    });
-
-    items.push({
-      label: 'Thông Báo 🔔',
-      path: '/notifications',
-      icon: Bell,
-      color: 'text-amber-500',
-    });
-
-    items.push({
-      label: 'Gói Dịch Vụ ✨',
-      path: '/upgrade',
-      icon: Sparkles,
-      color: 'text-amber-500',
-    });
-
-    items.push({
-      label: 'Hồ Sơ Mẹ',
-      path: '/profile',
-      icon: User,
-      color: 'text-momPink',
-    });
-
-    items.push({
-      label: 'Lịch chăm sóc',
-      path: '/care-calendar',
-      icon: Calendar,
-      color: 'text-momPink',
-    });
-
-    items.push({
-      label: 'Thư giãn',
-      path: '/relax',
-      icon: Headphones,
-      color: 'text-momPurple',
-    });
-
-    items.push({
-      label: 'Lịch sử gói',
-      path: '/subscription-history',
-      icon: ReceiptText,
-      color: 'text-emerald-500',
-    });
-
-    items.push({
-      label: 'Hỗ trợ',
-      path: '/feedback',
-      icon: MessageSquare,
-      color: 'text-blue-500',
-    });
-
-    items.push({
-      label: 'Khẩn cấp',
-      path: '/emergency',
-      icon: LifeBuoy,
-      color: 'text-red-500',
-    });
-
-    return items;
+    return [
+      { title: 'Hằng ngày', items: daily },
+      {
+        title: 'Sức khỏe & tinh thần',
+        items: [
+          { label: 'Kiểm tra triệu chứng', path: '/symptoms', icon: Stethoscope },
+          { label: 'Thư giãn', path: '/relax', icon: Headphones },
+        ],
+      },
+      {
+        title: 'Tài khoản',
+        items: [
+          { label: 'Hồ sơ của mẹ', path: '/profile', icon: User },
+          { label: 'Gói dịch vụ', path: '/upgrade', icon: Sparkles },
+          { label: 'Lịch sử thanh toán', path: '/subscription-history', icon: ReceiptText },
+          { label: 'Góp ý & hỗ trợ', path: '/feedback', icon: MessageSquare },
+        ],
+      },
+    ];
   };
 
-  const navItems = getNavItems();
+  const navGroups = getNavGroups();
+  const allItems = navGroups.flatMap(g => g.items);
+  // Điện thoại: tối đa 3 mục chính + Khẩn cấp + Thêm, chữ đủ lớn để bấm
+  const mobileMain = isMom
+    ? [allItems[0], allItems[1], allItems.find(i => i.path === '/care-calendar')].filter(
+        (item, idx, arr) => item && arr.findIndex(x => x.path === item.path) === idx
+      )
+    : allItems;
+
   const tierExpiryDate = tierExpiresAt ? new Date(tierExpiresAt) : null;
   const tierDaysLeft = tierExpiryDate
-    ? Math.ceil((tierExpiryDate.getTime() - Date.now()) / 86400000)
+    ? Math.ceil((tierExpiryDate.getTime() - now) / 86400000)
     : null;
-  const shouldShowExpiryNotice = !isAdmin && !isExpert && !isStaff && tier !== 'Free' && tierDaysLeft !== null && tierDaysLeft <= 7;
-
-  const getStageNameVi = (stage) => {
-    if (stage === 'PrePregnancy') return 'Kế hoạch thụ thai';
-    if (stage === 'Pregnant') return 'Theo dõi thai kỳ';
-    if (stage === 'Postpartum') return 'Hồi phục hậu sản & Bé';
-    return 'Chưa thiết lập';
-  };
+  const shouldShowExpiryNotice = isMom && tier !== 'Free' && tierDaysLeft !== null && tierDaysLeft <= 7;
 
   const handleLogoClick = () => {
     if (isAdmin) navigate('/admin');
@@ -218,209 +133,185 @@ export default function AppShell() {
     else navigate('/dashboard');
   };
 
-  const getSubTitleVi = () => {
-    if (isAdmin) return 'Hệ Thống Quản Trị';
-    if (isExpert) return 'Chuyên Gia Y Tế';
-    if (isStaff) return 'Care Staff';
-    return getStageNameVi(journeyStage);
+  const getRoleBadgeVi = () => {
+    if (isAdmin) return 'Quản trị viên';
+    if (isExpert) return 'Chuyên gia';
+    if (isStaff) return 'Nhân viên';
+    return getTierNameVi(tier);
   };
 
-  const getRoleBadgeVi = () => {
-    if (isAdmin) return 'Quản Trị Viên';
-    if (isExpert) return 'Chuyên Gia';
-    if (isStaff) return 'Nhân Viên';
-    return getTierNameVi(tier);
+  const NavLink = ({ item, large = false }) => {
+    const Icon = item.icon;
+    const active = isPathActive(location.pathname, item.path);
+    return (
+      <Link
+        to={item.path}
+        aria-current={active ? 'page' : undefined}
+        className={`flex items-center gap-3 px-4 ${large ? 'py-4 text-lg' : 'py-3 text-base'} rounded-2xl font-semibold transition-colors ${
+          active
+            ? 'bg-momPink-light text-momPink-dark dark:bg-momPink/20 dark:text-pink-300'
+            : 'text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-800'
+        }`}
+      >
+        <Icon className="w-6 h-6 shrink-0" />
+        {item.label}
+      </Link>
+    );
   };
 
   return (
     <div className="h-screen bg-[#FCF8F8] dark:bg-[#0E0C0F] text-gray-800 dark:text-gray-100 flex flex-col font-sans relative overflow-hidden">
-      {/* Decorative premium ambient glowing spots */}
-      <div className="absolute top-[-10%] left-[-15%] w-[45%] aspect-square rounded-full bg-gradient-to-br from-pink-300/15 to-purple-400/15 blur-[120px] pointer-events-none"></div>
-      <div className="absolute bottom-[-15%] right-[-10%] w-[45%] aspect-square rounded-full bg-gradient-to-br from-purple-300/10 to-pink-400/10 blur-[130px] pointer-events-none"></div>
-      <div className="absolute top-[35%] right-[15%] w-[25%] aspect-square rounded-full bg-pink-200/10 dark:bg-pink-900/5 blur-[100px] pointer-events-none"></div>
-      
-      {/* Top Header Bar */}
-      <header className="sticky top-0 z-30 bg-white/60 dark:bg-gray-900/50 backdrop-blur-xl border-b border-white/50 dark:border-gray-850 py-3.5 px-4 sm:px-8 flex items-center justify-between relative">
-        <div onClick={handleLogoClick} className="cursor-pointer flex items-center gap-2.5 group">
-          <img
-            src={momOiLogo}
-            alt="Mom Ơi!"
-            className="h-11 w-11 rounded-full object-cover shadow-[0_4px_15px_rgba(236,72,153,0.18)] transition-transform duration-300 group-hover:scale-105"
-          />
-          <div>
-            <h1 className="font-brand text-2xl font-extrabold leading-none tracking-normal bg-gradient-to-r from-momPink-dark to-momPurple-dark dark:from-pink-400 dark:to-purple-400 bg-clip-text text-transparent">
-              Mom Ơi!
-            </h1>
-            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">
-              {getSubTitleVi()}
-            </p>
-          </div>
-        </div>
+      {/* Header */}
+      <header className="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-pink-100 dark:border-gray-800 py-3 px-4 sm:px-8 flex items-center justify-between gap-3">
+        <button onClick={handleLogoClick} className="flex items-center gap-3 text-left" aria-label="Về trang chủ">
+          <img src={momOiLogo} alt="" className="h-12 w-12 rounded-full object-cover shadow" />
+          <span className="font-brand text-2xl font-extrabold leading-none text-momPink-dark dark:text-pink-400">
+            Mom Ơi!
+          </span>
+        </button>
 
-        {/* User Tier Status and Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {user && (
-            <div className="hidden sm:flex flex-col items-end text-right">
-              <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
-                {user.fullName || user.email}
+            <Link to="/profile" className="hidden md:flex flex-col items-end text-right mr-1">
+              <span className="text-base font-bold text-gray-800 dark:text-gray-100">
+                {fullName || 'Tài khoản của mẹ'}
               </span>
-              <span className="text-[10px] bg-momPink-light/75 dark:bg-momPink/25 text-momPink-dark dark:text-pink-455 px-2.5 py-0.5 rounded-full font-bold">
-                {getRoleBadgeVi()}
-              </span>
-            </div>
+              <span className="text-sm font-semibold text-momPink-dark dark:text-pink-300">{getRoleBadgeVi()}</span>
+            </Link>
           )}
-          
+
+          {isMom && (
+            <Link
+              to="/emergency"
+              className="hidden sm:inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-red-600 hover:bg-red-700 text-white text-base font-bold shadow"
+            >
+              <Phone className="w-5 h-5" /> Khẩn cấp
+            </Link>
+          )}
+
           <button
             onClick={handleLogout}
-            title="Đăng xuất"
-            className="p-2 text-gray-450 hover:text-red-500 rounded-full hover:bg-red-50 dark:hover:bg-red-950/20 transition-all duration-300"
+            className="inline-flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-full border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-base font-semibold"
           >
-            <LogOut className="w-4.5 h-4.5" />
+            <LogOut className="w-5 h-5" />
+            <span className="hidden sm:inline">Đăng xuất</span>
           </button>
         </div>
       </header>
 
-      {/* Main Layout Body */}
-      <div className="flex-1 flex max-w-7xl w-full mx-auto pb-20 lg:pb-0 relative z-10 overflow-hidden">
-        
-        {/* Sidebar for Desktop */}
-        <aside className="hidden lg:flex flex-col w-64 border-r border-white/20 dark:border-gray-850/50 p-5 bg-white/20 dark:bg-gray-900/10 backdrop-blur-xl shrink-0 overflow-y-auto h-full">
-          <div className="space-y-2 flex-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
-              return (
-                <Link
-                  key={item.label}
-                  to={item.path}
-                  className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl text-xs font-bold transition-all duration-300 ${
-                    isActive
-                      ? 'bg-white/80 dark:bg-gray-850/70 text-momPink-dark dark:text-pink-400 border-l-4 border-momPink shadow-[0_4px_20px_-4px_rgba(236,72,153,0.12)] dark:shadow-none'
-                      : 'text-gray-400 hover:text-gray-800 dark:hover:text-white hover:bg-white/40 dark:hover:bg-gray-800/30 hover:translate-x-1'
-                  }`}
-                >
-                  <Icon className={`w-4.5 h-4.5 ${isActive ? 'scale-110' : ''}`} />
-                  {item.label}
-                </Link>
-              );
-            })}
-          </div>
-
-          {user && (
-            <div className="p-4 bg-gradient-to-br from-white/60 to-pink-50/20 dark:from-gray-950/40 dark:to-purple-950/20 rounded-2xl border border-white/60 dark:border-gray-850 shadow-sm mt-auto">
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                Tài khoản
-              </p>
-              <p className="text-xs font-bold text-gray-850 dark:text-gray-200 truncate">
-                {user.fullName}
-              </p>
-              <p className="text-[10px] text-gray-400 mt-0.5 truncate">
-                {user.email}
-              </p>
-              
-              {/* Profile and subscription status for Mom users */}
-              {!isAdmin && !isExpert && !isStaff && (
-                <>
-                  <div className="mt-3 flex justify-between items-center bg-white/70 dark:bg-gray-900/60 p-2.5 rounded-xl border border-white/50 dark:border-gray-850">
-                    <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      Gói dịch vụ
-                    </span>
-                    <Link
-                      to="/upgrade"
-                      className="text-xs font-black text-momPink-dark dark:text-pink-400 hover:text-momPurple transition-colors flex items-center gap-1 group"
-                      title="Bấm để xem và nâng cấp gói"
-                    >
-                      <span>{getTierNameVi(tier)}</span>
-                      <span className="text-[9px] bg-momPink-light/80 dark:bg-momPink/30 text-momPink-dark dark:text-pink-300 px-1.5 py-0.5 rounded-full font-bold group-hover:scale-105 transition-transform">
-                        Đổi
-                      </span>
-                    </Link>
-                  </div>
-                  <div className="mt-2.5 pt-2 border-t border-gray-100 dark:border-gray-800/60 flex justify-between items-center">
-                    <Link to="/profile" className="text-[10px] font-bold text-momPink hover:text-momPink-dark hover:underline transition-all">
-                      Chỉnh sửa hồ sơ
-                    </Link>
-                    <Link to="/profile" className="text-[10px] font-bold text-gray-400 hover:text-gray-600 hover:underline transition-all">
-                      Đổi lộ trình
-                    </Link>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
+      <div className="flex-1 flex max-w-7xl w-full mx-auto pb-24 lg:pb-0 relative z-10 overflow-hidden">
+        {/* Sidebar (máy tính) */}
+        <aside className="hidden lg:flex flex-col w-72 border-r border-pink-100 dark:border-gray-800 p-4 shrink-0 overflow-y-auto h-full">
+          <nav className="space-y-6 flex-1" aria-label="Menu chính">
+            {navGroups.map(group => (
+              <div key={group.title || 'main'}>
+                {group.title && (
+                  <p className="px-4 mb-2 text-sm font-bold text-gray-500 dark:text-gray-400">{group.title}</p>
+                )}
+                <div className="space-y-1">
+                  {group.items.map(item => <NavLink key={item.path} item={item} />)}
+                </div>
+              </div>
+            ))}
+          </nav>
         </aside>
 
-        {/* Content Viewport */}
-        <main className="flex-1 min-w-0 p-6 sm:p-8 overflow-y-auto flex flex-col justify-between">
+        {/* Nội dung */}
+        <main className="flex-1 min-w-0 p-4 sm:p-8 overflow-y-auto flex flex-col justify-between">
           <div>
             {shouldShowExpiryNotice && (
-              <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                  <p className="text-xs font-black text-amber-800 uppercase tracking-wider">Gói của bạn sắp hết hạn</p>
-                  <p className="text-xs font-semibold text-amber-700 mt-1">
-                    Còn {Math.max(tierDaysLeft, 0)} ngày. Gia hạn để giữ quyền truy cập các tính năng nâng cao.
+                  <p className="text-base font-bold text-amber-900">Gói của mẹ sắp hết hạn</p>
+                  <p className="text-base text-amber-800 mt-1">
+                    Còn {Math.max(tierDaysLeft, 0)} ngày. Gia hạn để tiếp tục dùng các tính năng nâng cao.
                   </p>
                 </div>
-                <Link to="/upgrade" className="px-4 py-2 rounded-xl bg-amber-500 text-white text-xs font-black text-center">
-                  Gia hạn
+                <Link to="/upgrade" className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-base font-bold text-center">
+                  Gia hạn ngay
                 </Link>
               </div>
             )}
             <Outlet />
           </div>
 
-          {/* Dòng trích dẫn khoa học bảo chứng ở chân trang cho người dùng */}
-          <div className="mt-14 pt-5 border-t border-gray-150 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-gray-400 font-medium">
-            <div className="flex items-center gap-2 flex-wrap text-center sm:text-left">
-              <span className="inline-flex items-center gap-1 font-bold text-gray-700 dark:text-gray-300">
-                <Microscope className="w-3.5 h-3.5 text-momPink" /> MomBaby Care AI
-              </span>
-              <span>• Khuyến nghị dinh dưỡng & phác đồ chuẩn hóa theo WHO DRIs & USDA FoodData</span>
-            </div>
-            <div className="flex items-center gap-3 shrink-0">
-              <a
-                href="https://www.who.int/nutrition/publications/infantfeeding/924156209X/en/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-momPink transition-colors inline-flex items-center gap-1"
-              >
-                WHO Guidelines <ExternalLink className="w-2.5 h-2.5" />
+          {isMom && <MedicalDisclaimer className="mt-14" />}
+          <footer className="mt-6 pt-5 border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-500 dark:text-gray-400">
+            <span className="inline-flex items-center gap-2 text-center sm:text-left">
+              <Microscope className="w-4 h-4 text-momPink" />
+              Khuyến nghị dinh dưỡng theo chuẩn WHO và dữ liệu USDA
+            </span>
+            <div className="flex items-center gap-4 shrink-0">
+              <a href="https://www.who.int/nutrition/publications/infantfeeding/924156209X/en/" target="_blank" rel="noopener noreferrer" className="hover:text-momPink inline-flex items-center gap-1">
+                WHO <ExternalLink className="w-3.5 h-3.5" />
               </a>
-              <a
-                href="https://fdc.nal.usda.gov/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-momPink transition-colors inline-flex items-center gap-1"
-              >
-                USDA FoodData <ExternalLink className="w-2.5 h-2.5" />
+              <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener noreferrer" className="hover:text-momPink inline-flex items-center gap-1">
+                USDA <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>
-          </div>
+          </footer>
         </main>
       </div>
 
-      {/* Bottom Navigation for Mobile Devices */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-gray-900/95 backdrop-blur-lg border-t border-pink-100/60 dark:border-gray-800 flex items-center justify-around py-2 px-1 z-40 shadow-2xl">
-        {navItems.map((item) => {
+      {/* Menu "Thêm" (điện thoại) */}
+      {moreOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={() => setMoreOpen(false)}>
+          <div
+            className="bg-white dark:bg-gray-900 rounded-t-3xl p-4 pb-8 max-h-[80vh] overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+            role="dialog"
+            aria-label="Tất cả mục"
+          >
+            <div className="flex items-center justify-between mb-3 px-2">
+              <p className="text-xl font-bold">Tất cả mục</p>
+              <button onClick={() => setMoreOpen(false)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Đóng">
+                <X className="w-7 h-7" />
+              </button>
+            </div>
+            {navGroups.map(group => (
+              <div key={group.title || 'main'} className="mb-4">
+                {group.title && <p className="px-4 mb-1 text-sm font-bold text-gray-500">{group.title}</p>}
+                {group.items.map(item => <NavLink key={item.path} item={item} large />)}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Thanh điều hướng dưới (điện thoại) */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-pink-100 dark:border-gray-800 grid grid-flow-col auto-cols-fr z-40 shadow-2xl" aria-label="Điều hướng nhanh">
+        {mobileMain.map(item => {
           const Icon = item.icon;
-          const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
+          const active = isPathActive(location.pathname, item.path);
           return (
             <Link
-              key={item.label}
+              key={item.path}
               to={item.path}
-              className={`flex flex-col items-center gap-1 py-1 px-3 text-[10px] font-bold transition-all duration-300 ${
-                isActive
-                  ? 'text-momPink-dark dark:text-momPink scale-110'
-                  : 'text-gray-400 hover:text-gray-600'
+              className={`flex flex-col items-center justify-center gap-1 py-2.5 min-h-[64px] text-sm font-semibold ${
+                active ? 'text-momPink-dark dark:text-pink-300' : 'text-gray-600 dark:text-gray-300'
               }`}
             >
-              <Icon className="w-5 h-5" />
-              <span>{item.label}</span>
+              <Icon className="w-7 h-7" />
+              <span className="leading-tight text-center">{item.label}</span>
             </Link>
           );
         })}
+        {isMom && (
+          <>
+            <Link to="/emergency" className="flex flex-col items-center justify-center gap-1 py-2.5 min-h-[64px] text-sm font-bold text-red-600">
+              <Phone className="w-7 h-7" />
+              Khẩn cấp
+            </Link>
+            <button
+              onClick={() => setMoreOpen(true)}
+              className="flex flex-col items-center justify-center gap-1 py-2.5 min-h-[64px] text-sm font-semibold text-gray-600 dark:text-gray-300"
+            >
+              <Menu className="w-7 h-7" />
+              Thêm
+            </button>
+          </>
+        )}
       </nav>
-
     </div>
   );
 }

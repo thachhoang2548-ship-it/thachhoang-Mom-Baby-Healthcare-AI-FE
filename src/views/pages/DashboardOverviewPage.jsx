@@ -1,306 +1,285 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuthController } from '../../controllers/authController';
 import { useProfileController } from '../../controllers/profileController';
 import { getTierNameVi } from '../../utils/tierHelpers';
+import { getFullName, getGivenName, getTimeGreeting, formatTodayVi } from '../../utils/displayName';
 import {
-  Heart,
-  Calendar,
-  Baby,
-  MessageSquare,
-  Activity,
-  Sparkles,
-  Droplet,
-  Compass,
-  Smile,
-  ChevronRight,
-  TrendingUp,
+  Heart, Calendar, Activity, Droplet, Compass, ChevronRight, Stethoscope,
+  UtensilsCrossed, LineChart, Dumbbell, BookHeart, Smile, Minus, Plus,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+const MOODS = [
+  { emoji: '😊', label: 'Vui vẻ' },
+  { emoji: '😐', label: 'Bình thường' },
+  { emoji: '😴', label: 'Mệt mỏi' },
+  { emoji: '😟', label: 'Lo lắng' },
+];
+
+// Một cốc nước thông dụng ở Việt Nam ~250 ml
+const CUP_ML = 250;
+
+// Tổng lượng nước khuyến nghị mỗi ngày cho phụ nữ (EFSA 2010, đã gồm nước từ
+// thức ăn như canh, sữa, trái cây): bình thường 2,0 L; mang thai +0,3 L;
+// cho con bú +0,7 L. Giai đoạn sau sinh mặc định là đang cho con bú.
+const WATER_GOAL_ML = {
+  Pregnant: { ml: 2300, reason: 'mẹ bầu' },
+  Postpartum: { ml: 2700, reason: 'mẹ đang cho con bú' },
+  default: { ml: 2000, reason: 'phụ nữ trưởng thành' },
+};
+
+const formatLiters = (ml) =>
+  `${(ml / 1000).toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 2 })} lít`;
+
 export default function DashboardOverviewPage() {
-  const { user, tier } = useAuthController();
-  const { journeyStage, momProfile } = useProfileController();
+  const { user, tier, token } = useAuthController();
+  const { journeyStage } = useProfileController();
   const navigate = useNavigate();
 
-  // Local state for interactive daily check-in
+  const givenName = getGivenName(getFullName(user, token));
+  const greeting = `${getTimeGreeting()}, ${givenName ? `mẹ ${givenName}` : 'mẹ'}!`;
+
+  // Ghi nhận trong ngày (giữ nguyên hành vi cũ: chỉ lưu trên màn hình)
   const [waterCups, setWaterCups] = useState(0);
   const [mood, setMood] = useState('');
   const [weight, setWeight] = useState('');
   const [hasCheckedIn, setHasCheckedIn] = useState(false);
 
-  const handleWaterAdd = () => {
-    if (waterCups < 12) {
-      setWaterCups((prev) => prev + 1);
-      toast.success('Đã thêm 1 cốc nước! Giữ đủ nước mẹ nhé 💧');
-    }
-  };
+  const waterGoal = WATER_GOAL_ML[journeyStage] || WATER_GOAL_ML.default;
+  const waterMl = waterCups * CUP_ML;
+  const waterPct = Math.min(100, Math.round((waterMl / waterGoal.ml) * 100));
+  const cupsLeft = Math.max(0, Math.ceil((waterGoal.ml - waterMl) / CUP_ML));
 
   const handleCheckInSubmit = (e) => {
     e.preventDefault();
     setHasCheckedIn(true);
-    toast.success('Ghi nhận sức khỏe hôm nay thành công! 🌸');
+    toast.success('Đã ghi nhận sức khỏe hôm nay!');
   };
 
-  // Stage details mapping
-  const getStageContent = () => {
+  // Các việc mẹ hay làm nhất theo từng giai đoạn
+  const getStage = () => {
     switch (journeyStage) {
       case 'PrePregnancy':
         return {
-          title: 'Kế hoạch thụ thai an toàn',
-          desc: 'Quản lý chu kỳ kinh nguyệt tự động, dự đoán ngày rụng trứng và cơ hội thụ thai bằng thuật toán AI.',
-          badge: 'Giai đoạn thụ thai',
-          color: 'from-pink-500 to-rose-450',
-          icon: Calendar,
-          actions: [
-            { label: 'Lịch rụng trứng', path: '/fertility' },
+          title: 'Chuẩn bị mang thai',
+          tasks: [
+            { label: 'Xem lịch rụng trứng', desc: 'Biết ngày dễ thụ thai nhất', path: '/fertility', icon: Calendar, tone: 'pink' },
           ],
         };
       case 'Pregnant':
         return {
-          title: 'Đồng hành thai kỳ hạnh phúc',
-          desc: 'Theo dõi sự phát triển của thai nhi theo từng tuần, lập thực đơn ăn uống và các bài tập yoga an toàn cho mẹ bầu.',
-          badge: 'Giai đoạn thai kỳ',
-          color: 'from-purple-500 to-indigo-500',
-          icon: Heart,
-          actions: [
-            { label: 'Nhật ký thai kỳ', path: '/pregnancy' },
-            { label: 'Thực đơn mẹ bầu', path: '/pregnancy/meals' },
-            { label: 'Thực đơn thông minh AI', path: '/diet-recipes' },
-            { label: 'Bài tập thai giáo', path: '/pregnancy/exercises' },
+          title: 'Đang mang thai',
+          tasks: [
+            { label: 'Thai kỳ tuần này', desc: 'Bé phát triển thế nào', path: '/pregnancy', icon: Heart, tone: 'purple' },
+            { label: 'Thực đơn mẹ bầu', desc: 'Ăn gì cho đủ chất', path: '/pregnancy/meals', icon: UtensilsCrossed, tone: 'green' },
+            { label: 'Bài tập nhẹ', desc: 'Vận động an toàn cho bầu', path: '/pregnancy/exercises', icon: Dumbbell, tone: 'pink' },
           ],
         };
       case 'Postpartum':
         return {
-          title: 'Hồi phục sau sinh & Chăm bé',
-          desc: 'Theo dõi sự phục hồi của mẹ, đánh giá tâm lý EPDS ngừa trầm cảm và ghi nhận chiều cao, cân nặng, giấc ngủ của bé.',
-          badge: 'Giai đoạn sau sinh',
-          color: 'from-emerald-500 to-teal-500',
-          icon: Baby,
-          actions: [
-            { label: 'Nhật ký phục hồi', path: '/postpartum' },
-            { label: 'Đánh giá trầm cảm EPDS', path: '/postpartum/epds' },
-            { label: 'Biểu đồ tăng trưởng bé', path: '/baby-nutrition/growth' },
+          title: 'Sau sinh',
+          tasks: [
+            { label: 'Thực đơn cho bé', desc: 'Món ăn dặm hôm nay', path: '/baby-nutrition/menu', icon: UtensilsCrossed, tone: 'green' },
+            { label: 'Cân nặng, chiều cao bé', desc: 'Bé lớn có đúng chuẩn không', path: '/baby-nutrition/growth', icon: LineChart, tone: 'purple' },
+            { label: 'Sức khỏe của mẹ', desc: 'Ghi lại sự hồi phục', path: '/postpartum', icon: Activity, tone: 'pink' },
+            { label: 'Tâm trạng của mẹ', desc: 'Bài kiểm tra ngắn 10 câu', path: '/postpartum/epds', icon: BookHeart, tone: 'amber' },
           ],
         };
       default:
         return {
-          title: 'Bắt đầu lộ trình mới',
-          desc: 'Vui lòng thiết lập lộ trình sức khỏe cá nhân hóa phù hợp với thể trạng của bạn.',
-          badge: 'Thiết lập lộ trình',
-          color: 'from-gray-500 to-slate-600',
-          icon: Compass,
-          actions: [{ label: 'Thiết lập hồ sơ', path: '/profile' }],
+          title: null,
+          tasks: [
+            { label: 'Bắt đầu thiết lập', desc: 'Cho Mom Ơi biết mẹ đang ở giai đoạn nào', path: '/profile', icon: Compass, tone: 'pink' },
+          ],
         };
     }
   };
 
-  const stageContent = getStageContent();
+  const stage = getStage();
+  const tasks = [
+    ...stage.tasks,
+    { label: 'Kiểm tra triệu chứng', desc: 'Thấy trong người không khỏe?', path: '/symptoms', icon: Stethoscope, tone: 'blue' },
+    { label: 'Lịch chăm sóc', desc: 'Lịch khám, tiêm, uống thuốc', path: '/care-calendar', icon: Calendar, tone: 'amber' },
+  ];
+
+  const tones = {
+    pink: 'bg-pink-100 text-pink-700 dark:bg-pink-900/40 dark:text-pink-300',
+    purple: 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300',
+    green: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+    blue: 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
+    amber: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+  };
 
   return (
     <div className="space-y-8 pb-10">
-      {/* Top Banner with Warm Welcome */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-momPink/10 via-momPurple/5 to-pink-100/10 dark:from-momPink/5 dark:to-transparent border border-white/50 dark:border-gray-850 p-6 sm:p-8 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.01)] backdrop-blur-md">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-xl">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-momPink-light/80 dark:bg-momPink/30 text-momPink-dark dark:text-pink-300">
-              <Sparkles className="w-3.5 h-3.5 text-momPink animate-pulse" /> Chào mừng mami đến với Mom Ơi!
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white leading-tight font-display">
-              Chào mẹ, <span className="bg-gradient-to-r from-momPink to-momPurple bg-clip-text text-transparent">{user?.fullName || user?.email}</span>! 🌸
-            </h2>
-            <p className="text-xs text-gray-400 dark:text-gray-405 font-semibold leading-relaxed">
-              Chúc mẹ một ngày ngập tràn niềm vui và sức khỏe. Hãy đồng hành cùng Mom Ơi để chăm sóc sức khỏe tốt nhất cho cả mẹ và bé yêu nhé.
-            </p>
-          </div>
-
-          {/* User Membership Status Badge */}
-          <div
-            onClick={() => navigate('/upgrade')}
-            className="shrink-0 flex items-center gap-3.5 bg-white/85 dark:bg-gray-900/80 backdrop-blur-xl p-4 px-5 rounded-3xl border border-white/80 dark:border-gray-800 shadow-[0_4px_20px_-4px_rgba(236,72,153,0.12)] hover:shadow-lg hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer group"
-          >
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-pink-500/15 via-purple-500/15 to-pink-500/20 dark:from-pink-500/25 dark:to-purple-500/25 flex items-center justify-center text-xl shadow-inner group-hover:scale-110 transition-transform">
-              👑
-            </div>
-            <div>
-              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                Gói hội viên <Sparkles className="w-3 h-3 text-amber-400 animate-pulse" />
-              </p>
-              <h4 className="text-sm font-black text-momPurple-dark dark:text-purple-300 mt-0.5 group-hover:text-momPink transition-colors">
-                {getTierNameVi(tier)}
-              </h4>
-            </div>
-            <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-momPink group-hover:translate-x-0.5 transition-all ml-1" />
-          </div>
+      {/* Lời chào */}
+      <section className="bg-white dark:bg-gray-900 border border-pink-100 dark:border-gray-800 p-5 sm:p-8 rounded-3xl flex flex-col md:flex-row md:items-center justify-between gap-5">
+        <div className="space-y-2">
+          <p className="text-base font-semibold text-gray-500 dark:text-gray-400 first-letter:uppercase">{formatTodayVi()}</p>
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white leading-tight">
+            {greeting} 🌸
+          </h1>
+          <p className="text-lg text-gray-600 dark:text-gray-300">
+            {stage.title ? <>Giai đoạn: <strong className="text-gray-800 dark:text-gray-100">{stage.title}</strong></> : 'Mom Ơi luôn ở bên mẹ và bé.'}
+          </p>
         </div>
-      </div>
+        <Link
+          to="/upgrade"
+          className="self-start md:self-center inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-900/30 dark:border-amber-800 dark:text-amber-200 text-base font-semibold"
+        >
+          Gói của mẹ: {getTierNameVi(tier)} <ChevronRight className="w-5 h-5" />
+        </Link>
+      </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Active Journey & AI Tools */}
-        <div className="lg:col-span-2 space-y-8">
-          
-          {/* Active Journey Stage Info */}
-          <div className="bg-white/40 dark:bg-gray-850/20 backdrop-blur-md p-6 rounded-[2rem] border border-white/60 dark:border-gray-800 shadow-sm hover:shadow-md transition-all duration-300 space-y-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-tr ${stageContent.color} flex items-center justify-center text-white shadow-md`}>
-                  <stageContent.icon className="w-6 h-6" />
-                </div>
-                <div>
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">{stageContent.badge}</span>
-                  <h3 className="text-base font-extrabold text-gray-900 dark:text-white mt-0.5">{stageContent.title}</h3>
-                </div>
-              </div>
+      {/* Việc cần làm */}
+      <section className="space-y-4" aria-labelledby="tasks-title">
+        <h2 id="tasks-title" className="text-2xl font-bold text-gray-900 dark:text-white">
+          Hôm nay mẹ muốn làm gì?
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4">
+          {tasks.map(task => {
+            const Icon = task.icon;
+            return (
               <button
-                onClick={() => navigate('/profile')}
-                className="text-xs font-bold text-momPink hover:text-momPink-dark flex items-center gap-0.5 transition-colors"
+                key={task.path}
+                onClick={() => navigate(task.path)}
+                className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 min-h-[88px] text-left bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-gray-800 hover:border-momPink focus-visible:border-momPink rounded-2xl transition-colors"
               >
-                Đổi lộ trình <ChevronRight className="w-3.5 h-3.5" />
+                <span className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center shrink-0 ${tones[task.tone]}`}>
+                  <Icon className="w-7 h-7" />
+                </span>
+                <span className="flex-1 min-w-0">
+                  <span className="block text-lg font-bold text-gray-900 dark:text-white leading-snug">{task.label}</span>
+                  <span className="block text-base text-gray-600 dark:text-gray-400 leading-snug">{task.desc}</span>
+                </span>
+                <ChevronRight className="w-6 h-6 text-gray-400 shrink-0" />
               </button>
-            </div>
+            );
+          })}
+        </div>
+      </section>
 
-            <p className="text-xs text-gray-400 dark:text-gray-405 leading-relaxed font-semibold">
-              {stageContent.desc}
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              {stageContent.actions.map((act) => (
-                <button
-                  key={act.label}
-                  onClick={() => navigate(act.path)}
-                  className="px-4 py-3.5 bg-white/70 dark:bg-gray-900/50 hover:bg-momPink-light/30 hover:border-momPink/50 dark:hover:bg-momPink/10 border border-white/60 dark:border-gray-800 rounded-2xl text-xs font-bold text-gray-800 dark:text-gray-200 transition-all duration-300 text-left flex items-center justify-between group shadow-sm"
-                >
-                  <span>{act.label}</span>
-                  <ChevronRight className="w-4 h-4 text-gray-400 group-hover:translate-x-1 transition-transform" />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* AI Helper Cards Section */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider">
-              Trợ lý AI đắc lực cho mẹ
-            </h3>
-
-            <div className="grid grid-cols-1 gap-6">
-              {/* Symptom Checker AI */}
-              <div className="bg-white/40 dark:bg-gray-850/20 backdrop-blur-md p-5 rounded-[2rem] border border-white/60 dark:border-gray-800 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between h-48">
-                <div>
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-550 shadow-inner">
-                    <Activity className="w-5 h-5 text-momGreen" />
-                  </div>
-                  <h4 className="text-sm font-extrabold text-gray-900 dark:text-white mt-3">Chẩn đoán triệu chứng AI</h4>
-                  <p className="text-[10px] text-gray-400 font-semibold mt-1 leading-relaxed">
-                    Tải lên hình ảnh hoặc mô tả dấu hiệu cơ thể để nhận gợi ý y tế chuyên khoa từ AI.
-                  </p>
-                </div>
-                <button
-                  onClick={() => navigate('/symptoms')}
-                  className="mt-3 w-full py-2.5 bg-gradient-to-r from-momGreen to-teal-500 text-white text-xs font-bold rounded-xl shadow-md hover:scale-105 active:scale-95 transition-all duration-300"
-                >
-                  Kiểm tra triệu chứng
-                </button>
-              </div>
-            </div>
-          </div>
+      {/* Ghi nhận sức khỏe */}
+      <section className="bg-white dark:bg-gray-900 border border-pink-100 dark:border-gray-800 p-5 sm:p-8 rounded-3xl space-y-6" aria-labelledby="checkin-title">
+        <div>
+          <h2 id="checkin-title" className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <Smile className="w-7 h-7 text-momPink" /> Mẹ thấy thế nào?
+          </h2>
+          <p className="text-base text-gray-600 dark:text-gray-400 mt-1">Ghi lại vài điều nhỏ mỗi ngày.</p>
         </div>
 
-        {/* Right Column: Daily Health Check-in */}
-        <div className="space-y-6">
-          <div className="bg-white/40 dark:bg-gray-850/20 backdrop-blur-md p-6 rounded-[2rem] border border-white/60 dark:border-gray-800 shadow-sm space-y-5">
-            <div>
-              <h3 className="text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider">
-                Ghi nhận sức khỏe mỗi ngày
-              </h3>
-              <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
-                Xây dựng thói quen chăm sóc sức khỏe đều đặn
-              </p>
-            </div>
-
-            {!hasCheckedIn ? (
-              <form onSubmit={handleCheckInSubmit} className="space-y-4">
-                {/* Mood Select */}
-                <div>
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-2">Tâm trạng hôm nay</label>
-                  <div className="flex gap-2.5">
-                    {['🌸 Vui vẻ', '😴 Mệt mỏi', '😐 Bình thường', '🥺 Lo lắng'].map((item) => (
-                      <button
-                        type="button"
-                        key={item}
-                        onClick={() => setMood(item)}
-                        className={`flex-1 py-2 rounded-xl text-[10px] font-bold border transition-all duration-300 ${
-                          mood === item
-                            ? 'bg-momPink-light border-momPink text-momPink-dark shadow-sm'
-                            : 'bg-white/50 dark:bg-gray-900/40 border-white/60 dark:border-gray-850 text-gray-400 hover:bg-white/70'
-                        }`}
-                      >
-                        {item.split(' ')[0]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Weight Input */}
-                <div>
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-1">Cân nặng của mẹ (kg)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    placeholder="Nhập cân nặng..."
-                    value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-white/60 dark:border-gray-855 focus:outline-none focus:ring-2 focus:ring-momPink/30 focus:border-momPink text-xs font-semibold bg-white/50 dark:bg-gray-900/30"
-                  />
-                </div>
-
-                {/* Water Tracker Widget */}
-                <div>
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block mb-2">Lượng nước uống (Mục tiêu: 8 cốc)</label>
-                  <div className="flex items-center justify-between bg-white/50 dark:bg-gray-900/30 border border-white/60 dark:border-gray-855 p-3 rounded-2xl">
-                    <div className="flex items-center gap-2">
-                      <Droplet className="w-5 h-5 text-momBlue fill-momBlue animate-bounce" />
-                      <span className="text-xs font-extrabold text-gray-800 dark:text-gray-200">
-                        {waterCups} / 8 cốc
-                      </span>
-                    </div>
+        {!hasCheckedIn ? (
+          <form onSubmit={handleCheckInSubmit} className="space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <fieldset>
+                <legend className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-3">Tâm trạng hôm nay</legend>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {MOODS.map(m => (
                     <button
                       type="button"
-                      onClick={handleWaterAdd}
-                      className="px-3 py-1.5 bg-momBlue/10 hover:bg-momBlue/20 text-momBlue dark:text-blue-400 text-[10px] font-extrabold rounded-xl transition-all"
+                      key={m.label}
+                      onClick={() => setMood(m.label)}
+                      aria-pressed={mood === m.label}
+                      className={`flex flex-col items-center justify-center gap-1 py-3 px-2 rounded-xl border-2 text-base font-semibold transition-colors ${
+                        mood === m.label
+                          ? 'border-momPink bg-momPink-light text-momPink-dark'
+                          : 'border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:border-momPink'
+                      }`}
                     >
-                      + Thêm cốc
+                      <span className="text-3xl" aria-hidden>{m.emoji}</span>
+                      {m.label}
                     </button>
-                  </div>
+                  ))}
+                </div>
+              </fieldset>
+
+              <div>
+                <label htmlFor="mom-weight" className="text-lg font-semibold text-gray-800 dark:text-gray-200 block mb-3">
+                  Cân nặng của mẹ (kg)
+                </label>
+                <input
+                  id="mom-weight"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.1"
+                  placeholder="Ví dụ: 55,5"
+                  value={weight}
+                  onChange={(e) => setWeight(e.target.value)}
+                  className="w-full px-4 py-3.5 rounded-xl border-2 border-gray-200 dark:border-gray-700 focus:outline-none focus:border-momPink text-lg bg-white dark:bg-gray-950"
+                />
+              </div>
+            </div>
+
+            {/* Uống nước: tính theo lít, mục tiêu theo giai đoạn */}
+            <div>
+              <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">Uống nước hôm nay</p>
+              <p className="text-base text-gray-600 dark:text-gray-400 mt-1">
+                Gợi ý cho {waterGoal.reason}: khoảng <strong className="text-gray-800 dark:text-gray-100">{formatLiters(waterGoal.ml)}</strong> mỗi ngày
+                (tính cả canh, sữa, trái cây), tương đương <strong className="text-gray-800 dark:text-gray-100">{Math.ceil(waterGoal.ml / CUP_ML)} cốc</strong> loại {CUP_ML} ml.
+              </p>
+
+              <div className="mt-4 border-2 border-gray-200 dark:border-gray-700 rounded-2xl p-4 space-y-4">
+                <div className="flex items-end justify-between gap-3 flex-wrap">
+                  <p className="flex items-center gap-2">
+                    <Droplet className="w-8 h-8 text-sky-500 shrink-0" />
+                    <span>
+                      <span className="block text-sm text-gray-500 dark:text-gray-400">Đã uống</span>
+                      <span className="block text-3xl font-extrabold text-gray-900 dark:text-white">{formatLiters(waterMl)}</span>
+                      <span className="block text-base text-gray-500 dark:text-gray-400">trên {formatLiters(waterGoal.ml)} gợi ý</span>
+                    </span>
+                  </p>
+                  <p className="text-base font-semibold text-sky-700 dark:text-sky-300">
+                    {cupsLeft > 0 ? `Còn khoảng ${cupsLeft} cốc nữa` : 'Đã đủ nước hôm nay 🎉'}
+                  </p>
                 </div>
 
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-gradient-to-r from-momPink to-momPurple text-white text-xs font-bold rounded-xl shadow-md hover:scale-105 active:scale-95 transition-all duration-300"
-                >
-                  Lưu check-in hôm nay
-                </button>
-              </form>
-            ) : (
-              <div className="p-4 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border border-emerald-500/20 rounded-2xl text-center space-y-3">
-                <span className="text-2xl">🎉</span>
-                <h4 className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">Đã hoàn tất check-in hôm nay!</h4>
-                <div className="text-[10px] text-gray-450 dark:text-gray-400 leading-normal space-y-1 font-semibold text-left p-2.5 bg-white/70 dark:bg-gray-900/60 rounded-xl">
-                  {mood && <p>🌻 Tâm trạng: <span className="font-extrabold text-gray-800 dark:text-white">{mood}</span></p>}
-                  {weight && <p>⚖️ Cân nặng: <span className="font-extrabold text-gray-800 dark:text-white">{weight} kg</span></p>}
-                  <p>💧 Lượng nước: <span className="font-extrabold text-gray-800 dark:text-white">{waterCups} cốc</span></p>
+                <div className="h-4 rounded-full bg-sky-100 dark:bg-sky-950 overflow-hidden" role="progressbar" aria-valuenow={waterPct} aria-valuemin={0} aria-valuemax={100} aria-label="Lượng nước đã uống">
+                  <div className="h-full bg-sky-500 rounded-full transition-all" style={{ width: `${waterPct}%` }} />
                 </div>
-                <button
-                  onClick={() => setHasCheckedIn(false)}
-                  className="text-[10px] font-bold text-gray-450 hover:text-gray-600 underline"
-                >
-                  Chỉnh sửa ghi nhận
-                </button>
+
+                {/* Điện thoại: nút thêm cốc nằm trên, rộng hết khung; máy tính: cùng hàng */}
+                <div className="flex flex-col sm:flex-row-reverse gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setWaterCups(c => Math.min(20, c + 1))}
+                    className="flex-1 min-h-[56px] px-4 rounded-xl bg-sky-500 hover:bg-sky-600 text-white flex items-center justify-center gap-2 text-lg font-bold"
+                  >
+                    <Plus className="w-6 h-6 shrink-0" /> Thêm 1 cốc ({CUP_ML} ml)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWaterCups(c => Math.max(0, c - 1))}
+                    disabled={waterCups === 0}
+                    className="min-h-[56px] px-5 rounded-xl bg-gray-100 dark:bg-gray-800 disabled:opacity-40 flex items-center justify-center gap-2 text-base font-semibold"
+                  >
+                    <Minus className="w-6 h-6 shrink-0" /> Bớt 1 cốc
+                  </button>
+                </div>
               </div>
-            )}
+            </div>
+
+            <button
+              type="submit"
+              className="w-full lg:w-auto lg:px-12 py-4 bg-momPink-dark hover:bg-pink-700 text-white text-lg font-bold rounded-2xl"
+            >
+              Lưu hôm nay
+            </button>
+          </form>
+        ) : (
+          <div className="p-5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-2xl space-y-3">
+            <p className="text-lg font-bold text-emerald-800 dark:text-emerald-300">Đã ghi nhận hôm nay 🎉</p>
+            <ul className="text-base text-gray-700 dark:text-gray-200 space-y-1">
+              {mood && <li>Tâm trạng: <strong>{mood}</strong></li>}
+              {weight && <li>Cân nặng: <strong>{weight} kg</strong></li>}
+              <li>Uống nước: <strong>{formatLiters(waterMl)}</strong> / {formatLiters(waterGoal.ml)}</li>
+            </ul>
+            <button onClick={() => setHasCheckedIn(false)} className="text-base font-semibold text-momPink-dark underline">
+              Sửa lại
+            </button>
           </div>
-        </div>
-      </div>
+        )}
+      </section>
     </div>
   );
 }
