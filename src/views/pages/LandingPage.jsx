@@ -15,6 +15,8 @@ import { useAuthController } from '../../controllers/authController';
 import babyHeroMascot from '../../assets/baby-hero-mascot.png';
 import momOiLogo from '../../assets/Logo/mom-oi-submark-cropped.png';
 import ScientificEvidenceFooter from '../components/common/ScientificEvidenceFooter';
+import MedicalDisclaimer from '../components/common/MedicalDisclaimer';
+import { ADVISOR_DOCTOR } from '../../config/advisor';
 
 function HeroBabyMascot() {
   const [tilt, setTilt] = useState({ rotateX: 0, rotateY: 0, x: 0, y: 0 });
@@ -335,8 +337,18 @@ export default function LandingPage() {
         </section>
       </main>
 
-      {/* FOOTER BẢO CHỨNG KHOA HỌC & BÀI BÁO NGHIÊN CỨU */}
+      {/* Vì sao mẹ có thể yên tâm + nguồn tham khảo */}
       <ScientificEvidenceFooter variant="full" />
+
+      {/* Miễn trừ trách nhiệm y tế */}
+      <footer className="bg-[#FFF7F8] dark:bg-gray-950 px-4 sm:px-8 pb-10">
+        <div className="max-w-6xl mx-auto space-y-4">
+          <MedicalDisclaimer />
+          <p className="text-center text-sm text-gray-500 dark:text-gray-400">
+            © {new Date().getFullYear()} Mom Ơi! Bác sĩ cố vấn chuyên môn: {ADVISOR_DOCTOR.displayName}
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { AlertTriangle, CheckCircle2, Leaf, Stethoscope, Info, ArrowRight, ShieldAlert, Phone } from "lucide-react";
 import DoctorConsultationCard from "./DoctorConsultationCard";
+import { ADVISOR_DOCTOR, EMERGENCY_NUMBER } from "../../../config/advisor";
 
 export default function AnalysisResult({ analysis }) {
   if (!analysis) return null;
@@ -130,11 +131,11 @@ export default function AnalysisResult({ analysis }) {
             </div>
           </div>
           <a
-            href="tel:0985544534"
-            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 active:scale-95 text-white text-xs font-bold rounded-full shadow-sm flex-shrink-0 transition-all"
+            href={`tel:${ADVISOR_DOCTOR.phone}`}
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-red-600 hover:bg-red-700 text-white text-base font-bold rounded-full shadow-sm flex-shrink-0"
           >
-            <Phone className="w-3.5 h-3.5 animate-pulse" />
-            <span>Gọi BS. Thu ngay (0985 544 534)</span>
+            <Phone className="w-5 h-5" />
+            <span>Gọi {ADVISOR_DOCTOR.displayName}</span>
           </a>
         </div>
       )}
@@ -225,16 +226,15 @@ export default function AnalysisResult({ analysis }) {
         urgent={shouldSeeDoctor || urgencyText === "Khẩn cấp" || urgencyText === "Cao"}
       />
 
-      {/* Section G: Disclaimer */}
-      <div className="bg-gray-100 rounded-2xl p-4 border border-gray-200/60">
-        <div className="flex gap-2.5 items-start">
-          <ShieldAlert className="w-4.5 h-4.5 text-gray-500 flex-shrink-0 mt-0.5" />
-          <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
-            <strong className="text-gray-700">Tuyên bố miễn trừ trách nhiệm y tế: </strong>
-            <span className="italic">
-              {disclaimer || "Thông tin này chỉ mang tính chất gợi ý tham khảo và không thay thế cho lời khuyên, chẩn đoán hoặc điều trị y tế chuyên nghiệp."}
-            </span>{" "}
-            Chủ đề sức khỏe mẹ & bé là lĩnh vực nhạy cảm, bạn hãy liên hệ trực tiếp với <strong>BS. Thu (0985 544 534)</strong> hoặc cơ sở y tế uy tín để được chẩn đoán và điều trị chính xác nhất.
+      {/* Section G: Disclaimer riêng cho kết quả AI */}
+      <div className="bg-gray-100 rounded-2xl p-5 border border-gray-200">
+        <div className="flex gap-3 items-start">
+          <ShieldAlert className="w-6 h-6 text-gray-600 flex-shrink-0 mt-0.5" />
+          <p className="text-base text-gray-700 leading-relaxed">
+            <strong className="text-gray-900">Kết quả này do AI gợi ý, không phải chẩn đoán của bác sĩ. </strong>
+            {disclaimer && <span>{disclaimer} </span>}
+            Hãy hỏi <strong>{ADVISOR_DOCTOR.displayName} ({ADVISOR_DOCTOR.phoneDisplay})</strong> hoặc đến cơ sở y tế
+            để được khám và điều trị đúng. Trường hợp khẩn cấp, gọi ngay <strong>{EMERGENCY_NUMBER}</strong>.
           </p>
         </div>
       </div>
