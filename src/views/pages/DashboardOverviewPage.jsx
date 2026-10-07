@@ -90,7 +90,7 @@ export default function DashboardOverviewPage() {
         return {
           title: null,
           tasks: [
-            { label: 'Bắt đầu thiết lập', desc: 'Cho Mom Ơi biết mẹ đang ở giai đoạn nào', path: '/profile', icon: Compass, tone: 'pink' },
+            { label: 'Bắt đầu thiết lập', desc: 'Cho Mom Ơi! biết mẹ đang ở giai đoạn nào', path: '/profile', icon: Compass, tone: 'pink' },
           ],
         };
     }
@@ -121,7 +121,7 @@ export default function DashboardOverviewPage() {
             {greeting} 🌸
           </h1>
           <p className="text-lg text-gray-600 dark:text-gray-300">
-            {stage.title ? <>Giai đoạn: <strong className="text-gray-800 dark:text-gray-100">{stage.title}</strong></> : 'Mom Ơi luôn ở bên mẹ và bé.'}
+            {stage.title ? <>Giai đoạn: <strong className="text-gray-800 dark:text-gray-100">{stage.title}</strong></> : 'Mom Ơi! luôn ở bên mẹ và bé.'}
           </p>
         </div>
         <Link

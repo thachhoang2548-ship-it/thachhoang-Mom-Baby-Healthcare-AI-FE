@@ -242,7 +242,7 @@ export default function AppShell() {
               Khuyến nghị dinh dưỡng theo chuẩn WHO và dữ liệu USDA
             </span>
             <div className="flex items-center gap-4 shrink-0">
-              <a href="https://www.who.int/nutrition/publications/infantfeeding/924156209X/en/" target="_blank" rel="noopener noreferrer" className="hover:text-momPink inline-flex items-center gap-1">
+              <a href="https://www.who.int/publications/i/item/9789240081864" target="_blank" rel="noopener noreferrer" className="hover:text-momPink inline-flex items-center gap-1">
                 WHO <ExternalLink className="w-3.5 h-3.5" />
               </a>
               <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener noreferrer" className="hover:text-momPink inline-flex items-center gap-1">

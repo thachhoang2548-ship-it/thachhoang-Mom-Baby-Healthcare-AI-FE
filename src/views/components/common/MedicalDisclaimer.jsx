@@ -19,8 +19,8 @@ export default function MedicalDisclaimer({ className = '' }) {
             Miễn trừ trách nhiệm
           </h2>
           <p className="text-base text-gray-700 dark:text-gray-200 leading-relaxed">
-            Thông tin trên Mom Ơi, kể cả kết quả do AI gợi ý, <strong>chỉ để mẹ tham khảo</strong>.
-            Mom Ơi <strong>không thay thế</strong> việc thăm khám, chẩn đoán hay điều trị của bác sĩ,
+            Mọi thông tin trên Mom Ơi! (kể cả kết quả do AI gợi ý) <strong>chỉ để mẹ tham khảo</strong>.
+            Mom Ơi! <strong>không thay thế</strong> việc thăm khám, chẩn đoán hay điều trị của bác sĩ,
             và không chịu trách nhiệm cho các quyết định chỉ dựa vào thông tin trên ứng dụng.
             Khi mẹ hoặc bé có dấu hiệu bất thường, hãy đến cơ sở y tế gần nhất.
           </p>

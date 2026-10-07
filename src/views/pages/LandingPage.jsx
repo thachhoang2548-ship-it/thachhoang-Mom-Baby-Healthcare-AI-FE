@@ -56,7 +56,7 @@ function HeroBabyMascot() {
       >
         <img
           src={babyHeroMascot}
-          alt="Linh vật em bé 3D của Mom Ơi"
+          alt="Linh vật em bé 3D của Mom Ơi!"
           className="hero-baby-idle w-[300px] select-none drop-shadow-[0_28px_45px_rgba(43,58,50,0.2)] sm:w-[410px] lg:w-[455px]"
           draggable="false"
         />
@@ -303,7 +303,7 @@ export default function LandingPage() {
                     <MessageSquare className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-black text-gray-950">Trợ lý Mom Ơi</h3>
+                    <h3 className="text-sm font-black text-gray-950">Trợ lý Mom Ơi!</h3>
                     <p className="text-xs font-semibold text-gray-400">Phản hồi tham khảo, không thay thế bác sĩ</p>
                   </div>
                 </div>

@@ -169,7 +169,7 @@ export default function PostpartumDashPage() {
             Khởi động lộ trình hậu sản
           </h2>
           <p className="text-xs text-gray-500 font-semibold max-w-xs mx-auto leading-relaxed">
-            Thiết lập thông tin sinh để Mom Ơi cá nhân hóa bài tập phục hồi, gợi ý chăm sóc và theo dõi tinh thần cho mami.
+            Thiết lập thông tin sinh để Mom Ơi! cá nhân hóa bài tập phục hồi, gợi ý chăm sóc và theo dõi tinh thần cho mami.
           </p>
         </div>
 
@@ -276,7 +276,7 @@ export default function PostpartumDashPage() {
           <div className="space-y-1">
             <h4 className="text-xs font-bold uppercase tracking-wider">Cảnh báo trầm cảm sau sinh (EPDS từ 13 điểm)</h4>
             <p className="text-[11px] leading-relaxed font-semibold">
-              Điểm EPDS cho thấy mami đang chịu áp lực tâm lý lớn. Đừng chịu đựng một mình, hãy kết nối với bác sĩ tâm lý của Mom Ơi hoặc liên hệ Hotline hỗ trợ: 1800 599 920.
+              Điểm EPDS cho thấy mami đang chịu áp lực tâm lý lớn. Đừng chịu đựng một mình, hãy kết nối với bác sĩ tâm lý của Mom Ơi! hoặc liên hệ Hotline hỗ trợ: 1800 599 920.
             </p>
           </div>
         </div>

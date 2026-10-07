@@ -56,7 +56,7 @@ export default function EmergencyHelpPage() {
 
       <div className="rounded-3xl bg-white border border-blue-100 p-5 shadow-sm flex gap-3">
         <ShieldCheck className="w-6 h-6 text-blue-600 shrink-0" />
-        <p className="text-xs font-semibold text-gray-500 leading-relaxed">{guide?.disclaimer || 'Mom Ơi chỉ hỗ trợ theo dõi và gợi ý chăm sóc.'}</p>
+        <p className="text-xs font-semibold text-gray-500 leading-relaxed">{guide?.disclaimer || 'Mom Ơi! chỉ hỗ trợ theo dõi và gợi ý chăm sóc.'}</p>
       </div>
     </div>
   );

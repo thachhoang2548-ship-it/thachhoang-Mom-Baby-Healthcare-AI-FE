@@ -39,12 +39,6 @@ const SCIENTIFIC_REFERENCES = [
     url: 'https://www.who.int/publications/i/item/9789240081864',
   },
   {
-    org: 'Tổ chức Y tế Thế giới (WHO)',
-    title: 'Complementary feeding: report of the global consultation, and summary of guiding principles',
-    year: '2001',
-    url: 'https://www.who.int/nutrition/publications/infantfeeding/924156209X/en/',
-  },
-  {
     org: 'Bộ Nông nghiệp Hoa Kỳ (USDA)',
     title: 'FoodData Central — cơ sở dữ liệu thành phần dinh dưỡng thực phẩm',
     year: '',

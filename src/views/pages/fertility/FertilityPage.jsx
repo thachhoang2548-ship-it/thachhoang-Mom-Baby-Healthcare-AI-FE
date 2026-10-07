@@ -201,7 +201,7 @@ export default function FertilityPage() {
             <div className="bg-white/20 dark:bg-gray-900/20 p-3 rounded-2xl border border-white/30 dark:border-gray-850 flex items-start gap-2.5">
               <Info className="w-4 h-4 text-momPink/75 mt-0.5 shrink-0" />
               <p className="text-[10px] text-gray-400 dark:text-gray-400 font-semibold leading-relaxed">
-                Các chỉ số chu kỳ giúp thuật toán của Mom Ơi dự báo cửa sổ thụ thai an toàn. Hãy cập nhật lịch kinh nguyệt đều đặn mỗi tháng để có kết quả chính xác nhất.
+                Các chỉ số chu kỳ giúp thuật toán của Mom Ơi! dự báo cửa sổ thụ thai an toàn. Hãy cập nhật lịch kinh nguyệt đều đặn mỗi tháng để có kết quả chính xác nhất.
               </p>
             </div>
           </div>

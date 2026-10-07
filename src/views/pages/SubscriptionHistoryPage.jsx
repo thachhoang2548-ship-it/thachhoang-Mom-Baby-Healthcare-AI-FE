@@ -107,7 +107,7 @@ export default function SubscriptionHistoryPage() {
         <div className="bg-white rounded-3xl border border-amber-100 p-5 shadow-sm">
           <p className="text-[11px] font-black uppercase tracking-wider text-gray-400">Nhắc gia hạn</p>
           <h2 className="text-xl font-black text-amber-600 mt-2">{daysLeft == null ? 'Chưa có hạn' : `${Math.max(daysLeft, 0)} ngày`}</h2>
-          <p className="text-xs font-bold text-gray-500 mt-2">Mom Ơi sẽ nhắc khi gói gần hết hạn.</p>
+          <p className="text-xs font-bold text-gray-500 mt-2">Mom Ơi! sẽ nhắc khi gói gần hết hạn.</p>
         </div>
       </div>
 
