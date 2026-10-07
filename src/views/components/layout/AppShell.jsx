@@ -10,7 +10,7 @@ import MedicalDisclaimer from '../common/MedicalDisclaimer';
 import {
   Calendar, Heart, Baby, Sparkles, LogOut, Activity, MessageSquare, Home, User, Settings,
   ShieldCheck, HeartPulse, Bell, Microscope, ExternalLink, Headphones, Phone, ReceiptText,
-  Stethoscope, Menu, X,
+  Stethoscope, Menu, X, ChefHat,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -95,6 +95,7 @@ export default function AppShell() {
       {
         title: 'Sức khỏe & tinh thần',
         items: [
+          { label: 'Thực đơn AI cho mẹ', path: '/diet-recipes', icon: ChefHat },
           { label: 'Kiểm tra triệu chứng', path: '/symptoms', icon: Stethoscope },
           { label: 'Thư giãn', path: '/relax', icon: Headphones },
         ],

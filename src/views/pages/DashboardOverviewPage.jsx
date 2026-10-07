@@ -6,7 +6,7 @@ import { getTierNameVi } from '../../utils/tierHelpers';
 import { getFullName, getGivenName, getTimeGreeting, formatTodayVi } from '../../utils/displayName';
 import {
   Heart, Calendar, Activity, Droplet, Compass, ChevronRight, Stethoscope,
-  UtensilsCrossed, LineChart, Dumbbell, BookHeart, Smile, Minus, Plus,
+  UtensilsCrossed, LineChart, Dumbbell, BookHeart, Smile, Minus, Plus, ChefHat,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -99,6 +99,8 @@ export default function DashboardOverviewPage() {
   const stage = getStage();
   const tasks = [
     ...stage.tasks,
+    // Thực đơn AI tùy chỉnh dùng được cho cả 3 giai đoạn (BE phân loại theo hồ sơ mẹ)
+    ...(stage.title ? [{ label: 'Thực đơn AI cho mẹ', desc: 'Gợi ý món theo sức khỏe, chỉnh được theo ý mẹ', path: '/diet-recipes', icon: ChefHat, tone: 'amber' }] : []),
     { label: 'Kiểm tra triệu chứng', desc: 'Thấy trong người không khỏe?', path: '/symptoms', icon: Stethoscope, tone: 'blue' },
     { label: 'Lịch chăm sóc', desc: 'Lịch khám, tiêm, uống thuốc', path: '/care-calendar', icon: Calendar, tone: 'amber' },
   ];
