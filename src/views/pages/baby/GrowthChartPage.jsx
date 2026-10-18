@@ -161,17 +161,8 @@ export default function GrowthChartPage() {
       });
     }
 
-    // Add baseline month 0 if missing
-    if (!logs.some(l => l.month === 0)) {
-      logs.unshift({
-        id: 'baseline',
-        month: 0,
-        weight: baby.birthWeightKg || baby.currentWeightKg || 3.2,
-        height: baby.birthHeightCm || baby.currentHeightCm || 50,
-        recordedAt: baby.birthDate
-      });
-    }
-
+    // Chỉ vẽ các lần đo thật. Trước kia tự thêm điểm "tháng 0" lấy cân nặng hiện tại
+    // (hoặc 3.2 kg / 50 cm) đặt vào lúc sinh, làm sai biểu đồ.
     setWeightLogs(logs.sort((a, b) => a.month - b.month));
   };
 
@@ -281,11 +272,6 @@ export default function GrowthChartPage() {
   };
 
   const handleDeleteGrowth = async (recordId) => {
-    if (recordId === 'baseline') {
-      toast.error('Không thể xóa chỉ số sơ sinh ban đầu.');
-      return;
-    }
-
     if (!window.confirm('Bạn có chắc chắn muốn xóa mốc đo lường này?')) {
       return;
     }
@@ -951,17 +937,13 @@ export default function GrowthChartPage() {
                       </span>
                     </td>
                     <td className="py-3 px-3 text-center">
-                      {log.id === 'baseline' ? (
-                        <span className="text-[10px] text-gray-400 font-bold italic">Mốc gốc</span>
-                      ) : (
-                        <button
-                          onClick={() => handleDeleteGrowth(log.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-all active:scale-90"
-                          title="Xóa mốc đo này"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleDeleteGrowth(log.id)}
+                        className="p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-all active:scale-90"
+                        title="Xóa mốc đo này"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </td>
                   </tr>
                 );

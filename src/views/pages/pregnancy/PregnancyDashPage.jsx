@@ -5,7 +5,6 @@ import { useBusinessRules } from '../../../hooks/useBusinessRules';
 import pregnancyService from '../../../models/services/pregnancyService';
 import WeeklyMilestone from '../../components/pregnancy/WeeklyMilestone';
 import WeightChart from '../../components/pregnancy/WeightChart';
-import NutritionRadar from '../../components/shared/NutritionRadar';
 import TierGate from '../../components/layout/TierGate';
 import { Calendar, Heart, Plus, Scale, Footprints, Utensils, AlertTriangle, ChevronRight, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -23,7 +22,6 @@ export default function PregnancyDashPage() {
   // Food Form States
   const [foodInput, setFoodInput] = useState('');
   const [submittingFood, setSubmittingFood] = useState(false);
-  const [todayNutrient, setTodayNutrient] = useState({ iron: 70, calcium: 65, folate: 85, protein: 75 });
 
   // Food Warning Modal States
   const [showWarningModal, setShowWarningModal] = useState(false);
@@ -31,34 +29,28 @@ export default function PregnancyDashPage() {
 
   // Step Counter States
   const [stepInput, setStepInput] = useState('');
-  const [exerciseType, setExerciseType] = useState('Đi bộ');
+  // Ô ghi vận động ở trang này chỉ dành cho bước chân đi bộ (không có ô chọn loại bài tập)
+  const exerciseType = 'Đi bộ';
   const [durationInput, setDurationInput] = useState('');
   const [submittingExercise, setSubmittingExercise] = useState(false);
-  const [todaySteps, setTodaySteps] = useState(1500);
+  const [todaySteps, setTodaySteps] = useState(null);
 
   useEffect(() => {
     loadDashboardData();
   }, []);
 
+  const loadWeightLogs = async () => {
+    const weightRes = await pregnancyService.getWeightLogs();
+    const ok = weightRes && (weightRes.isSuccess || weightRes.success) && Array.isArray(weightRes.data);
+    setWeightLogs(ok ? weightRes.data : []);
+  };
+
   const loadDashboardData = async () => {
     try {
-      const profile = await fetchProfile();
-      
-      // Load real weight logs
-      const weightRes = await pregnancyService.getWeightLogs();
-      const hasLogs = weightRes && (weightRes.isSuccess || weightRes.success || weightRes.Success) && Array.isArray(weightRes.data) && weightRes.data.length > 0;
-      if (hasLogs) {
-        setWeightLogs(weightRes.data);
-      } else {
-        // Default mock weight logs combined with actual logs from backend if any
-        const mockLogs = [
-          { week: 1, weight: 51.0, recordedAt: new Date(Date.now() - 77 * 24 * 60 * 60 * 1000).toISOString() },
-          { week: 4, weight: 51.2, recordedAt: new Date(Date.now() - 56 * 24 * 60 * 60 * 1000).toISOString() },
-          { week: 8, weight: 52.0, recordedAt: new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString() },
-          { week: 11, weight: 53.1, recordedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() },
-        ];
-        setWeightLogs(mockLogs);
-      }
+      await fetchProfile();
+
+      // Cân nặng thật từ server; chưa ghi lần nào thì WeightChart hiện trạng thái trống
+      await loadWeightLogs();
 
       // Load today's steps
       const stepsRes = await pregnancyService.getTodaySteps();
@@ -83,14 +75,8 @@ export default function PregnancyDashPage() {
       const res = await updateWeightLog(weightInput);
       if (res) {
         toast.success('Ghi nhận cân nặng thành công! ⚖️');
-        
-        // Append to logs
-        const newLog = {
-          week: momProfile?.pregnancyWeek || 12,
-          weight: parseFloat(weightInput),
-          recordedAt: new Date().toISOString()
-        };
-        setWeightLogs((prev) => [...prev, newLog]);
+        // Tải lại từ server để có tuần thai và mốc thời gian do server tính
+        await loadWeightLogs();
         setWeightInput('');
       }
     } catch (err) {
@@ -111,7 +97,8 @@ export default function PregnancyDashPage() {
 
     const foodsArray = foodInput.split(',').map((f) => f.trim()).filter(Boolean);
     
-    // 1. Client-Side instant BR02 (Unsafe Foods) check
+    // 1. Kiểm tra nhanh trên trình duyệt (danh sách món rộng hơn server). Chỉ để hiển thị:
+    // bữa ăn vẫn luôn được gửi lên server để lưu nhật ký và chạy BR02 (thông báo, chuyên gia).
     let clientWarning = null;
     for (const food of foodsArray) {
       const warning = evaluateBR02(food);
@@ -130,46 +117,42 @@ export default function PregnancyDashPage() {
       }
     }
 
-    if (clientWarning) {
-      setFoodWarningAlert(clientWarning);
-      setShowWarningModal(true);
-      setFoodInput('');
-      return;
-    }
-
-    // 2. Submit to API (Requires MomHienDai tier)
+    // 2. Luôn gửi lên server (cần gói MomHienDai)
     setSubmittingFood(true);
     try {
       const res = await pregnancyService.logFood(foodsArray);
-      if (res.isSuccess && res.data) {
-        const { alerts, safeAlternatives } = res.data;
-        
-        // If API returns alerts for BR02
-        if (alerts && alerts.length > 0) {
-          const apiWarning = {
-            title: alerts[0].titleVi || alerts[0].title || 'Phát hiện thực phẩm nhạy cảm',
-            message: alerts[0].messageVi || alerts[0].message || '',
-            safeAlternatives: safeAlternatives || ['Phở bò chín kỹ']
-          };
-          setFoodWarningAlert(apiWarning);
-          setShowWarningModal(true);
-        } else {
-          toast.success('Bữa ăn đã được ghi nhận thành công! ✨');
-          
-          // Boost nutrition values simulated
-          setTodayNutrient((prev) => ({
-            iron: Math.min(prev.iron + 15, 100),
-            calcium: Math.min(prev.calcium + 20, 100),
-            folate: Math.min(prev.folate + 10, 100),
-            protein: Math.min(prev.protein + 15, 100)
-          }));
-        }
-        setFoodInput('');
+      const ok = res && (res.isSuccess || res.success || res.Success);
+      if (!ok) {
+        toast.error(res?.message || 'Không thể lưu bữa ăn. Vui lòng thử lại!');
+        return;
       }
+
+      const alerts = res.data?.alerts || [];
+      if (alerts.length > 0) {
+        // Ưu tiên cảnh báo của server (đã ghi nhận và đẩy thông báo)
+        setFoodWarningAlert({
+          title: alerts[0].titleVi || alerts[0].title || 'Phát hiện thực phẩm nhạy cảm',
+          message: alerts[0].messageVi || alerts[0].message || '',
+          safeAlternatives: res.data?.safeAlternatives?.length
+            ? res.data.safeAlternatives
+            : clientWarning?.safeAlternatives || []
+        });
+        setShowWarningModal(true);
+      } else if (clientWarning) {
+        setFoodWarningAlert(clientWarning);
+        setShowWarningModal(true);
+      } else {
+        toast.success('Bữa ăn đã được ghi nhận thành công! ✨');
+      }
+      setFoodInput('');
     } catch (err) {
       console.error(err);
-      // Fallback message for network issues
-      toast.error('Không thể lưu bữa ăn. Vui lòng thử lại!');
+      // Không lưu được nhưng vẫn báo món cần tránh nếu nhận ra trên trình duyệt
+      if (clientWarning) {
+        setFoodWarningAlert(clientWarning);
+        setShowWarningModal(true);
+      }
+      toast.error(err?.response?.data?.message || 'Không thể lưu bữa ăn. Vui lòng thử lại!');
     } finally {
       setSubmittingFood(false);
     }
@@ -188,7 +171,7 @@ export default function PregnancyDashPage() {
       const res = await pregnancyService.logExercise(stepInput, exerciseType, durationInput || 0);
       if (res.isSuccess) {
         const stepsVal = parseInt(stepInput);
-        setTodaySteps((prev) => prev + stepsVal);
+        setTodaySteps((prev) => (prev ?? 0) + stepsVal);
         
         // Evaluate rule client-side
         const check = evaluateBR03(stepsVal);
@@ -209,8 +192,9 @@ export default function PregnancyDashPage() {
     }
   };
 
-  const currentWeek = momProfile?.pregnancyWeek || 12;
-  const currentTrimester = currentWeek <= 12 ? 1 : currentWeek <= 27 ? 2 : 3;
+  // Chưa có tuần thai trong hồ sơ thì ẩn nhãn, không tự đặt một tuần mặc định
+  const currentWeek = momProfile?.pregnancyWeek || null;
+  const currentTrimester = currentWeek ? (currentWeek <= 12 ? 1 : currentWeek <= 27 ? 2 : 3) : null;
 
   return (
     <div className="space-y-6">
@@ -227,19 +211,21 @@ export default function PregnancyDashPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] bg-gradient-to-r from-momPink to-momPurple text-white px-3 py-1 rounded-full font-bold uppercase shadow-sm">
-            Tam cá nguyệt {currentTrimester}
-          </span>
-          <span className="text-[10px] bg-white border border-pink-100 text-momPink-dark px-3 py-1 rounded-full font-bold uppercase">
-            Tuần thai {currentWeek}
-          </span>
-        </div>
+        {currentWeek ? (
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] bg-gradient-to-r from-momPink to-momPurple text-white px-3 py-1 rounded-full font-bold uppercase shadow-sm">
+              Tam cá nguyệt {currentTrimester}
+            </span>
+            <span className="text-[10px] bg-white border border-pink-100 text-momPink-dark px-3 py-1 rounded-full font-bold uppercase">
+              Tuần thai {currentWeek}
+            </span>
+          </div>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Left Column: Milestones, Foods & Radar */}
+        {/* Left Column: Milestones & Foods */}
         <div className="lg:col-span-2 space-y-6">
           
           {/* Weekly Milestone Card */}
@@ -283,9 +269,6 @@ export default function PregnancyDashPage() {
                     {submittingFood ? 'Đang phân tích...' : 'Phân tích món ăn 🔍'}
                   </button>
                 </form>
-
-                {/* Radar Chart */}
-                <NutritionRadar intake={todayNutrient} />
               </div>
             </TierGate>
           </div>
@@ -345,10 +328,12 @@ export default function PregnancyDashPage() {
             {/* Steps counter display */}
             <div className="bg-green-50/30 p-4 rounded-xl border border-green-150/40 text-center">
               <span className="text-2xl">🚶‍♀️</span>
-              <p className="text-lg font-extrabold text-momGreen-dark mt-1">{todaySteps.toLocaleString()} bước</p>
+              <p className="text-lg font-extrabold text-momGreen-dark mt-1">
+                {todaySteps === null ? '—' : `${todaySteps.toLocaleString()} bước`}
+              </p>
               <p className="text-[10px] text-gray-500 font-semibold mt-0.5">Mục tiêu: Hướng tới 5.000 bước mỗi ngày</p>
-              
-              {todaySteps < 3000 && (
+
+              {todaySteps !== null && todaySteps < 3000 && (
                 <div className="mt-2.5 p-2 bg-amber-50 rounded-lg border border-amber-250 flex items-center gap-1.5 text-[9px] text-amber-800 font-bold text-left leading-normal">
                   <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                   Mami đang ít vận động hôm nay. Hãy đứng dậy đi lại nhẹ nhàng nhé!

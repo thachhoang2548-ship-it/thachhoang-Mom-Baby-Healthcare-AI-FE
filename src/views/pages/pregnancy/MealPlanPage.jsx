@@ -21,7 +21,8 @@ export default function MealPlanPage() {
   const loadMealPlan = async () => {
     setLoading(true);
     try {
-      const week = momProfile?.pregnancyWeek || 12;
+      // Không có tuần trong hồ sơ thì để server tự tính từ ngày kinh cuối
+      const week = momProfile?.pregnancyWeek || null;
       const res = await pregnancyService.getMealPlan(week);
       // ApiResponse của backend trả về "success" (không phải "isSuccess")
       if ((res.success || res.isSuccess) && res.data) {

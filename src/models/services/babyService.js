@@ -8,6 +8,12 @@
  */
 import axiosClient from '../api/axiosClient';
 
+/** Số đo hợp lệ (>0) hoặc null khi chưa có; không thay bằng số mẫu. */
+const toMeasurement = (value) => {
+  const n = parseFloat(value);
+  return Number.isFinite(n) && n > 0 ? n : null;
+};
+
 const babyService = {
   // ─── Create a new baby profile ───────────────────────────────────
   createProfile: async (babyProfileData) => {
@@ -55,10 +61,12 @@ const babyService = {
         birthDate: b.dateOfBirth,
         dateOfBirth: b.dateOfBirth,
         ageMonths: b.ageMonths ?? 0, // tuổi (tháng) do backend tính từ ngày sinh
-        birthWeightKg: b.currentWeightKg || 3.2,
-        birthHeightCm: b.currentHeightCm || 50,
-        currentWeightKg: b.currentWeightKg || 3.2,
-        currentHeightCm: b.currentHeightCm || 50,
+        // Backend không lưu số đo lúc sinh, chỉ số đo hiện tại. Chưa đo thì để null,
+        // không điền số mẫu (số mẫu bị ghi ngược lên server khi cập nhật hồ sơ).
+        birthWeightKg: b.currentWeightKg ?? null,
+        birthHeightCm: b.currentHeightCm ?? null,
+        currentWeightKg: b.currentWeightKg ?? null,
+        currentHeightCm: b.currentHeightCm ?? null,
         allergies: b.allergies || [],
         foodHistory: b.foodHistory || [],
         growthRecords: b.growthRecords || []
@@ -95,8 +103,8 @@ const babyService = {
       babyName: profileData.name || profileData.babyName,
       dateOfBirth: profileData.birthDate || profileData.dateOfBirth,
       gender: profileData.gender === 0 || profileData.gender === 'male' || profileData.gender === 'boy' ? 0 : 1,
-      currentWeightKg: parseFloat(profileData.currentWeightKg || profileData.birthWeightKg || 3.2),
-      currentHeightCm: parseFloat(profileData.currentHeightCm || profileData.birthHeightCm || 50),
+      currentWeightKg: toMeasurement(profileData.currentWeightKg ?? profileData.birthWeightKg),
+      currentHeightCm: toMeasurement(profileData.currentHeightCm ?? profileData.birthHeightCm),
       allergies: profileData.allergies || [],
       foodHistory: profileData.foodHistory || []
     });

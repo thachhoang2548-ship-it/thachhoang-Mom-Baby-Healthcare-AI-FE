@@ -47,7 +47,7 @@ export default function WeeklyMilestone({ week }) {
       <div className="flex items-center justify-between border-b border-pink-50 dark:border-gray-700 pb-3">
         <h3 className="text-sm font-extrabold text-gray-800 dark:text-white flex items-center gap-1.5">
           <Sparkles className="w-4 h-4 text-momPink" />
-          Mốc phát triển tuần {week}
+          {week ? `Mốc phát triển tuần ${week}` : 'Mốc phát triển tuần này'}
         </h3>
         <span className="text-xs bg-momPink-light text-momPink-dark px-3 py-1 rounded-full font-bold border border-momPink/20">
           Kích thước: {milestone.babySize}
