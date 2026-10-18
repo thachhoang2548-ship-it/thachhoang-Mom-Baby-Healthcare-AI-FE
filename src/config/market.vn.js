@@ -3,6 +3,9 @@ export const MARKET = {
   tagline: "Thấu hiểu lòng mẹ, nâng bước con yêu - Dinh dưỡng & Sức khỏe tinh thần cho Mẹ và Bé",
   phonePlaceholder: "0912345678 hoặc +84912345678",
   phoneHint: "Số điện thoại người dùng (dùng nhận SMS cảnh báo y tế/sức khỏe)",
+  // Email liên hệ về quyền riêng tư, hiện trong Chính sách quyền riêng tư (Google Play yêu cầu).
+  // Để trống thì trang chỉ hướng dẫn liên hệ qua mục Góp ý trong ứng dụng.
+  supportEmail: "thach2548@gmail.com",
 };
 
 export const DIET_TYPES = [

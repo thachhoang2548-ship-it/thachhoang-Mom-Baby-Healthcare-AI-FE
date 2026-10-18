@@ -12,6 +12,7 @@ import LandingPage from "./views/pages/LandingPage";
 import DashboardOverviewPage from "./views/pages/DashboardOverviewPage";
 import LoginPage from "./views/pages/auth/LoginPage";
 import RegisterPage from "./views/pages/auth/RegisterPage";
+import DeleteAccountPage from "./views/pages/auth/DeleteAccountPage";
 import JourneySetupPage from "./views/pages/onboarding/JourneySetupPage";
 import FertilityPage from "./views/pages/fertility/FertilityPage";
 import PregnancyDashPage from "./views/pages/pregnancy/PregnancyDashPage";
@@ -72,6 +73,8 @@ function AppContent() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/consent" element={<Consent />} />
+        {/* Google Play yêu cầu link xóa tài khoản không cần cài ứng dụng */}
+        <Route path="/delete-account" element={<DeleteAccountPage />} />
 
         {/* Redirect Onboarding to Profile Setup */}
         <Route path="/onboarding" element={<Navigate to="/profile" replace />} />
