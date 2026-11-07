@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import {
@@ -14,9 +14,17 @@ import {
   RefreshCw,
   Utensils,
   X,
+  Sun,
+  Apple,
+  Moon,
+  Milk,
+  AlertTriangle,
+  Loader2,
+  Baby
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import babyService from '../../../models/services/babyService';
+import { useBabyTheme } from '../../../hooks/useBabyTheme';
 
 const AGE_STAGES = {
   infant: {
@@ -48,11 +56,11 @@ const TAB_ITEMS = [
 ];
 
 const SLOT_META = {
-  breakfast: { slot: 'Sáng', time: '07:30', emoji: '🥣' },
-  lunch: { slot: 'Trưa', time: '11:30', emoji: '🍲' },
-  snack: { slot: 'Chiều', time: '15:30', emoji: '🍌' },
-  dinner: { slot: 'Tối', time: '18:30', emoji: '🥣' },
-  supplementary_snack: { slot: 'Phụ', time: '20:00', emoji: '🍼' },
+  breakfast: { slot: 'Sáng', time: '07:30', icon: Sun },
+  lunch: { slot: 'Trưa', time: '11:30', icon: Utensils },
+  snack: { slot: 'Chiều', time: '15:30', icon: Apple },
+  dinner: { slot: 'Tối', time: '18:30', icon: Moon },
+  supplementary_snack: { slot: 'Phụ', time: '20:00', icon: Milk },
 };
 
 const getAgeMonthsFromBaby = (baby) => {
@@ -85,7 +93,7 @@ const normalizeIngredient = (item) => ({
 const mapFastApiRecipe = (key, recipe) => {
   if (!recipe) return null;
 
-  const meta = SLOT_META[key] || { slot: 'Bữa ăn', time: '--:--', emoji: '🍽️' };
+  const meta = SLOT_META[key] || { slot: 'Bữa ăn', time: '--:--', icon: Utensils };
   const id = recipe.id || `${key}-${recipe.name_vi || recipe.name_en || 'recipe'}`;
 
   const steps = (recipe.cooking_steps || []).map((step, idx) => ({
@@ -100,7 +108,7 @@ const mapFastApiRecipe = (key, recipe) => {
     slotKey: key,
     slot: meta.slot,
     name: recipe.name_vi || recipe.name_en || 'Món ăn cho bé',
-    emoji: meta.emoji,
+    icon: meta.icon,
     kcal: Math.round(recipe.total_calories || 0),
     time: meta.time,
     status: recipe.status ?? 0,
@@ -129,6 +137,15 @@ const mapFastApiRecipe = (key, recipe) => {
   };
 };
 
+// Nhãn trục Y của biểu đồ dinh dưỡng trong modal
+function BarYAxisTick({ x, y, payload }) {
+  return (
+    <text x={x} y={y} dy={4} textAnchor="end" fill="rgb(var(--c-ink))" fontSize={12} fontWeight={600}>
+      {payload?.value ?? ''}
+    </text>
+  );
+}
+
 export default function BabyMenuPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('today');
@@ -145,11 +162,14 @@ export default function BabyMenuPage() {
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
   const [checkedIngredients, setCheckedIngredients] = useState({});
 
+  // Bắt buộc gọi ở đầu component, TRƯỚC mọi return sớm
+  useBabyTheme(selectedBaby);
+
   const ageMonths = getAgeMonthsFromBaby(selectedBaby);
   const activeStage = AGE_STAGES[selectedStageId];
   const ageMatchedStageId = getStageIdFromAge(ageMonths);
 
-  const loadMenus = async (forceRefresh = false) => {
+  const loadMenus = useCallback(async (forceRefresh = false) => {
     setLoading(true);
     try {
       const profileRes = await babyService.getProfiles();
@@ -193,11 +213,11 @@ export default function BabyMenuPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadMenus();
-  }, []);
+  }, [loadMenus]);
 
   const activeRecipes = useMemo(() => {
     return dailyMenu.map((recipe) => {
@@ -220,14 +240,14 @@ export default function BabyMenuPage() {
 
   const weeklySlots = useMemo(() => {
     const base = [
-      { key: 'breakfast', label: 'Sáng', color: 'bg-rose-50 text-rose-700' },
-      { key: 'lunch', label: 'Trưa', color: 'bg-violet-50 text-violet-700' },
-      { key: 'snack', label: 'Chiều', color: 'bg-amber-50 text-amber-700' },
-      { key: 'dinner', label: 'Tối', color: 'bg-emerald-50 text-emerald-700' },
+      { key: 'breakfast', label: 'Sáng', icon: Sun },
+      { key: 'lunch', label: 'Trưa', icon: Utensils },
+      { key: 'snack', label: 'Chiều', icon: Apple },
+      { key: 'dinner', label: 'Tối', icon: Moon },
     ];
 
     if (selectedStageId === 'toddler') {
-      return [...base, { key: 'supplementary_snack', label: 'Phụ', color: 'bg-sky-50 text-sky-700' }];
+      return [...base, { key: 'supplementary_snack', label: 'Phụ', icon: Milk }];
     }
 
     return base;
@@ -267,41 +287,336 @@ export default function BabyMenuPage() {
     setCheckedIngredients((prev) => ({ ...prev, [name]: !prev[name] }));
   };
 
-  return (
-    <div className="space-y-6">
-      <button
-        onClick={() => navigate('/baby-nutrition')}
-        className="flex items-center gap-2 text-xs font-bold text-gray-500 transition hover:text-gray-800"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Quay lại trang bé yêu
-      </button>
+  const eatenCoverage = getEatenCoverage();
+  const clampedEatenWidth = Math.max(0, Math.min(100, eatenCoverage));
 
-      <section className="rounded-lg border border-rose-100 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <span className="inline-flex items-center gap-2 rounded-md bg-rose-50 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-rose-600">
-              <Utensils className="h-4 w-4" />
-              Thực đơn sau thai kỳ cho bé
-            </span>
-            <h2 className="mt-4 text-2xl font-black tracking-tight text-gray-950">
-              Chia thực đơn theo 2 độ tuổi ăn dặm
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm font-semibold leading-6 text-gray-500">
+  // Khi chưa có hồ sơ bé, biến --c-brand ở :root (#FF7A8A) chưa đạt 4,5:1 với chữ trắng;
+  // dùng bg-theme-ink text-theme-surface nếu chưa có selectedBaby.
+  const hasTheme = Boolean(selectedBaby);
+  const brandBadgeClass = hasTheme
+    ? 'bg-theme-brand-soft text-theme-brand'
+    : 'bg-theme-sidebar text-theme-ink border border-theme-line';
+  const brandTextClass = hasTheme ? 'text-theme-brand' : 'text-theme-ink';
+  const primaryBtnClass = hasTheme
+    ? 'bg-theme-brand text-theme-surface hover:bg-theme-ink'
+    : 'bg-theme-ink text-theme-surface hover:bg-status-ok';
+
+  return (
+    <div className="font-display rounded-3xl bg-theme-page p-4 sm:p-6 border border-theme-line space-y-6">
+      {/* Nút quay lại */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => navigate('/baby-nutrition')}
+          className="inline-flex items-center gap-2 min-h-[44px] px-3.5 py-2 rounded-2xl border border-theme-line bg-theme-surface hover:bg-theme-sidebar text-xs sm:text-sm font-semibold text-theme-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+        >
+          <ArrowLeft className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span>Quay lại trang bé yêu</span>
+        </button>
+
+        {selectedBaby && (
+          <div className="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-theme-surface border border-theme-line text-xs sm:text-sm">
+            <Baby className="w-4 h-4 text-theme-brand shrink-0" aria-hidden="true" />
+            <span className="font-bold text-theme-ink">{selectedBaby.name || selectedBaby.babyName}</span>
+            <span className="text-theme-muted">•</span>
+            <span className="font-semibold text-theme-muted">{ageMonths} tháng tuổi</span>
+          </div>
+        )}
+      </div>
+
+      {/* 1. Đầu trang & thanh chuyển chế độ thực đơn (Hôm nay / 7 ngày / Lịch sử) */}
+      <section className="bg-theme-surface rounded-2xl border border-theme-line p-5 sm:p-6 shadow-sm space-y-5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold ${brandBadgeClass}`}>
+              <Utensils className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>Thực đơn sau thai kỳ cho bé</span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-bold text-theme-ink">
+              Món ăn của bé hôm nay ({activeStage.range})
+            </h1>
+            <p className="max-w-2xl text-xs sm:text-sm font-medium leading-relaxed text-theme-muted">
               WHO/CDC thường dùng mốc 6 tháng để bắt đầu ăn bổ sung, sau đó khẩu phần và kết cấu thay đổi rõ khi bé bước sang 12 tháng. Vì vậy giao diện chia thành 6-11 tháng và 12-24 tháng.
             </p>
           </div>
 
-          {selectedBaby && (
-            <div className="rounded-lg bg-[#FFF8F6] p-4 text-sm font-bold text-gray-700">
-              <p className="text-[10px] uppercase tracking-wider text-gray-400">Hồ sơ đang dùng</p>
-              <p className="mt-1 text-base font-black text-gray-950">{selectedBaby.name || selectedBaby.babyName}</p>
-              <p className="mt-1 text-xs text-gray-500">Tuổi hiện tại: {ageMonths} tháng</p>
+          {/* Tiến độ ăn hôm nay */}
+          <div className="w-full lg:w-72 p-4 rounded-2xl bg-theme-page border border-theme-line space-y-2 shrink-0">
+            <div className="flex items-center justify-between text-xs font-bold text-theme-ink">
+              <span>Độ hoàn thành dinh dưỡng hôm nay</span>
+              <span className={brandTextClass}>{eatenCoverage}%</span>
             </div>
-          )}
+            <div className="h-2.5 overflow-hidden rounded-full bg-theme-sidebar border border-theme-line">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${hasTheme ? 'bg-theme-brand' : 'bg-theme-ink'}`}
+                style={{ width: `${clampedEatenWidth}%` }}
+              />
+            </div>
+            <p className="text-xs font-medium text-theme-muted leading-snug">
+              Tích chọn từng món đã ăn để theo dõi tiến độ. Thực đơn vẫn cần theo phản ứng và khả năng nhai nuốt của bé.
+            </p>
+          </div>
         </div>
 
-        <div className="mt-6 grid gap-3 md:grid-cols-2">
+        {/* Bộ lọc tab & nút tạo lại thực đơn ngay trên đầu */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-theme-line">
+          <div className="flex w-full sm:w-auto gap-1.5 rounded-2xl border border-theme-line bg-theme-page p-1">
+            {TAB_ITEMS.map((tab) => {
+              const isSelected = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex-1 sm:flex-none min-h-[40px] px-4 py-2 rounded-md text-xs sm:text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+                    isSelected
+                      ? 'bg-theme-ink text-theme-surface'
+                      : 'text-theme-ink hover:bg-theme-sidebar'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {activeTab === 'today' && (
+            <button
+              type="button"
+              onClick={handleRegenerateMenu}
+              className={`inline-flex items-center justify-center gap-2 min-h-[44px] px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${primaryBtnClass}`}
+            >
+              <RefreshCw className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>Tạo thực đơn mới tránh dị ứng</span>
+            </button>
+          )}
+        </div>
+      </section>
+
+      {/* 2. TRỌNG TÂM: Danh sách món ăn / Thực đơn 7 ngày / Lịch sử */}
+      {activeTab === 'today' && (
+        <section className="space-y-4">
+          {loading && (
+            <div className="rounded-2xl border border-theme-line bg-theme-surface p-8 text-center space-y-3">
+              <Loader2 className="w-7 h-7 mx-auto text-theme-ink animate-spin motion-reduce:animate-none" aria-hidden="true" />
+              <p className="text-sm font-bold text-theme-ink">
+                Đang tải thực đơn cho bé...
+              </p>
+            </div>
+          )}
+
+          {!loading && !activeRecipes.length && (
+            <div className="rounded-2xl border border-status-warn-line bg-status-warn-bg p-6 text-center text-status-warn-text space-y-2">
+              <p className="text-sm font-bold">Chưa có thực đơn cho bé</p>
+              <p className="text-xs sm:text-sm font-medium leading-relaxed">
+                {menuError || 'Không thể kết nối dịch vụ dinh dưỡng. Vui lòng thử lại sau.'}
+              </p>
+            </div>
+          )}
+
+          {!loading && activeRecipes.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {activeRecipes.map((recipe) => {
+                const SlotIcon = recipe.icon || Utensils;
+                return (
+                  <article
+                    key={recipe.id}
+                    className={`rounded-2xl border bg-theme-surface p-5 shadow-sm flex flex-col justify-between gap-4 transition-colors ${
+                      recipe.eaten ? 'border-status-ok' : 'border-theme-line'
+                    }`}
+                  >
+                    <div className="space-y-4">
+                      {/* Đầu thẻ món */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 mt-0.5 ${brandBadgeClass}`}>
+                            <SlotIcon className="w-5 h-5" aria-hidden="true" />
+                          </div>
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className={`inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-xs font-bold ${brandBadgeClass}`}>
+                                Bữa {recipe.slot} · {recipe.time}
+                              </span>
+                            </div>
+                            <h2 className="text-base sm:text-lg font-bold text-theme-ink leading-snug break-words">
+                              {recipe.name}
+                            </h2>
+                          </div>
+                        </div>
+
+                        {recipe.eaten && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-status-ok px-2.5 py-1 text-xs font-bold text-theme-surface shrink-0">
+                            <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                            <span>Đã ăn</span>
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Chỉ số dinh dưỡng chính của món */}
+                      <div className="grid grid-cols-3 gap-2 rounded-2xl bg-theme-page border border-theme-line p-3 text-xs">
+                        <div className="space-y-0.5">
+                          <span className="text-theme-muted font-medium block">Năng lượng</span>
+                          <span className="inline-flex items-center gap-1 font-bold text-theme-ink">
+                            <Flame className="h-3.5 w-3.5 text-theme-brand shrink-0" aria-hidden="true" />
+                            {recipe.kcal} kcal
+                          </span>
+                        </div>
+                        <div className="space-y-0.5 border-l border-theme-line pl-2.5">
+                          <span className="text-theme-muted font-medium block">Chất đạm</span>
+                          <span className="font-bold text-theme-ink">{recipe.protein}</span>
+                        </div>
+                        <div className="space-y-0.5 border-l border-theme-line pl-2.5">
+                          <span className="text-theme-muted font-medium block">Chất sắt</span>
+                          <span className="font-bold text-theme-ink">{recipe.iron}</span>
+                        </div>
+                      </div>
+
+                      {/* Tóm tắt nguyên liệu ngay trên thẻ */}
+                      <div className="space-y-1.5">
+                        <p className="text-xs font-bold text-theme-ink">
+                          Nguyên liệu chính:
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {recipe.ingredients.slice(0, 4).map((ing, idx) => (
+                            <span
+                              key={`${recipe.id}-ing-${idx}`}
+                              className="rounded-md bg-theme-sidebar border border-theme-line px-2.5 py-1 text-xs font-semibold text-theme-ink"
+                            >
+                              {ing.name} ({ing.amount}{ing.unit})
+                            </span>
+                          ))}
+                          {recipe.ingredients.length > 4 && (
+                            <span className="rounded-md bg-theme-page border border-theme-line px-2.5 py-1 text-xs font-semibold text-theme-muted">
+                              +{recipe.ingredients.length - 4} nguyên liệu
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Nhãn tag */}
+                      <div className="flex flex-wrap gap-1.5">
+                        {recipe.tags.map((tag) => (
+                          <span
+                            key={`${recipe.id}-${tag}`}
+                            className={`rounded-md px-2.5 py-1 text-xs font-semibold border ${
+                              recipe.allergyWarning
+                                ? 'bg-status-warn-bg border-status-warn-line text-status-warn-text'
+                                : 'bg-theme-page border-theme-line text-theme-muted'
+                            }`}
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+
+                      {recipe.allergyWarning && (
+                        <div className="rounded-2xl bg-status-warn-bg border border-status-warn-line p-3 text-xs font-semibold leading-relaxed text-status-warn-text flex items-start gap-2">
+                          <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+                          <span>
+                            Món này có thể trùng với danh sách dị ứng/kiêng của bé. Mẹ nên tạo lại thực đơn hoặc hỏi chuyên gia trước khi cho ăn.
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Hành động cho món */}
+                    <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-theme-line">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenRecipe(recipe)}
+                        className={`min-h-[44px] rounded-2xl border border-theme-line bg-theme-surface hover:bg-theme-sidebar px-3 py-2.5 text-xs sm:text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${brandTextClass}`}
+                      >
+                        Xem công thức
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleMarkEaten(recipe.id)}
+                        className={`inline-flex items-center justify-center gap-1.5 min-h-[44px] rounded-2xl px-3 py-2.5 text-xs sm:text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+                          recipe.eaten
+                            ? 'bg-status-ok text-theme-surface hover:bg-theme-ink'
+                            : hasTheme
+                            ? 'bg-theme-ink text-theme-surface hover:bg-theme-brand'
+                            : 'bg-theme-ink text-theme-surface hover:bg-status-ok'
+                        }`}
+                      >
+                        <Check className="h-4 w-4 shrink-0" aria-hidden="true" />
+                        <span>{recipe.eaten ? 'Bé đã ăn' : 'Đã cho bé ăn'}</span>
+                      </button>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
+
+      {activeTab === 'weekly' && (
+        <section className="overflow-x-auto rounded-2xl border border-theme-line bg-theme-surface p-5 sm:p-6 shadow-sm space-y-4">
+          <h2 className="flex items-center gap-2 text-base font-bold text-theme-ink">
+            <Calendar className="h-5 w-5 text-theme-brand shrink-0" aria-hidden="true" />
+            <span>Khung thực đơn 7 ngày · {activeStage.range}</span>
+          </h2>
+
+          <table className="w-full min-w-[760px] border-collapse text-left">
+            <thead>
+              <tr className="border-b border-theme-line">
+                <th className="py-3 pr-3 text-xs font-bold text-theme-muted">Bữa ăn</th>
+                {['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'].map((day) => (
+                  <th key={day} className="py-3 px-1.5 text-center text-xs font-bold text-theme-muted">
+                    {day}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-theme-line">
+              {weeklySlots.map((slot) => {
+                const SlotIcon = slot.icon || Utensils;
+                return (
+                  <tr key={slot.key}>
+                    <td className="py-3 pr-3 text-xs sm:text-sm font-bold text-theme-ink whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1.5">
+                        <SlotIcon className="w-4 h-4 text-theme-brand shrink-0" aria-hidden="true" />
+                        <span>{slot.label}</span>
+                      </span>
+                    </td>
+                    {Array.from({ length: 7 }).map((_, index) => (
+                      <td key={`${slot.key}-${index}`} className="px-1.5 py-2.5 align-top">
+                        <div className="rounded-2xl bg-theme-page border border-theme-line p-2.5 text-xs font-semibold leading-snug text-theme-ink min-h-[56px] flex items-center justify-center text-center">
+                          {getWeeklyMealForDay(slot.key, index)}
+                        </div>
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      {activeTab === 'history' && (
+        <section className="rounded-2xl border border-theme-line bg-theme-surface p-8 text-center shadow-sm space-y-2">
+          <Award className="mx-auto h-10 w-10 text-theme-brand" aria-hidden="true" />
+          <h2 className="text-base font-bold text-theme-ink">Lịch sử ăn dặm</h2>
+          <p className="text-xs sm:text-sm font-medium text-theme-muted">
+            Chưa ghi nhận lịch sử ăn dặm nào trước đó của bé.
+          </p>
+        </section>
+      )}
+
+      {/* 3. Chọn giai đoạn độ tuổi ăn dặm & Gợi ý chuẩn bị kết cấu */}
+      <section className="rounded-2xl border border-theme-line bg-theme-surface p-5 sm:p-6 shadow-sm space-y-5">
+        <div>
+          <h2 className="text-base sm:text-lg font-bold text-theme-ink">
+            Chia thực đơn theo 2 độ tuổi ăn dặm
+          </h2>
+          <p className="text-xs sm:text-sm font-medium text-theme-muted mt-0.5">
+            Chuyển đổi giai đoạn để xem định hướng kết cấu và nhóm chất ưu tiên phù hợp với bé
+          </p>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2">
           {Object.values(AGE_STAGES).map((stage) => {
             const selected = selectedStageId === stage.id;
             const matched = ageMatchedStageId === stage.id && selectedBaby;
@@ -309,26 +624,27 @@ export default function BabyMenuPage() {
             return (
               <button
                 key={stage.id}
+                type="button"
                 onClick={() => setSelectedStageId(stage.id)}
-                className={`rounded-lg border p-4 text-left transition ${
+                className={`rounded-2xl border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
                   selected
-                    ? 'border-rose-300 bg-rose-50 shadow-sm'
-                    : 'border-gray-100 bg-white hover:border-rose-200 hover:bg-rose-50/40'
+                    ? 'border-theme-brand bg-theme-brand-soft/60'
+                    : 'border-theme-line bg-theme-page hover:bg-theme-sidebar'
                 }`}
               >
-                <div className="flex items-center justify-between gap-3">
-                  <span className="rounded-md bg-white px-2.5 py-1 text-xs font-black text-rose-600 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className={`rounded-md bg-theme-surface border border-theme-line px-2.5 py-1 text-xs font-bold ${brandTextClass}`}>
                     {stage.range}
                   </span>
                   {matched && (
-                    <span className="rounded-md bg-emerald-100 px-2.5 py-1 text-[10px] font-black uppercase text-emerald-700">
+                    <span className="rounded-md bg-status-ok px-2.5 py-1 text-xs font-bold text-theme-surface">
                       Phù hợp bé
                     </span>
                   )}
                 </div>
-                <h3 className="mt-3 text-base font-black text-gray-950">{stage.title}</h3>
-                <p className="mt-1 text-xs font-semibold text-gray-500">{stage.subtitle}</p>
-                <div className="mt-4 grid gap-2 text-xs font-bold text-gray-600">
+                <h3 className="mt-3 text-base font-bold text-theme-ink">{stage.title}</h3>
+                <p className="mt-1 text-xs font-medium text-theme-muted">{stage.subtitle}</p>
+                <div className="mt-3 grid gap-1.5 text-xs font-semibold text-theme-ink">
                   <span>Suất ăn: {stage.meals}</span>
                   <span>Kết cấu: {stage.texture}</span>
                 </div>
@@ -336,230 +652,70 @@ export default function BabyMenuPage() {
             );
           })}
         </div>
-      </section>
 
-      <section className="grid gap-4 lg:grid-cols-[0.8fr_1.2fr]">
-        <div className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-theme-line bg-theme-page p-4 space-y-3">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
-              <Info className="h-5 w-5" />
+            <div className={`flex h-10 w-10 items-center justify-center rounded-2xl shrink-0 ${brandBadgeClass}`}>
+              <Info className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-gray-950">{activeStage.title}</h3>
-              <p className="text-xs font-semibold text-gray-400">{activeStage.range}</p>
+              <h3 className="text-sm font-bold text-theme-ink">{activeStage.title}</h3>
+              <p className="text-xs font-medium text-theme-muted">{activeStage.range}</p>
             </div>
           </div>
-          <p className="mt-4 text-sm font-semibold leading-6 text-gray-500">{activeStage.note}</p>
-          <div className="mt-4 flex flex-wrap gap-2">
+          <p className="text-xs sm:text-sm font-medium leading-relaxed text-theme-ink">
+            {activeStage.note}
+          </p>
+          <div className="flex flex-wrap gap-2">
             {activeStage.focus.map((item) => (
-              <span key={item} className="rounded-md bg-gray-100 px-2.5 py-1 text-[11px] font-black text-gray-600">
+              <span
+                key={item}
+                className="rounded-md bg-theme-surface border border-theme-line px-2.5 py-1 text-xs font-semibold text-theme-ink"
+              >
                 {item}
               </span>
             ))}
           </div>
         </div>
-
-        <div className="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
-          <div className="mb-3 flex items-center justify-between text-xs font-black uppercase text-gray-500">
-            <span>Độ hoàn thành dinh dưỡng hôm nay</span>
-            <span className="text-rose-600">{getEatenCoverage()}%</span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-rose-100">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-rose-400 to-violet-400 transition-all duration-300"
-              style={{ width: `${getEatenCoverage()}%` }}
-            />
-          </div>
-          <p className="mt-3 text-xs font-semibold text-gray-400">
-            Tích chọn từng món đã ăn để theo dõi tiến độ. Thực đơn vẫn cần theo phản ứng và khả năng nhai nuốt của bé.
-          </p>
-        </div>
       </section>
 
-      <div className="flex max-w-sm gap-1.5 rounded-lg border border-gray-100 bg-white p-1 shadow-sm">
-        {TAB_ITEMS.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 rounded-md py-2 text-xs font-black transition ${
-              activeTab === tab.id ? 'bg-gray-950 text-white' : 'text-gray-500 hover:bg-gray-50'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {activeTab === 'today' && (
-        <section className="space-y-4">
-          {loading && (
-            <div className="rounded-lg border border-gray-100 bg-white p-6 text-center text-sm font-bold text-gray-500">
-              Đang tải thực đơn cho bé...
-            </div>
-          )}
-
-          {!loading && !activeRecipes.length && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-center">
-              <p className="text-sm font-black text-amber-900">Chưa có thực đơn cho bé</p>
-              <p className="mt-1 text-xs font-semibold leading-6 text-amber-800">
-                {menuError || 'Không thể kết nối dịch vụ dinh dưỡng. Vui lòng thử lại sau.'}
-              </p>
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {activeRecipes.map((recipe) => (
-              <article
-                key={recipe.id}
-                className={`rounded-lg border bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-                  recipe.eaten ? 'border-emerald-300 bg-emerald-50/40' : 'border-gray-100'
-                }`}
-              >
-                <div className="mb-4 flex items-start justify-between gap-3">
-                  <div>
-                    <span className="rounded-md bg-rose-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-rose-600">
-                      {recipe.slot} · {recipe.time}
-                    </span>
-                    <h3 className="mt-3 flex items-center gap-2 text-base font-black text-gray-950">
-                      <span className="text-xl">{recipe.emoji}</span>
-                      {recipe.name}
-                    </h3>
-                  </div>
-                  {recipe.eaten && (
-                    <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-1 text-[10px] font-black text-emerald-700">
-                      <Check className="h-3 w-3" />
-                      Đã ăn
-                    </span>
-                  )}
-                </div>
-
-                <div className="mb-4 flex flex-wrap gap-1.5">
-                  {recipe.tags.map((tag) => (
-                    <span
-                      key={`${recipe.id}-${tag}`}
-                      className={`rounded-md px-2 py-1 text-[10px] font-black ${
-                        recipe.allergyWarning ? 'bg-red-50 text-red-600' : 'bg-gray-100 text-gray-500'
-                      }`}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-3 gap-2 border-y border-gray-100 py-3 text-xs font-bold text-gray-500">
-                  <span className="flex items-center gap-1">
-                    <Flame className="h-4 w-4 text-rose-500" />
-                    {recipe.kcal} kcal
-                  </span>
-                  <span>Đạm: {recipe.protein}</span>
-                  <span>Sắt: {recipe.iron}</span>
-                </div>
-
-                {recipe.allergyWarning && (
-                  <p className="mt-3 rounded-md bg-red-50 p-3 text-xs font-bold leading-5 text-red-700">
-                    Món này có thể trùng với danh sách dị ứng/kiêng của bé. Mẹ nên tạo lại thực đơn hoặc hỏi chuyên gia trước khi cho ăn.
-                  </p>
-                )}
-
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => handleOpenRecipe(recipe)}
-                    className="rounded-lg border border-rose-200 py-2.5 text-xs font-black text-rose-600 transition hover:bg-rose-50"
-                  >
-                    Xem công thức
-                  </button>
-                  <button
-                    onClick={() => handleMarkEaten(recipe.id)}
-                    className={`inline-flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-black transition active:scale-95 ${
-                      recipe.eaten ? 'bg-emerald-500 text-white' : 'bg-gray-950 text-white'
-                    }`}
-                  >
-                    <Check className="h-4 w-4" />
-                    {recipe.eaten ? 'Bé đã ăn' : 'Đã cho bé ăn'}
-                  </button>
-                </div>
-              </article>
-            ))}
-          </div>
-
-          <button
-            onClick={handleRegenerateMenu}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-rose-500 to-violet-500 py-3 text-xs font-black text-white shadow-sm transition active:scale-95"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Tạo thực đơn mới tránh dị ứng
-          </button>
-        </section>
-      )}
-
-      {activeTab === 'weekly' && (
-        <section className="overflow-x-auto rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
-          <h3 className="mb-4 flex items-center gap-2 text-sm font-black uppercase tracking-wide text-gray-950">
-            <Calendar className="h-4 w-4 text-rose-500" />
-            Khung thực đơn 7 ngày · {activeStage.range}
-          </h3>
-
-          <table className="w-full min-w-[720px] border-collapse text-left">
-            <thead>
-              <tr className="border-b border-gray-100">
-                <th className="py-3 text-[10px] font-black uppercase text-gray-400">Bữa</th>
-                {['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'].map((day) => (
-                  <th key={day} className="py-3 text-center text-[10px] font-black uppercase text-gray-400">
-                    {day}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {weeklySlots.map((slot) => (
-                <tr key={slot.key} className="border-b border-gray-50">
-                  <td className="py-3 text-xs font-black text-gray-800">{slot.label}</td>
-                  {Array.from({ length: 7 }).map((_, index) => (
-                    <td key={`${slot.key}-${index}`} className="px-1 py-2 text-center">
-                      <div className={`rounded-lg px-2 py-2 text-[10px] font-bold leading-4 ${slot.color}`}>
-                        {getWeeklyMealForDay(slot.key, index)}
-                      </div>
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-      )}
-
-      {activeTab === 'history' && (
-        <section className="rounded-lg border border-gray-100 bg-white p-8 text-center shadow-sm">
-          <Award className="mx-auto h-10 w-10 text-gray-300" />
-          <h3 className="mt-3 text-sm font-black text-gray-800">Lịch sử ăn dặm</h3>
-          <p className="mt-1 text-xs font-semibold text-gray-400">
-            Chưa ghi nhận lịch sử ăn dặm nào trước đó của bé.
-          </p>
-        </section>
-      )}
-
+      {/* Modal chi tiết công thức & chế biến */}
       {selectedRecipe && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
-          <div className="max-h-[86vh] w-full max-w-xl overflow-y-auto rounded-lg bg-white shadow-2xl">
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white/95 px-5 py-4 backdrop-blur">
-              <div className="flex items-center gap-3">
-                <span className="text-xl">{selectedRecipe.emoji}</span>
-                <div>
-                  <h3 className="text-sm font-black text-gray-950">{selectedRecipe.name}</h3>
-                  <p className="text-xs font-semibold text-gray-400">
-                    {selectedRecipe.slot} · {selectedRecipe.ageRange}
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-theme-ink/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="recipe-modal-title"
+        >
+          <div className="max-h-[86vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-theme-line bg-theme-surface shadow-2xl">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-theme-line bg-theme-surface px-5 py-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${brandBadgeClass}`}>
+                  {(() => {
+                    const ModalIcon = selectedRecipe.icon || Utensils;
+                    return <ModalIcon className="w-5 h-5" aria-hidden="true" />;
+                  })()}
+                </div>
+                <div className="min-w-0">
+                  <h3 id="recipe-modal-title" className="text-sm sm:text-base font-bold text-theme-ink leading-snug break-words">
+                    {selectedRecipe.name}
+                  </h3>
+                  <p className="text-xs font-medium text-theme-muted">
+                    Bữa {selectedRecipe.slot} · {selectedRecipe.ageRange}
                   </p>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setSelectedRecipe(null)}
-                className="rounded-md p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+                aria-label="Đóng chi tiết công thức"
+                className="min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded-2xl text-theme-muted transition-colors hover:bg-theme-page hover:text-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand shrink-0"
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5" aria-hidden="true" />
               </button>
             </div>
 
-            <div className="flex gap-2 border-b border-gray-100 px-5 pt-3">
+            <div className="flex gap-2 border-b border-theme-line px-5 pt-3">
               {[
                 { id: 'ingredients', label: 'Nguyên liệu' },
                 { id: 'steps', label: 'Cách làm' },
@@ -567,9 +723,12 @@ export default function BabyMenuPage() {
               ].map((tab) => (
                 <button
                   key={tab.id}
+                  type="button"
                   onClick={() => setModalTab(tab.id)}
-                  className={`border-b-2 pb-2 text-xs font-black transition ${
-                    modalTab === tab.id ? 'border-rose-500 text-rose-600' : 'border-transparent text-gray-400'
+                  className={`min-h-[40px] px-3 border-b-2 pb-2 text-xs sm:text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-brand ${
+                    modalTab === tab.id
+                      ? `border-theme-ink ${brandTextClass}`
+                      : 'border-transparent text-theme-muted hover:text-theme-ink'
                   }`}
                 >
                   {tab.label}
@@ -583,15 +742,15 @@ export default function BabyMenuPage() {
                   {selectedRecipe.ingredients.map((item) => (
                     <label
                       key={`${selectedRecipe.id}-${item.name}`}
-                      className="flex cursor-pointer items-center gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3 text-sm font-semibold text-gray-700"
+                      className="flex cursor-pointer items-center gap-3 rounded-2xl border border-theme-line bg-theme-page p-3.5 text-xs sm:text-sm font-semibold text-theme-ink"
                     >
                       <input
                         type="checkbox"
                         checked={!!checkedIngredients[item.name]}
                         onChange={() => toggleIngredientCheck(item.name)}
-                        className="h-4 w-4 rounded border-gray-300 text-rose-500 focus:ring-rose-500"
+                        className="h-4 w-4 rounded border-theme-line text-theme-brand focus:ring-theme-brand"
                       />
-                      <span className={checkedIngredients[item.name] ? 'text-gray-400 line-through' : ''}>
+                      <span className={checkedIngredients[item.name] ? 'text-theme-muted line-through' : ''}>
                         {item.name}: <strong>{item.amount} {item.unit}</strong>
                       </span>
                     </label>
@@ -604,64 +763,77 @@ export default function BabyMenuPage() {
                   {!cookingMode ? (
                     <>
                       {selectedRecipe.steps.map((step, index) => (
-                        <div key={`${selectedRecipe.id}-step-${index}`} className="flex gap-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
-                          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rose-100 text-xs font-black text-rose-600">
+                        <div
+                          key={`${selectedRecipe.id}-step-${index}`}
+                          className="flex gap-3 rounded-2xl border border-theme-line bg-theme-page p-3.5"
+                        >
+                          <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${brandBadgeClass}`}>
                             {index + 1}
                           </span>
-                          <div>
-                            <p className="text-sm font-semibold leading-6 text-gray-700">{step.desc}</p>
-                            <span className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-gray-400">
-                              <Clock className="h-3 w-3" />
+                          <div className="space-y-1">
+                            <p className="text-xs sm:text-sm font-medium leading-relaxed text-theme-ink">
+                              {step.desc}
+                            </p>
+                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-theme-muted">
+                              <Clock className="h-3.5 w-3.5" aria-hidden="true" />
                               {step.time}
                             </span>
                           </div>
                         </div>
                       ))}
                       <button
+                        type="button"
                         onClick={() => {
                           setCookingMode(true);
                           setCurrentStepIdx(0);
                         }}
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-gray-950 py-3 text-xs font-black text-white"
+                        className={`inline-flex w-full min-h-[44px] items-center justify-center gap-2 rounded-2xl py-3 text-xs sm:text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+                          hasTheme
+                            ? 'bg-theme-ink hover:bg-theme-brand text-theme-surface'
+                            : 'bg-theme-ink hover:bg-status-ok text-theme-surface'
+                        }`}
                       >
-                        <BookOpen className="h-4 w-4" />
-                        Bắt đầu chế biến từng bước
+                        <BookOpen className="h-4 w-4 shrink-0" aria-hidden="true" />
+                        <span>Bắt đầu chế biến từng bước</span>
                       </button>
                     </>
                   ) : (
                     <div className="space-y-5 text-center">
-                      <span className="rounded-md bg-rose-50 px-3 py-1 text-xs font-black text-rose-600">
+                      <span className={`inline-block rounded-md px-3 py-1 text-xs font-bold ${brandBadgeClass}`}>
                         Bước {currentStepIdx + 1}/{selectedRecipe.steps.length}
                       </span>
-                      <p className="text-lg font-black leading-7 text-gray-950">
+                      <p className="text-base sm:text-lg font-bold leading-relaxed text-theme-ink">
                         {selectedRecipe.steps[currentStepIdx].desc}
                       </p>
-                      <p className="text-xs font-bold text-gray-400">
+                      <p className="text-xs font-semibold text-theme-muted">
                         Thời gian đề xuất: {selectedRecipe.steps[currentStepIdx].time}
                       </p>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-2.5">
                         <button
+                          type="button"
                           disabled={currentStepIdx === 0}
                           onClick={() => setCurrentStepIdx((prev) => Math.max(0, prev - 1))}
-                          className="rounded-lg border border-gray-200 py-3 text-xs font-black text-gray-500 disabled:opacity-40"
+                          className="min-h-[44px] rounded-2xl border border-theme-line bg-theme-surface hover:bg-theme-sidebar py-3 text-xs sm:text-sm font-bold text-theme-ink disabled:opacity-40 transition-colors"
                         >
                           Bước trước
                         </button>
                         {currentStepIdx < selectedRecipe.steps.length - 1 ? (
                           <button
+                            type="button"
                             onClick={() => setCurrentStepIdx((prev) => prev + 1)}
-                            className="inline-flex items-center justify-center gap-1 rounded-lg bg-rose-500 py-3 text-xs font-black text-white"
+                            className={`inline-flex min-h-[44px] items-center justify-center gap-1 rounded-2xl py-3 text-xs sm:text-sm font-bold transition-colors ${primaryBtnClass}`}
                           >
-                            Bước tiếp
-                            <ChevronRight className="h-4 w-4" />
+                            <span>Bước tiếp</span>
+                            <ChevronRight className="h-4 w-4" aria-hidden="true" />
                           </button>
                         ) : (
                           <button
+                            type="button"
                             onClick={() => {
                               setCookingMode(false);
                               toast.success('Đã hoàn thành món ăn.');
                             }}
-                            className="rounded-lg bg-emerald-500 py-3 text-xs font-black text-white"
+                            className="min-h-[44px] rounded-2xl bg-status-ok hover:bg-theme-ink py-3 text-xs sm:text-sm font-bold text-theme-surface transition-colors"
                           >
                             Hoàn thành
                           </button>
@@ -674,20 +846,40 @@ export default function BabyMenuPage() {
 
               {modalTab === 'nutrition' && (
                 <div className="space-y-5">
-                  <div className="rounded-lg bg-rose-50 p-4 text-center">
-                    <p className="text-xs font-black uppercase text-gray-400">Tổng năng lượng</p>
-                    <p className="mt-1 text-3xl font-black text-rose-600">
-                      {selectedRecipe.kcal} <span className="text-sm text-gray-500">kcal</span>
+                  <div className="rounded-2xl bg-theme-brand-soft border border-theme-line p-4 text-center">
+                    <p className="text-xs font-bold text-theme-ink">Tổng năng lượng</p>
+                    <p className={`mt-1 text-2xl sm:text-3xl font-bold ${brandTextClass}`}>
+                      {selectedRecipe.kcal} <span className="text-sm text-theme-ink">kcal</span>
                     </p>
                   </div>
-                  <div className="h-52">
+                  <div className="h-56 w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={selectedRecipe.nutritionData} layout="vertical" margin={{ top: 0, right: 10, left: -10, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                        <XAxis type="number" tick={{ fontSize: 10 }} />
-                        <YAxis dataKey="name" type="category" tick={{ fontSize: 11, fontWeight: 700 }} />
-                        <Tooltip />
-                        <Bar dataKey="value" fill="#f43f5e" radius={[0, 8, 8, 0]} barSize={18} />
+                      <BarChart
+                        data={selectedRecipe.nutritionData}
+                        layout="vertical"
+                        margin={{ top: 8, right: 20, left: 16, bottom: 8 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--c-line))" />
+                        <XAxis
+                          type="number"
+                          tick={{ fontSize: 12, fill: 'rgb(var(--c-muted))' }}
+                        />
+                        <YAxis
+                          dataKey="name"
+                          type="category"
+                          width={84}
+                          tick={<BarYAxisTick />}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: 'rgb(var(--c-surface))',
+                            borderColor: 'rgb(var(--c-line))',
+                            borderRadius: '1rem',
+                            fontSize: '12px',
+                            color: 'rgb(var(--c-ink))'
+                          }}
+                        />
+                        <Bar dataKey="value" fill="rgb(var(--c-brand))" radius={[0, 8, 8, 0]} barSize={18} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>

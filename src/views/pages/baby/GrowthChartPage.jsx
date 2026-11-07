@@ -1,9 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import babyService from '../../../models/services/babyService';
 import { useProfileController } from '../../../controllers/profileController';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart } from 'recharts';
-import { ArrowLeft, Scale, ArrowUpRight, Activity, ShieldAlert, Sparkles, Plus, Trash2, Calendar, TrendingUp, ChevronRight } from 'lucide-react';
+import { useBabyTheme } from '../../../hooks/useBabyTheme';
+import {
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  ComposedChart
+} from 'recharts';
+import {
+  ArrowLeft,
+  Scale,
+  ArrowUpRight,
+  Activity,
+  ShieldAlert,
+  Plus,
+  Trash2,
+  Calendar,
+  TrendingUp,
+  ChevronRight,
+  Info,
+  Loader2,
+  Baby
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 
 // WHO standard weight percentile values (Boys in kg)
@@ -66,6 +89,51 @@ const WHO_HEIGHT_GIRLS = [
   { month: 24, P3: 79.8, P15: 82.5, P50: 85.2, P85: 88.0, P97: 90.7 }
 ];
 
+// Component Tooltip khai báo ngoài render để tránh tạo lại component mỗi lần vẽ (quy tắc React hooks)
+function GrowthChartTooltip({ active, payload, label, unitSymbol }) {
+  if (active && payload && payload.length) {
+    const babyVal = payload.find((p) => p.dataKey === 'userValue')?.value;
+    const p50Val = payload.find((p) => p.dataKey === 'P50')?.value;
+    const difference = babyVal !== undefined && p50Val !== undefined ? (babyVal - p50Val).toFixed(1) : null;
+
+    return (
+      <div className="bg-theme-surface p-3.5 border border-theme-line rounded-2xl shadow-lg text-xs font-semibold text-theme-ink">
+        <p className="font-bold text-theme-ink border-b border-theme-line pb-1.5 mb-1.5 flex items-center gap-1.5">
+          <Calendar className="w-3.5 h-3.5 text-theme-brand shrink-0" aria-hidden="true" />
+          <span>{label === 0 ? 'Sơ sinh (0 tháng)' : `${label} tháng tuổi`}</span>
+        </p>
+        <div className="space-y-1">
+          {babyVal !== undefined && (
+            <p className="flex justify-between items-center gap-6">
+              <span>Bé của bạn:</span>
+              <span className="font-bold text-theme-brand">
+                {babyVal} {unitSymbol}
+              </span>
+            </p>
+          )}
+          {p50Val !== undefined && (
+            <p className="flex justify-between items-center gap-6 text-theme-muted">
+              <span>Chuẩn WHO P50:</span>
+              <span className="font-bold text-theme-ink">
+                {p50Val} {unitSymbol}
+              </span>
+            </p>
+          )}
+          {difference !== null && (
+            <p className="flex justify-between items-center gap-6 text-xs border-t border-dashed border-theme-line pt-1.5 mt-1 font-bold">
+              <span>Độ lệch chuẩn:</span>
+              <span className={parseFloat(difference) >= 0 ? 'text-status-ok' : 'text-status-warn-text'}>
+                {parseFloat(difference) > 0 ? `+${difference}` : difference} {unitSymbol}
+              </span>
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
+
 export default function GrowthChartPage() {
   const navigate = useNavigate();
   const { momProfile, updateProfile } = useProfileController();
@@ -75,10 +143,10 @@ export default function GrowthChartPage() {
 
   // Growth logs
   const [weightLogs, setWeightLogs] = useState([]);
-  
+
   // Active chart tab: 'weight' | 'height'
   const [activeTab, setActiveTab] = useState('weight');
-  
+
   // Input form state
   const [weight, setWeight] = useState('');
   const [height, setHeight] = useState('');
@@ -96,12 +164,70 @@ export default function GrowthChartPage() {
   const [birthWeight, setBirthWeight] = useState('3.2');
   const [birthHeight, setBirthHeight] = useState('50');
 
-  useEffect(() => {
-    loadBabies();
+  // Bắt buộc gọi ở đầu component, TRƯỚC mọi return sớm (loading, setupMode)
+  // Khi ở setupMode, truyền giới tính đang chọn để giao diện đổi màu theo bé trai / bé gái
+  useBabyTheme(selectedBaby || (setupMode ? { gender: babyGender } : null));
+
+  const parseAndSetLogs = useCallback((baby) => {
+    let logs = [];
+    if (baby.growthRecords && baby.growthRecords.length > 0) {
+      logs = baby.growthRecords.map((g) => {
+        const birth = new Date(baby.birthDate);
+        const record = new Date(g.recordedAt);
+        // Calendar month calculation to eliminate floating point rounding error
+        const diffMonths = Math.max(
+          0,
+          (record.getFullYear() - birth.getFullYear()) * 12 + (record.getMonth() - birth.getMonth())
+        );
+        return {
+          id: g.id,
+          month: diffMonths,
+          weight: g.weightKg,
+          height: g.heightCm,
+          recordedAt: g.recordedAt
+        };
+      });
+    }
+
+    // Chỉ vẽ các lần đo thật. Trước kia tự thêm điểm "tháng 0" lấy cân nặng hiện tại
+    // (hoặc 3.2 kg / 50 cm) đặt vào lúc sinh, làm sai biểu đồ.
+    setWeightLogs(logs.sort((a, b) => a.month - b.month));
   }, []);
 
+  const loadBabies = useCallback(async (preferredBabyId = null) => {
+    setLoading(true);
+    try {
+      const res = await babyService.getProfiles();
+      const isSuccessful = res && (res.isSuccess || res.success);
+      if (isSuccessful && res.data && res.data.length > 0) {
+        setBabies(res.data);
+        const targetId = preferredBabyId;
+        const defaultBaby = targetId
+          ? res.data.find((b) => b.id === targetId) || res.data[0]
+          : res.data[0];
+        setSelectedBaby(defaultBaby);
+        parseAndSetLogs(defaultBaby);
+      } else {
+        setSetupMode(true);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Có lỗi xảy ra khi tải hồ sơ bé');
+    } finally {
+      setLoading(false);
+    }
+  }, [parseAndSetLogs]);
+
   useEffect(() => {
-    if (momProfile && (momProfile.stage === 2 || momProfile.stage === 'Postpartum' || momProfile.journeyStage === 'Postpartum') && momProfile.deliveryDate) {
+    loadBabies();
+  }, [loadBabies]);
+
+  useEffect(() => {
+    if (
+      momProfile &&
+      (momProfile.stage === 2 || momProfile.stage === 'Postpartum' || momProfile.journeyStage === 'Postpartum') &&
+      momProfile.deliveryDate
+    ) {
       try {
         const dateStr = new Date(momProfile.deliveryDate).toISOString().substring(0, 10);
         setBirthDate(dateStr);
@@ -116,55 +242,13 @@ export default function GrowthChartPage() {
     if (selectedBaby) {
       const birth = new Date(selectedBaby.birthDate);
       const today = new Date();
-      const diffMonths = Math.max(0, (today.getFullYear() - birth.getFullYear()) * 12 + (today.getMonth() - birth.getMonth()));
+      const diffMonths = Math.max(
+        0,
+        (today.getFullYear() - birth.getFullYear()) * 12 + (today.getMonth() - birth.getMonth())
+      );
       setAgeMonths(Math.min(24, diffMonths).toString());
     }
   }, [selectedBaby, logType]);
-
-  const loadBabies = async () => {
-    setLoading(true);
-    try {
-      const res = await babyService.getProfiles();
-      const isSuccessful = res && (res.isSuccess || res.success);
-      if (isSuccessful && res.data && res.data.length > 0) {
-        setBabies(res.data);
-        // Retain selection if reloading, otherwise default to first baby
-        const defaultBaby = selectedBaby ? res.data.find(b => b.id === selectedBaby.id) || res.data[0] : res.data[0];
-        setSelectedBaby(defaultBaby);
-        parseAndSetLogs(defaultBaby);
-      } else {
-        setSetupMode(true);
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error('Có lỗi xảy ra khi tải hồ sơ bé');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const parseAndSetLogs = (baby) => {
-    let logs = [];
-    if (baby.growthRecords && baby.growthRecords.length > 0) {
-      logs = baby.growthRecords.map(g => {
-        const birth = new Date(baby.birthDate);
-        const record = new Date(g.recordedAt);
-        // Calendar month calculation to eliminate floating point rounding error
-        const diffMonths = Math.max(0, (record.getFullYear() - birth.getFullYear()) * 12 + (record.getMonth() - birth.getMonth()));
-        return {
-          id: g.id,
-          month: diffMonths,
-          weight: g.weightKg,
-          height: g.heightCm,
-          recordedAt: g.recordedAt
-        };
-      });
-    }
-
-    // Chỉ vẽ các lần đo thật. Trước kia tự thêm điểm "tháng 0" lấy cân nặng hiện tại
-    // (hoặc 3.2 kg / 50 cm) đặt vào lúc sinh, làm sai biểu đồ.
-    setWeightLogs(logs.sort((a, b) => a.month - b.month));
-  };
 
   const handleSelectBaby = (baby) => {
     setSelectedBaby(baby);
@@ -211,7 +295,7 @@ export default function GrowthChartPage() {
           console.warn('Error auto-updating mom stage to postpartum:', stageErr);
         }
 
-        toast.success('Thiết lập hồ sơ bé thành công! 🎉');
+        toast.success('Thiết lập hồ sơ bé thành công!');
         setSetupMode(false);
         await loadBabies();
       } else {
@@ -232,7 +316,7 @@ export default function GrowthChartPage() {
       return;
     }
 
-    const monthValue = parseInt(ageMonths);
+    const monthValue = parseInt(ageMonths, 10);
     if (isNaN(monthValue) || monthValue < 0 || monthValue > 24) {
       toast.error('Tháng tuổi hợp lệ từ 0 đến 24 tháng');
       return;
@@ -242,7 +326,7 @@ export default function GrowthChartPage() {
     try {
       // Calculate recordedAt based on selected ageMonths and baby's birthDate
       const birth = new Date(selectedBaby.birthDate);
-      
+
       let recordedAt;
       if (logType === 'today') {
         recordedAt = new Date().toISOString();
@@ -255,11 +339,11 @@ export default function GrowthChartPage() {
       const res = await babyService.logGrowth(selectedBaby.id, weight, height, recordedAt);
       const isSuccessful = res && (res.isSuccess || res.success);
       if (isSuccessful) {
-        toast.success('Cập nhật chỉ số tăng trưởng thành công! ⚖️');
+        toast.success('Cập nhật chỉ số tăng trưởng thành công!');
         setWeight('');
         setHeight('');
         // Reload all data from backend to ensure state consistency
-        await loadBabies();
+        await loadBabies(selectedBaby.id);
       } else {
         toast.error(res?.message || 'Lỗi khi cập nhật chỉ số');
       }
@@ -281,7 +365,7 @@ export default function GrowthChartPage() {
       const isSuccessful = res && (res.isSuccess || res.success);
       if (isSuccessful) {
         toast.success('Xóa chỉ số thành công!');
-        await loadBabies();
+        await loadBabies(selectedBaby.id);
       } else {
         toast.error(res?.message || 'Lỗi khi xóa chỉ số');
       }
@@ -303,13 +387,12 @@ export default function GrowthChartPage() {
   // Combine WHO percentiles and user growth records
   const getCombinedChartData = (type) => {
     const whoData = type === 'weight' ? getWhoWeightData() : getWhoHeightData();
-    const allMonths = Array.from(new Set([
-      ...whoData.map(d => d.month),
-      ...weightLogs.map(l => l.month)
-    ])).sort((a, b) => a - b);
+    const allMonths = Array.from(
+      new Set([...whoData.map((d) => d.month), ...weightLogs.map((l) => l.month)])
+    ).sort((a, b) => a - b);
 
     return allMonths.map((month) => {
-      const whoNode = whoData.find(d => d.month === month);
+      const whoNode = whoData.find((d) => d.month === month);
       const userPoint = weightLogs.find((l) => l.month === month);
       return {
         month,
@@ -327,7 +410,7 @@ export default function GrowthChartPage() {
   const getLatestStatsSummary = () => {
     if (weightLogs.length === 0) return null;
     const latest = weightLogs[weightLogs.length - 1];
-    
+
     const whoWeight = getWhoWeightData();
     const whoHeight = getWhoHeightData();
 
@@ -344,23 +427,23 @@ export default function GrowthChartPage() {
     const diffHeight = latest.height - closeHeightNode.P50;
 
     let wStatus = 'Bình thường';
-    let wColor = 'text-green-655 dark:text-green-400 font-bold';
+    let wColor = 'text-status-ok font-bold';
     if (latest.weight < closeWeightNode.P3) {
       wStatus = 'Nhẹ cân';
-      wColor = 'text-red-500 font-bold';
+      wColor = 'text-status-warn-text font-bold';
     } else if (latest.weight > closeWeightNode.P97) {
       wStatus = 'Thừa cân';
-      wColor = 'text-amber-500 font-bold';
+      wColor = 'text-status-warn-text font-bold';
     }
 
     let hStatus = 'Bình thường';
-    let hColor = 'text-green-655 dark:text-green-400 font-bold';
+    let hColor = 'text-status-ok font-bold';
     if (latest.height < closeHeightNode.P3) {
       hStatus = 'Thấp còi';
-      hColor = 'text-red-500 font-bold';
+      hColor = 'text-status-warn-text font-bold';
     } else if (latest.height > closeHeightNode.P97) {
       hStatus = 'Cao vượt trội';
-      hColor = 'text-indigo-500 font-bold';
+      hColor = 'text-theme-brand font-bold';
     }
 
     return {
@@ -382,7 +465,7 @@ export default function GrowthChartPage() {
     if (weightLogs.length === 0) return null;
     const latest = weightLogs[weightLogs.length - 1];
     const whoWeight = getWhoWeightData();
-    
+
     const whoNode = whoWeight.reduce((prev, curr) => {
       return Math.abs(curr.month - latest.month) < Math.abs(prev.month - latest.month) ? curr : prev;
     });
@@ -390,118 +473,141 @@ export default function GrowthChartPage() {
     if (latest.weight < whoNode.P3) {
       return {
         type: 'critical',
-        text: `Cảnh báo tăng trưởng: Cân nặng của bé (${latest.weight}kg) thấp hơn chuẩn P3 của WHO (${whoNode.P3}kg). Bé có nguy cơ suy dinh dưỡng nhẹ, mami cần bổ sung vi chất dinh dưỡng hoặc tham khảo ý kiến bác sĩ nhi khoa. 🚨`
+        text: `Cảnh báo tăng trưởng: Cân nặng của bé (${latest.weight}kg) thấp hơn chuẩn P3 của WHO (${whoNode.P3}kg). Bé có nguy cơ suy dinh dưỡng nhẹ, mami cần bổ sung vi chất dinh dưỡng hoặc tham khảo ý kiến bác sĩ nhi khoa.`
       };
     }
     if (latest.weight > whoNode.P97) {
       return {
         type: 'warning',
-        text: `Cảnh báo tăng trưởng: Cân nặng của bé (${latest.weight}kg) vượt mức P97 của WHO (${whoNode.P97}kg). Bé có tốc độ tăng trưởng quá nhanh, mami nên điều tiết cữ bú sữa và giảm đồ ngọt quá đà. 🧡`
+        text: `Cảnh báo tăng trưởng: Cân nặng của bé (${latest.weight}kg) vượt mức P97 của WHO (${whoNode.P97}kg). Bé có tốc độ tăng trưởng quá nhanh, mami nên điều tiết cữ bú sữa và giảm đồ ngọt quá đà.`
       };
     }
     return {
       type: 'positive',
-      text: 'Chỉ số tuyệt vời! Tốc độ tăng trưởng cân nặng và chiều cao của bé đang nằm trong biểu đồ chuẩn an toàn của WHO. Mami tiếp tục duy trì nhé! 💚'
+      text: 'Chỉ số tuyệt vời! Tốc độ tăng trưởng cân nặng và chiều cao của bé đang nằm trong biểu đồ chuẩn an toàn của WHO. Mami tiếp tục duy trì nhé!'
     };
   };
 
   if (loading) {
     return (
-      <div className="space-y-6 animate-pulse p-4">
-        <div className="h-6 bg-pink-100/50 rounded-xl w-1/4"></div>
-        <div className="h-44 bg-pink-50/50 rounded-3xl"></div>
-        <div className="h-96 bg-pink-50/50 rounded-3xl"></div>
+      <div className="font-display flex flex-col items-center justify-center min-h-[50vh] px-4 py-12 text-center animate-fade-in motion-reduce:animate-none">
+        <div className="w-14 h-14 rounded-2xl bg-theme-sidebar border border-theme-line flex items-center justify-center text-theme-ink mb-4">
+          <Loader2 className="w-7 h-7 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+        </div>
+        <h2 className="text-base font-bold text-theme-ink">
+          Đang tải dữ liệu tăng trưởng...
+        </h2>
+        <p className="text-sm text-theme-muted font-medium mt-1">
+          Đối chiếu biểu đồ chuẩn WHO theo tháng tuổi của bé
+        </p>
       </div>
     );
   }
 
   if (setupMode) {
     return (
-      <div className="max-w-md mx-auto space-y-6 pt-6 px-4">
-        <div className="text-center space-y-2">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-momPink to-momPurple flex items-center justify-center text-white mx-auto shadow-lg">
-            <Plus className="w-8 h-8" />
+      <div className="font-display max-w-lg mx-auto py-6 px-4 animate-fade-in motion-reduce:animate-none">
+        <div className="bg-theme-surface border border-theme-line rounded-2xl p-6 sm:p-8 shadow-sm space-y-6">
+          <div className="text-center space-y-2">
+            <div className="w-14 h-14 rounded-2xl bg-theme-brand-soft border border-theme-line flex items-center justify-center text-theme-brand mx-auto">
+              <Baby className="w-7 h-7" aria-hidden="true" />
+            </div>
+            <h1 className="text-xl font-bold text-theme-ink">
+              Tạo hồ sơ bé yêu
+            </h1>
+            <p className="text-xs sm:text-sm text-theme-muted font-medium leading-relaxed">
+              Nhập các chỉ số sơ sinh để Mom Ơi! lập biểu đồ theo dõi tăng trưởng chuẩn WHO cho bé.
+            </p>
           </div>
-          <h2 className="text-xl font-black text-gray-855 dark:text-white uppercase tracking-wider">
-            Tạo Hồ Sơ Bé Yêu 👶
-          </h2>
-          <p className="text-xs text-gray-500 font-semibold leading-relaxed">
-            Nhập các chỉ số sơ sinh để Mom Ơi! lập biểu đồ theo dõi tăng trưởng chuẩn WHO cho bé.
-          </p>
+
+          <form onSubmit={handleCreateBaby} className="space-y-4">
+            <div className="space-y-1.5">
+              <label htmlFor="setup-baby-name" className="block text-xs font-semibold text-theme-ink">
+                Tên của bé
+              </label>
+              <input
+                id="setup-baby-name"
+                type="text"
+                placeholder="Ví dụ: Bắp, Cà Rốt, Gấu..."
+                value={babyName}
+                onChange={(e) => setBabyName(e.target.value)}
+                className="w-full min-h-[44px] px-3.5 py-2.5 bg-theme-surface border border-theme-line rounded-2xl text-xs sm:text-sm font-medium text-theme-ink placeholder:text-theme-muted focus:outline-none focus:ring-2 focus:ring-theme-brand"
+                required
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div className="space-y-1.5">
+                <label htmlFor="setup-birth-date" className="block text-xs font-semibold text-theme-ink">
+                  Ngày sinh
+                </label>
+                <input
+                  id="setup-birth-date"
+                  type="date"
+                  value={birthDate}
+                  max={new Date().toISOString().substring(0, 10)}
+                  onChange={(e) => setBirthDate(e.target.value)}
+                  className="w-full min-h-[44px] px-3.5 py-2 bg-theme-surface border border-theme-line rounded-2xl text-xs sm:text-sm font-medium text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="setup-baby-gender" className="block text-xs font-semibold text-theme-ink">
+                  Giới tính
+                </label>
+                <select
+                  id="setup-baby-gender"
+                  value={babyGender}
+                  onChange={(e) => setBabyGender(e.target.value)}
+                  className="w-full min-h-[44px] px-3.5 py-2 bg-theme-surface border border-theme-line rounded-2xl text-xs sm:text-sm font-semibold text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand"
+                >
+                  <option value="boy">Bé trai</option>
+                  <option value="girl">Bé gái</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div className="space-y-1.5">
+                <label htmlFor="setup-birth-weight" className="block text-xs font-semibold text-theme-ink">
+                  Cân nặng sơ sinh (kg)
+                </label>
+                <input
+                  id="setup-birth-weight"
+                  type="number"
+                  step="0.1"
+                  value={birthWeight}
+                  onChange={(e) => setBirthWeight(e.target.value)}
+                  className="w-full min-h-[44px] px-3.5 py-2 bg-theme-surface border border-theme-line rounded-2xl text-xs sm:text-sm font-medium text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="setup-birth-height" className="block text-xs font-semibold text-theme-ink">
+                  Chiều cao sơ sinh (cm)
+                </label>
+                <input
+                  id="setup-birth-height"
+                  type="number"
+                  value={birthHeight}
+                  onChange={(e) => setBirthHeight(e.target.value)}
+                  className="w-full min-h-[44px] px-3.5 py-2 bg-theme-surface border border-theme-line rounded-2xl text-xs sm:text-sm font-medium text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand"
+                  required
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full min-h-[44px] py-3 bg-theme-brand hover:bg-theme-ink text-theme-surface text-xs sm:text-sm font-bold rounded-2xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand disabled:opacity-60"
+            >
+              {submitting ? 'Đang tạo...' : 'Tạo hồ sơ bé'}
+            </button>
+          </form>
         </div>
-
-        <form onSubmit={handleCreateBaby} className="bg-white dark:bg-gray-800 border border-pink-100/50 dark:border-gray-700/50 p-6 rounded-3xl shadow-sm space-y-5">
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Tên của bé</label>
-            <input
-              type="text"
-              placeholder="Ví dụ: Bắp, Cà Rốt, Gấu..."
-              value={babyName}
-              onChange={(e) => setBabyName(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-700 dark:bg-gray-900 rounded-xl text-xs font-bold focus:ring-1 focus:ring-momPink/30 focus:border-momPink"
-              required
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Ngày sinh</label>
-              <input
-                type="date"
-                value={birthDate}
-                max={new Date().toISOString().substring(0, 10)}
-                onChange={(e) => setBirthDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 dark:bg-gray-900 rounded-xl text-xs font-bold focus:ring-1 focus:ring-momPink/30"
-                required
-              />
-            </div>
-            
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Giới tính</label>
-              <select
-                value={babyGender}
-                onChange={(e) => setBabyGender(e.target.value)}
-                className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-700 dark:bg-gray-900 rounded-xl text-xs font-bold focus:ring-1 focus:ring-momPink/30"
-              >
-                <option value="boy">Bé Trai 👦</option>
-                <option value="girl">Bé Gái 👧</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Cân nặng sơ sinh (kg)</label>
-              <input
-                type="number"
-                step="0.1"
-                value={birthWeight}
-                onChange={(e) => setBirthWeight(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 dark:bg-gray-900 rounded-xl text-xs font-bold focus:ring-1 focus:ring-momPink/30"
-                required
-              />
-            </div>
-            
-            <div className="space-y-1">
-              <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Chiều cao sơ sinh (cm)</label>
-              <input
-                type="number"
-                value={birthHeight}
-                onChange={(e) => setBirthHeight(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 dark:bg-gray-900 rounded-xl text-xs font-bold focus:ring-1 focus:ring-momPink/30"
-                required
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full py-3 bg-gradient-to-r from-momPink to-momPurple text-white text-xs font-extrabold rounded-xl transition hover:opacity-95 shadow active:scale-95"
-          >
-            {submitting ? 'Đang tạo...' : 'Tạo hồ sơ bé'}
-          </button>
-        </form>
       </div>
     );
   }
@@ -509,63 +615,28 @@ export default function GrowthChartPage() {
   const warning = getGrowthWarning();
   const summary = getLatestStatsSummary();
 
-  const CustomChartTooltip = ({ active, payload, label, unitSymbol }) => {
-    if (active && payload && payload.length) {
-      const babyVal = payload.find(p => p.dataKey === 'userValue')?.value;
-      const p50Val = payload.find(p => p.dataKey === 'P50')?.value;
-      const difference = babyVal && p50Val ? (babyVal - p50Val).toFixed(1) : null;
-      
-      return (
-        <div className="bg-white/95 dark:bg-gray-850 p-4 border border-pink-100 dark:border-gray-700 rounded-2xl shadow-xl backdrop-blur-md text-xs font-semibold text-gray-750 dark:text-gray-200">
-          <p className="font-extrabold text-gray-800 dark:text-white border-b border-gray-100 dark:border-gray-700 pb-1.5 mb-1.5 flex items-center gap-1">
-            <Calendar className="w-3.5 h-3.5 text-momPink" /> {label === 0 ? 'Sơ sinh (0 tháng)' : `${label} tháng tuổi`}
-          </p>
-          <div className="space-y-1">
-            {babyVal !== undefined && (
-              <p className="flex justify-between items-center gap-6">
-                <span>Bé của bạn:</span>
-                <span className="font-bold text-momPink">{babyVal} {unitSymbol}</span>
-              </p>
-            )}
-            {p50Val !== undefined && (
-              <p className="flex justify-between items-center gap-6 text-gray-500 dark:text-gray-400">
-                <span>Chuẩn WHO P50:</span>
-                <span className="font-bold">{p50Val} {unitSymbol}</span>
-              </p>
-            )}
-            {difference !== null && (
-              <p className="flex justify-between items-center gap-6 text-[10px] border-t border-dashed border-gray-100 dark:border-gray-700 pt-1 mt-1 font-bold">
-                <span>Độ lệch chuẩn:</span>
-                <span className={parseFloat(difference) >= 0 ? 'text-green-600' : 'text-red-500'}>
-                  {parseFloat(difference) > 0 ? `+${difference}` : difference} {unitSymbol}
-                </span>
-              </p>
-            )}
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
-
   return (
-    <div className="space-y-6 max-w-7xl mx-auto px-4 pb-12">
-      
+    <div className="font-display rounded-3xl bg-theme-page p-4 sm:p-6 border border-theme-line space-y-6">
       {/* Header Back */}
-      <button
-        onClick={() => navigate('/baby-nutrition')}
-        className="flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-momPink dark:text-gray-400 dark:hover:text-pink-400 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4" /> Quay lại góc Bé yêu
-      </button>
+      <div>
+        <button
+          type="button"
+          onClick={() => navigate('/baby-nutrition')}
+          className="inline-flex items-center gap-2 min-h-[44px] px-3.5 py-2 rounded-2xl border border-theme-line bg-theme-surface hover:bg-theme-sidebar text-xs sm:text-sm font-semibold text-theme-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+        >
+          <ArrowLeft className="w-4 h-4 shrink-0" aria-hidden="true" />
+          <span>Quay lại góc bé yêu</span>
+        </button>
+      </div>
 
       {/* Main Header & Baby Switcher */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-pink-100/30 dark:border-gray-700/50 pb-5">
-        <div>
-          <h2 className="text-2xl font-black text-gray-850 dark:text-white uppercase tracking-wider flex items-center gap-2">
-            Biểu Đồ Tăng Trưởng Chuẩn WHO <Sparkles className="w-5 h-5 text-momPink animate-pulse" />
-          </h2>
-          <p className="text-xs text-gray-550 dark:text-gray-400 font-semibold mt-1 leading-relaxed">
+      <section className="bg-theme-surface rounded-2xl border border-theme-line p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-theme-ink flex items-center gap-2">
+            <Activity className="w-6 h-6 text-theme-brand shrink-0" aria-hidden="true" />
+            <span>Biểu đồ tăng trưởng chuẩn WHO</span>
+          </h1>
+          <p className="text-xs sm:text-sm text-theme-muted font-medium leading-relaxed">
             Theo dõi sự phát triển thể chất của bé {selectedBaby?.name} dựa trên tiêu chuẩn tăng trưởng toàn cầu từ Tổ chức Y tế Thế giới (WHO).
           </p>
         </div>
@@ -573,94 +644,109 @@ export default function GrowthChartPage() {
         {/* Baby profile selection dropdown */}
         {babies.length > 1 && (
           <div className="flex items-center gap-2 shrink-0">
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Chọn bé:</span>
+            <label htmlFor="select-baby-profile" className="text-xs font-bold text-theme-ink">
+              Chọn bé:
+            </label>
             <div className="relative">
               <select
+                id="select-baby-profile"
                 value={selectedBaby?.id || ''}
                 onChange={(e) => {
-                  const target = babies.find(b => b.id === parseInt(e.target.value));
+                  const target = babies.find((b) => b.id === parseInt(e.target.value, 10));
                   if (target) handleSelectBaby(target);
                 }}
-                className="appearance-none bg-white dark:bg-gray-800 border border-pink-100/50 dark:border-gray-700/80 px-4 py-2 pr-8 rounded-xl text-xs font-bold text-gray-700 dark:text-gray-200 focus:ring-1 focus:ring-momPink/30 focus:border-momPink shadow-sm cursor-pointer"
+                className="appearance-none min-h-[44px] bg-theme-page border border-theme-line px-4 py-2 pr-9 rounded-2xl text-xs sm:text-sm font-bold text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand cursor-pointer"
               >
                 {babies.map((b) => (
                   <option key={b.id} value={b.id}>
-                    {b.name} ({b.gender === 0 ? 'Bé trai 👦' : 'Bé gái 👧'})
+                    {b.name} ({b.gender === 0 ? 'Bé trai' : 'Bé gái'})
                   </option>
                 ))}
               </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                <ChevronRight className="w-3 h-3 rotate-90" />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-theme-muted">
+                <ChevronRight className="w-4 h-4 rotate-90" aria-hidden="true" />
               </div>
             </div>
           </div>
         )}
-      </div>
+      </section>
 
       {/* Warning Alert Banner */}
       {warning && (
-        <div className={`p-4 rounded-2xl border flex items-start gap-3 text-xs font-semibold leading-relaxed shadow-sm transition-all duration-300 ${
-          warning.type === 'critical' 
-            ? 'bg-red-50/70 border-red-200/60 text-red-800 dark:bg-red-950/20 dark:border-red-900/30 dark:text-red-300' 
-            : warning.type === 'warning'
-            ? 'bg-amber-50/70 border-amber-250/60 text-amber-900 dark:bg-amber-950/20 dark:border-amber-900/30 dark:text-amber-300'
-            : 'bg-green-50/70 border-green-200/60 text-green-800 dark:bg-green-950/20 dark:border-green-900/30 dark:text-green-300'
-        }`}>
-          {warning.type === 'critical' ? (
-            <ShieldAlert className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+        <section
+          role="alert"
+          className={`p-4 sm:p-5 rounded-2xl border flex items-start gap-3 text-xs sm:text-sm font-medium leading-relaxed shadow-sm ${
+            warning.type === 'positive'
+              ? 'bg-theme-surface border-status-ok text-theme-ink'
+              : 'bg-status-warn-bg border-status-warn-line text-status-warn-text'
+          }`}
+        >
+          {warning.type === 'positive' ? (
+            <Activity className="w-5 h-5 text-status-ok shrink-0 mt-0.5" aria-hidden="true" />
           ) : (
-            <Activity className="w-5 h-5 text-momPink shrink-0 mt-0.5" />
+            <ShieldAlert className="w-5 h-5 text-status-warn-text shrink-0 mt-0.5" aria-hidden="true" />
           )}
           <span>{warning.text}</span>
-        </div>
+        </section>
       )}
 
       {/* Dashboard Overview Cards */}
       {summary && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-pink-100/40 dark:border-gray-755 shadow-sm space-y-3 animate-fade-in flex flex-col justify-between min-h-[115px]">
-            <div className="flex items-center gap-1.5 text-gray-400">
-              <Calendar className="w-4 h-4 text-momPink shrink-0 -mt-[2px]" />
-              <span className="text-[10px] font-extrabold uppercase tracking-wider">Tháng tuổi hiện tại</span>
+          <div className="bg-theme-surface p-5 rounded-2xl border border-theme-line shadow-sm space-y-2.5 flex flex-col justify-between min-h-[115px]">
+            <div className="flex items-center gap-2 text-theme-muted">
+              <Calendar className="w-4 h-4 text-theme-brand shrink-0" aria-hidden="true" />
+              <span className="text-xs font-bold">Tháng tuổi hiện tại</span>
             </div>
             <div>
-              <span className="text-xl font-black text-gray-850 dark:text-white block">{summary.age} tháng</span>
-              <span className="text-[9px] text-gray-400 block font-semibold mt-1">
-                Ngày sinh: {selectedBaby ? (() => {
-                  const d = new Date(selectedBaby.birthDate);
-                  return !isNaN(d.getTime()) 
-                    ? `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}/${d.getFullYear()}`
-                    : '';
-                })() : ''}
+              <span className="text-xl font-bold text-theme-ink block">{summary.age} tháng</span>
+              <span className="text-xs text-theme-muted block font-medium mt-1">
+                Ngày sinh:{' '}
+                {selectedBaby
+                  ? (() => {
+                      const d = new Date(selectedBaby.birthDate);
+                      return !isNaN(d.getTime())
+                        ? `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1)
+                            .toString()
+                            .padStart(2, '0')}/${d.getFullYear()}`
+                        : '';
+                    })()
+                  : ''}
               </span>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-pink-100/40 dark:border-gray-755 shadow-sm space-y-3 animate-fade-in flex flex-col justify-between min-h-[115px]">
-            <div className="flex items-center gap-1.5 text-gray-400">
-              <Scale className="w-4 h-4 text-momPink shrink-0 -mt-[2px]" />
-              <span className="text-[10px] font-extrabold uppercase tracking-wider">Cân nặng đo cuối</span>
+          <div className="bg-theme-surface p-5 rounded-2xl border border-theme-line shadow-sm space-y-2.5 flex flex-col justify-between min-h-[115px]">
+            <div className="flex items-center gap-2 text-theme-muted">
+              <Scale className="w-4 h-4 text-theme-brand shrink-0" aria-hidden="true" />
+              <span className="text-xs font-bold">Cân nặng đo cuối</span>
             </div>
             <div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-black text-gray-850 dark:text-white">{summary.weight} kg</span>
-                <span className={`text-[10px] ${summary.wColor}`}>({summary.wStatus})</span>
+              <div className="flex flex-wrap items-baseline gap-1.5">
+                <span className="text-xl font-bold text-theme-ink">{summary.weight} kg</span>
+                <span className={`text-xs ${summary.wColor}`}>({summary.wStatus})</span>
               </div>
-              <span className="text-[9px] text-gray-400 block font-semibold mt-1">WHO P50: {summary.p50Weight} kg ({parseFloat(summary.diffWeight) >= 0 ? `+${summary.diffWeight}` : summary.diffWeight} kg)</span>
+              <span className="text-xs text-theme-muted block font-medium mt-1">
+                WHO P50: {summary.p50Weight} kg (
+                {parseFloat(summary.diffWeight) >= 0 ? `+${summary.diffWeight}` : summary.diffWeight} kg)
+              </span>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-pink-100/40 dark:border-gray-755 shadow-sm space-y-3 animate-fade-in flex flex-col justify-between min-h-[115px]">
-            <div className="flex items-center gap-1.5 text-gray-400">
-              <ArrowUpRight className="w-4.5 h-4.5 text-momPurple shrink-0 -mt-[2px]" />
-              <span className="text-[10px] font-extrabold uppercase tracking-wider">Chiều cao đo cuối</span>
+          <div className="bg-theme-surface p-5 rounded-2xl border border-theme-line shadow-sm space-y-2.5 flex flex-col justify-between min-h-[115px]">
+            <div className="flex items-center gap-2 text-theme-muted">
+              <ArrowUpRight className="w-4 h-4 text-theme-brand shrink-0" aria-hidden="true" />
+              <span className="text-xs font-bold">Chiều cao đo cuối</span>
             </div>
             <div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-xl font-black text-gray-855 dark:text-white">{summary.height} cm</span>
-                <span className={`text-[10px] ${summary.hColor}`}>({summary.hStatus})</span>
+              <div className="flex flex-wrap items-baseline gap-1.5">
+                <span className="text-xl font-bold text-theme-ink">{summary.height} cm</span>
+                <span className={`text-xs ${summary.hColor}`}>({summary.hStatus})</span>
               </div>
-              <span className="text-[9px] text-gray-400 block font-semibold mt-1">WHO P50: {summary.p50Height} cm ({parseFloat(summary.diffHeight) >= 0 ? `+${summary.diffHeight}` : summary.diffHeight} cm)</span>
+              <span className="text-xs text-theme-muted block font-medium mt-1">
+                WHO P50: {summary.p50Height} cm (
+                {parseFloat(summary.diffHeight) >= 0 ? `+${summary.diffHeight}` : summary.diffHeight} cm)
+              </span>
             </div>
           </div>
         </div>
@@ -668,35 +754,34 @@ export default function GrowthChartPage() {
 
       {/* Main Grid: Chart & Form */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Left & Middle Column: Beautiful Chart Component */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-5 rounded-3xl border border-pink-100/50 dark:border-gray-750 shadow-sm flex flex-col space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-gray-150 dark:border-gray-700/60 pb-4">
-            <div>
-              <h3 className="text-sm font-extrabold text-gray-800 dark:text-white uppercase tracking-wider flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-momPink shrink-0" />
-                Đồ thị phát triển
-              </h3>
-            </div>
+        {/* Left & Middle Column: Chart Component */}
+        <section className="lg:col-span-2 bg-theme-surface p-5 sm:p-6 rounded-2xl border border-theme-line shadow-sm flex flex-col space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-theme-line pb-4">
+            <h2 className="text-base font-bold text-theme-ink flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-theme-brand shrink-0" aria-hidden="true" />
+              <span>Đồ thị phát triển ({activeTab === 'weight' ? 'kg theo tháng tuổi' : 'cm theo tháng tuổi'})</span>
+            </h2>
 
             {/* Custom tab switcher to show weight OR height */}
-            <div className="flex bg-gray-100 dark:bg-gray-900 p-0.5 rounded-xl border border-gray-200 dark:border-gray-700 w-full sm:w-auto">
+            <div className="flex bg-theme-page p-1 rounded-2xl border border-theme-line w-full sm:w-auto gap-1">
               <button
+                type="button"
                 onClick={() => setActiveTab('weight')}
-                className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
+                className={`flex-1 sm:flex-none min-h-[40px] px-4 py-1.5 rounded-md text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
                   activeTab === 'weight'
-                    ? 'bg-white dark:bg-gray-850 text-momPink shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'
+                    ? 'bg-theme-ink text-theme-surface'
+                    : 'text-theme-ink hover:bg-theme-sidebar'
                 }`}
               >
                 Cân nặng (kg)
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab('height')}
-                className={`flex-1 sm:flex-none px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 ${
+                className={`flex-1 sm:flex-none min-h-[40px] px-4 py-1.5 rounded-md text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
                   activeTab === 'height'
-                    ? 'bg-white dark:bg-gray-850 text-momPurple shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white'
+                    ? 'bg-theme-ink text-theme-surface'
+                    : 'text-theme-ink hover:bg-theme-sidebar'
                 }`}
               >
                 Chiều cao (cm)
@@ -705,77 +790,131 @@ export default function GrowthChartPage() {
           </div>
 
           {/* Recharts chart area */}
-          <div className="h-80 sm:h-96 w-full pt-2">
+          <div className="h-72 sm:h-96 w-full pt-2">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart
                 data={getCombinedChartData(activeTab)}
-                margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
+                margin={{ top: 12, right: 16, left: -12, bottom: 12 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" className="dark:stroke-gray-700/50" />
-                <XAxis 
-                  dataKey="month" 
-                  tick={{ fontSize: 9, fontWeight: 'bold', fill: '#94a3b8' }}
-                  label={{ value: 'Tháng tuổi', position: 'insideBottomRight', offset: -10, style: { fontSize: 9, fontWeight: 'bold', fill: '#94a3b8' } }} 
+                <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--c-line))" />
+                <XAxis
+                  dataKey="month"
+                  tick={{ fontSize: 12, fontWeight: 600, fill: 'rgb(var(--c-ink))' }}
+                  tickMargin={6}
                 />
-                <YAxis 
-                  domain={activeTab === 'weight' ? [1, 16] : [40, 100]} 
-                  tick={{ fontSize: 9, fontWeight: 'bold', fill: '#94a3b8' }} 
+                <YAxis
+                  domain={activeTab === 'weight' ? [1, 16] : [40, 100]}
+                  tick={{ fontSize: 12, fontWeight: 600, fill: 'rgb(var(--c-muted))' }}
+                  width={42}
                 />
-                
-                <Tooltip content={<CustomChartTooltip unitSymbol={activeTab === 'weight' ? 'kg' : 'cm'} />} />
-                
+
+                <Tooltip content={<GrowthChartTooltip unitSymbol={activeTab === 'weight' ? 'kg' : 'cm'} />} />
+
                 {/* WHO Standard Lines */}
-                <Line type="monotone" name="Chuẩn WHO P3 (Thấp)" dataKey="P3" stroke="#cbd5e1" strokeDasharray="4 4" strokeWidth={1} dot={false} connectNulls />
-                <Line type="monotone" name="Chuẩn WHO P15" dataKey="P15" stroke="#94a3b8" strokeDasharray="3 3" strokeWidth={1} dot={false} connectNulls />
-                <Line type="monotone" name="Chuẩn WHO P50 (Trung bình)" dataKey="P50" stroke="#64748b" strokeWidth={2} dot={false} connectNulls />
-                <Line type="monotone" name="Chuẩn WHO P85" dataKey="P85" stroke="#94a3b8" strokeDasharray="3 3" strokeWidth={1} dot={false} connectNulls />
-                <Line type="monotone" name="Chuẩn WHO P97 (Cao)" dataKey="P97" stroke="#cbd5e1" strokeDasharray="4 4" strokeWidth={1} dot={false} connectNulls />
-                
-                {/* Main Baby Curve with custom gradients */}
-                <Line 
-                  type="monotone" 
-                  name="Bé của bạn" 
-                  dataKey="userValue" 
-                  stroke={activeTab === 'weight' ? '#FF7A8A' : '#8B5CF6'} 
-                  strokeWidth={3.5} 
-                  dot={{ r: 6, fill: activeTab === 'weight' ? '#FF7A8A' : '#8B5CF6', strokeWidth: 3, stroke: '#fff' }} 
-                  activeDot={{ r: 8, strokeWidth: 0 }}
-                  connectNulls 
+                <Line
+                  type="monotone"
+                  name="Chuẩn WHO P3 (Thấp)"
+                  dataKey="P3"
+                  stroke="rgb(var(--c-line))"
+                  strokeDasharray="4 4"
+                  strokeWidth={1.5}
+                  dot={false}
+                  connectNulls
+                />
+                <Line
+                  type="monotone"
+                  name="Chuẩn WHO P15"
+                  dataKey="P15"
+                  stroke="rgb(var(--c-muted))"
+                  strokeDasharray="3 3"
+                  strokeWidth={1}
+                  dot={false}
+                  connectNulls
+                />
+                <Line
+                  type="monotone"
+                  name="Chuẩn WHO P50 (Trung bình)"
+                  dataKey="P50"
+                  stroke="rgb(var(--c-ok))"
+                  strokeWidth={2}
+                  dot={false}
+                  connectNulls
+                />
+                <Line
+                  type="monotone"
+                  name="Chuẩn WHO P85"
+                  dataKey="P85"
+                  stroke="rgb(var(--c-muted))"
+                  strokeDasharray="3 3"
+                  strokeWidth={1}
+                  dot={false}
+                  connectNulls
+                />
+                <Line
+                  type="monotone"
+                  name="Chuẩn WHO P97 (Cao)"
+                  dataKey="P97"
+                  stroke="rgb(var(--c-line))"
+                  strokeDasharray="4 4"
+                  strokeWidth={1.5}
+                  dot={false}
+                  connectNulls
+                />
+
+                {/* Main Baby Curve */}
+                <Line
+                  type="monotone"
+                  name="Bé của bạn"
+                  dataKey="userValue"
+                  stroke="rgb(var(--c-brand))"
+                  strokeWidth={3}
+                  dot={{
+                    r: 5,
+                    fill: 'rgb(var(--c-brand))',
+                    strokeWidth: 2,
+                    stroke: 'rgb(var(--c-surface))'
+                  }}
+                  activeDot={{ r: 7, strokeWidth: 0 }}
+                  connectNulls
                 />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
 
           {/* Chart Legends Explanation */}
-          <div className="flex flex-wrap justify-center gap-x-5 gap-y-1.5 text-[9px] font-bold text-gray-400 pt-2 border-t border-gray-100 dark:border-gray-700/50">
-            <span className="flex items-center gap-1.5">
-              <span className="w-3.5 h-1 bg-gradient-to-r from-momPink to-momPurple rounded"></span> Bé của bạn
+          <div className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs font-semibold text-theme-muted pt-3 border-t border-theme-line">
+            <span className="flex items-center gap-2 text-theme-ink">
+              <span className="w-4 h-1 bg-theme-brand rounded"></span>
+              <span>Bé của bạn</span>
             </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-3.5 h-0.5 bg-gray-500 rounded"></span> Chuẩn trung vị WHO P50
+            <span className="flex items-center gap-2 text-theme-ink">
+              <span className="w-4 h-0.5 bg-status-ok rounded"></span>
+              <span>Chuẩn trung vị WHO P50</span>
             </span>
-            <span className="flex items-center gap-1.5">
-              <span className="w-3.5 h-0.5 border-t border-dashed border-gray-300"></span> Ngưỡng an toàn chuẩn WHO (P3 - P97)
+            <span className="flex items-center gap-2">
+              <span className="w-4 h-0.5 border-t border-dashed border-theme-muted"></span>
+              <span>Ngưỡng chuẩn WHO (P3 - P97)</span>
             </span>
           </div>
-        </div>
+        </section>
 
         {/* Right Column: Logging Form Card */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-pink-100/50 dark:border-gray-750 shadow-sm flex flex-col justify-between">
+        <section className="bg-theme-surface p-5 sm:p-6 rounded-2xl border border-theme-line shadow-sm flex flex-col justify-between">
           <div className="space-y-4">
-            <h3 className="text-sm font-extrabold text-gray-800 dark:text-white uppercase tracking-wider text-center flex items-center justify-center gap-1.5 border-b border-gray-100 dark:border-gray-700/50 pb-3">
-              Ghi nhận chỉ số mới 📏
-            </h3>
+            <h2 className="text-base font-bold text-theme-ink flex items-center gap-2 border-b border-theme-line pb-3">
+              <Plus className="w-5 h-5 text-theme-brand shrink-0" aria-hidden="true" />
+              <span>Ghi nhận chỉ số mới</span>
+            </h2>
 
             {/* Toggle choice for logging target */}
-            <div className="grid grid-cols-2 gap-1 bg-gray-50 dark:bg-gray-900/50 p-1 rounded-xl border border-gray-200/50 dark:border-gray-700/50 text-[10px] font-bold text-gray-500">
+            <div className="grid grid-cols-2 gap-1 bg-theme-page p-1 rounded-2xl border border-theme-line text-xs font-bold">
               <button
                 type="button"
                 onClick={() => setLogType('today')}
-                className={`py-1.5 rounded-lg transition-all duration-200 ${
+                className={`min-h-[40px] py-1.5 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
                   logType === 'today'
-                    ? 'bg-white dark:bg-gray-800 text-momPink shadow-sm font-black'
-                    : 'hover:text-gray-800 dark:hover:text-white'
+                    ? 'bg-theme-ink text-theme-surface'
+                    : 'text-theme-ink hover:bg-theme-sidebar'
                 }`}
               >
                 Hôm nay
@@ -783,10 +922,10 @@ export default function GrowthChartPage() {
               <button
                 type="button"
                 onClick={() => setLogType('history')}
-                className={`py-1.5 rounded-lg transition-all duration-200 ${
+                className={`min-h-[40px] py-1.5 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
                   logType === 'history'
-                    ? 'bg-white dark:bg-gray-800 text-momPurple shadow-sm font-black'
-                    : 'hover:text-gray-800 dark:hover:text-white'
+                    ? 'bg-theme-ink text-theme-surface'
+                    : 'text-theme-ink hover:bg-theme-sidebar'
                 }`}
               >
                 Mốc lịch sử
@@ -794,18 +933,23 @@ export default function GrowthChartPage() {
             </div>
 
             <form onSubmit={handleLogGrowth} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tháng tuổi của bé</label>
+              <div className="space-y-1.5">
+                <label htmlFor="growth-age-months" className="block text-xs font-semibold text-theme-ink">
+                  Tháng tuổi của bé
+                </label>
                 {logType === 'today' ? (
-                  <div className="w-full px-3 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-150 dark:border-gray-700 rounded-xl text-xs font-bold text-gray-500 flex items-center justify-between">
+                  <div className="w-full min-h-[44px] px-3.5 py-2.5 bg-theme-page border border-theme-line rounded-2xl text-xs sm:text-sm font-bold text-theme-ink flex flex-wrap items-center justify-between gap-2">
                     <span>Tháng {ageMonths}</span>
-                    <span className="text-[9px] font-medium text-momPink italic bg-pink-50/50 dark:bg-pink-950/20 px-2 py-0.5 rounded-full">Tự động tính từ ngày sinh</span>
+                    <span className="text-xs font-semibold text-theme-brand bg-theme-brand-soft px-2.5 py-0.5 rounded-full">
+                      Tự động tính từ ngày sinh
+                    </span>
                   </div>
                 ) : (
                   <select
+                    id="growth-age-months"
                     value={ageMonths}
                     onChange={(e) => setAgeMonths(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 dark:bg-gray-900 rounded-xl text-xs font-bold focus:ring-1 focus:ring-momPink/30 text-gray-850 dark:text-white"
+                    className="w-full min-h-[44px] px-3.5 py-2 bg-theme-surface border border-theme-line rounded-2xl text-xs sm:text-sm font-semibold text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand"
                   >
                     <option value="0">Sơ sinh (0 tháng)</option>
                     {Array.from({ length: 24 }, (_, i) => (
@@ -817,10 +961,13 @@ export default function GrowthChartPage() {
                 )}
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Cân nặng (kg)</label>
+              <div className="space-y-1.5">
+                <label htmlFor="growth-weight-input" className="block text-xs font-semibold text-theme-ink">
+                  Cân nặng (kg)
+                </label>
                 <div className="relative">
                   <input
+                    id="growth-weight-input"
                     type="number"
                     step="0.01"
                     min="0.5"
@@ -828,17 +975,22 @@ export default function GrowthChartPage() {
                     value={weight}
                     onChange={(e) => setWeight(e.target.value)}
                     placeholder="Ví dụ: 8.6"
-                    className="w-full pl-3 pr-10 py-2.5 border border-gray-200 dark:border-gray-700 dark:bg-gray-900 rounded-xl text-xs font-bold focus:ring-1 focus:ring-momPink/30 focus:border-momPink text-gray-800 dark:text-white"
+                    className="w-full min-h-[44px] pl-3.5 pr-12 py-2.5 bg-theme-surface border border-theme-line rounded-2xl text-xs sm:text-sm font-medium text-theme-ink placeholder:text-theme-muted focus:outline-none focus:ring-2 focus:ring-theme-brand"
                     required
                   />
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] font-bold">kg</div>
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-theme-muted text-xs font-bold">
+                    kg
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Chiều cao (cm)</label>
+              <div className="space-y-1.5">
+                <label htmlFor="growth-height-input" className="block text-xs font-semibold text-theme-ink">
+                  Chiều cao (cm)
+                </label>
                 <div className="relative">
                   <input
+                    id="growth-height-input"
                     type="number"
                     step="0.1"
                     min="30"
@@ -846,113 +998,136 @@ export default function GrowthChartPage() {
                     value={height}
                     onChange={(e) => setHeight(e.target.value)}
                     placeholder="Ví dụ: 69.2"
-                    className="w-full pl-3 pr-10 py-2.5 border border-gray-200 dark:border-gray-700 dark:bg-gray-900 rounded-xl text-xs font-bold focus:ring-1 focus:ring-momPink/30 focus:border-momPink text-gray-800 dark:text-white"
+                    className="w-full min-h-[44px] pl-3.5 pr-12 py-2.5 bg-theme-surface border border-theme-line rounded-2xl text-xs sm:text-sm font-medium text-theme-ink placeholder:text-theme-muted focus:outline-none focus:ring-2 focus:ring-theme-brand"
                     required
                   />
-                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] font-bold">cm</div>
+                  <div className="absolute right-3.5 top-1/2 -translate-y-1/2 text-theme-muted text-xs font-bold">
+                    cm
+                  </div>
                 </div>
               </div>
 
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-3 bg-gradient-to-r from-momPink to-momPurple text-white text-xs font-extrabold rounded-xl transition hover:opacity-95 shadow active:scale-95 mt-2 flex items-center justify-center gap-1.5"
+                className="w-full min-h-[44px] py-3 bg-theme-brand hover:bg-theme-ink text-theme-surface text-xs sm:text-sm font-bold rounded-2xl transition-colors mt-2 flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand disabled:opacity-60"
               >
                 {submitting ? 'Đang cập nhật...' : 'Ghi nhận chỉ số'}
               </button>
             </form>
           </div>
-          
-          <div className="mt-4 pt-3 border-t border-dashed border-gray-150 dark:border-gray-700/80 text-[10px] font-semibold text-gray-400 leading-normal flex items-start gap-1">
-            <span className="text-momPink">💡</span>
-            <span>Các chỉ số sau khi ghi nhận sẽ tự động đồng bộ hóa lên hệ thống phân tích AI để cập nhật khuyến nghị thực đơn hạt dinh dưỡng tương ứng.</span>
+
+          <div className="mt-4 pt-3 border-t border-dashed border-theme-line text-xs font-medium text-theme-muted leading-relaxed flex items-start gap-2">
+            <Info className="w-4 h-4 text-theme-brand shrink-0 mt-0.5" aria-hidden="true" />
+            <span>
+              Các chỉ số sau khi ghi nhận sẽ tự động đồng bộ hóa lên hệ thống phân tích AI để cập nhật khuyến nghị thực đơn dinh dưỡng tương ứng.
+            </span>
           </div>
-        </div>
+        </section>
       </div>
 
       {/* History Log Section */}
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl border border-pink-100/50 dark:border-gray-755 shadow-sm space-y-4">
-        <div className="border-b border-gray-100 dark:border-gray-700 pb-3">
-          <h3 className="text-sm font-extrabold text-gray-850 dark:text-white uppercase tracking-wider flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-momPink shrink-0 translate-y-[-1px]" />
-            Lịch sử đo lường & Đánh giá chuẩn
-          </h3>
+      <section className="bg-theme-surface p-5 sm:p-6 rounded-2xl border border-theme-line shadow-sm space-y-4">
+        <div className="border-b border-theme-line pb-3">
+          <h2 className="text-base font-bold text-theme-ink flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-theme-brand shrink-0" aria-hidden="true" />
+            <span>Lịch sử đo lường và đánh giá chuẩn</span>
+          </h2>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-gray-600 dark:text-gray-300">
+          <table className="w-full min-w-[640px] text-left text-xs text-theme-ink">
             <thead>
-              <tr className="border-b border-gray-150 dark:border-gray-700/60 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                <th className="py-2.5 px-3">Mốc tuổi</th>
-                <th className="py-2.5 px-3">Ngày ghi nhận</th>
-                <th className="py-2.5 px-3">Cân nặng (kg)</th>
-                <th className="py-2.5 px-3">Chiều cao (cm)</th>
-                <th className="py-2.5 px-3">Đánh giá chung (Chuẩn WHO)</th>
-                <th className="py-2.5 px-3 text-center">Hành động</th>
+              <tr className="border-b border-theme-line text-xs font-bold text-theme-muted">
+                <th className="py-3 px-3">Mốc tuổi</th>
+                <th className="py-3 px-3">Ngày ghi nhận</th>
+                <th className="py-3 px-3">Cân nặng (kg)</th>
+                <th className="py-3 px-3">Chiều cao (cm)</th>
+                <th className="py-3 px-3">Đánh giá chung (Chuẩn WHO)</th>
+                <th className="py-3 px-3 text-center">Hành động</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50 font-semibold">
-              {weightLogs.map((log) => {
-                const dateObj = new Date(log.recordedAt);
-                const dateStr = !isNaN(dateObj.getTime()) 
-                  ? `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1).toString().padStart(2, '0')}/${dateObj.getFullYear()}`
-                  : '-';
-                  
-                // Determine evaluations locally for listing
-                const whoW = getWhoWeightData();
-                const whoH = getWhoHeightData();
-                const nodeW = whoW.reduce((prev, curr) => Math.abs(curr.month - log.month) < Math.abs(prev.month - log.month) ? curr : prev);
-                const nodeH = whoH.reduce((prev, curr) => Math.abs(curr.month - log.month) < Math.abs(prev.month - log.month) ? curr : prev);
+            <tbody className="divide-y divide-theme-line font-semibold">
+              {weightLogs.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-6 px-3 text-center text-xs sm:text-sm text-theme-muted font-medium">
+                    Chưa có mốc đo lường nào được ghi nhận cho bé.
+                  </td>
+                </tr>
+              ) : (
+                weightLogs.map((log) => {
+                  const dateObj = new Date(log.recordedAt);
+                  const dateStr = !isNaN(dateObj.getTime())
+                    ? `${dateObj.getDate().toString().padStart(2, '0')}/${(dateObj.getMonth() + 1)
+                        .toString()
+                        .padStart(2, '0')}/${dateObj.getFullYear()}`
+                    : '-';
 
-                let evalText = 'Bình thường';
-                let evalBadge = 'bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-300 border-green-200/50';
+                  // Determine evaluations locally for listing
+                  const whoW = getWhoWeightData();
+                  const whoH = getWhoHeightData();
+                  const nodeW = whoW.reduce((prev, curr) =>
+                    Math.abs(curr.month - log.month) < Math.abs(prev.month - log.month) ? curr : prev
+                  );
+                  const nodeH = whoH.reduce((prev, curr) =>
+                    Math.abs(curr.month - log.month) < Math.abs(prev.month - log.month) ? curr : prev
+                  );
 
-                if (log.weight < nodeW.P3 || log.height < nodeH.P3) {
-                  evalText = 'Cần chú ý (Dưới chuẩn)';
-                  evalBadge = 'bg-red-50 text-red-700 dark:bg-red-950/20 dark:text-red-300 border-red-200/50';
-                } else if (log.weight > nodeW.P97) {
-                  evalText = 'Thừa cân';
-                  evalBadge = 'bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-300 border-amber-200/50';
-                }
+                  let evalText = 'Bình thường';
+                  let evalBadge = 'bg-status-ok text-theme-surface border-status-ok';
 
-                return (
-                  <tr key={log.id} className="hover:bg-pink-50/10 dark:hover:bg-gray-750 transition-colors">
-                    <td className="py-3 px-3 text-gray-800 dark:text-white font-black text-xs">
-                      {log.month === 0 ? 'Sơ sinh (0 tháng)' : `${log.month} tháng`}
-                    </td>
-                    <td className="py-3 px-3 text-gray-500 dark:text-gray-400 text-[11px]">
-                      {dateStr}
-                    </td>
-                    <td className="py-3 px-3">
-                      <span>{log.weight} kg</span>
-                      <span className="text-[9px] text-gray-400 block font-normal">WHO P50: {nodeW.P50}kg</span>
-                    </td>
-                    <td className="py-3 px-3">
-                      <span>{log.height} cm</span>
-                      <span className="text-[9px] text-gray-400 block font-normal">WHO P50: {nodeH.P50}cm</span>
-                    </td>
-                    <td className="py-3 px-3">
-                      <span className={`px-2.5 py-0.5 rounded-full border text-[10px] ${evalBadge}`}>
-                        {evalText}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 text-center">
-                      <button
-                        onClick={() => handleDeleteGrowth(log.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-all active:scale-90"
-                        title="Xóa mốc đo này"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
+                  if (log.weight < nodeW.P3 || log.height < nodeH.P3) {
+                    evalText = 'Cần chú ý (Dưới chuẩn)';
+                    evalBadge = 'bg-status-warn-bg text-status-warn-text border-status-warn-line';
+                  } else if (log.weight > nodeW.P97) {
+                    evalText = 'Thừa cân';
+                    evalBadge = 'bg-status-warn-bg text-status-warn-text border-status-warn-line';
+                  }
+
+                  return (
+                    <tr key={log.id} className="hover:bg-theme-page/60 transition-colors">
+                      <td className="py-3.5 px-3 text-theme-ink font-bold text-xs sm:text-sm">
+                        {log.month === 0 ? 'Sơ sinh (0 tháng)' : `${log.month} tháng`}
+                      </td>
+                      <td className="py-3.5 px-3 text-theme-muted text-xs">
+                        {dateStr}
+                      </td>
+                      <td className="py-3.5 px-3">
+                        <span className="font-bold text-theme-ink">{log.weight} kg</span>
+                        <span className="text-xs text-theme-muted block font-medium">
+                          WHO P50: {nodeW.P50}kg
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3">
+                        <span className="font-bold text-theme-ink">{log.height} cm</span>
+                        <span className="text-xs text-theme-muted block font-medium">
+                          WHO P50: {nodeH.P50}cm
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3">
+                        <span className={`inline-block px-2.5 py-1 rounded-full border text-xs font-bold ${evalBadge}`}>
+                          {evalText}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3 text-center">
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteGrowth(log.id)}
+                          aria-label={`Xóa mốc đo tháng ${log.month}`}
+                          className="min-h-[40px] min-w-[40px] inline-flex items-center justify-center p-2 text-theme-muted hover:text-status-warn-text hover:bg-status-warn-bg rounded-2xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+                          title="Xóa mốc đo này"
+                        >
+                          <Trash2 className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
-      </div>
-
+      </section>
     </div>
   );
 }
