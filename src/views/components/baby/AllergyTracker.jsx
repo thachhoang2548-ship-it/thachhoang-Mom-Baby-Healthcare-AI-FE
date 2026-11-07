@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ShieldAlert, ShieldCheck, Plus, Trash2, AlertTriangle, AlertOctagon, Info, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import babyService from '../../../models/services/babyService';
@@ -37,6 +37,10 @@ export default function AllergyTracker({ baby, onAllergiesChange }) {
   const [introDate, setIntroDate] = useState(new Date().toISOString().substring(0, 10));
   const [reaction, setReaction] = useState('none');
   const [showAddForm, setShowAddForm] = useState(false);
+
+  // Focus của hộp thoại BR09: nút mở form là nơi trả focus khi đóng
+  const addButtonRef = useRef(null);
+  const dialogRef = useRef(null);
 
   // BR09 Alert modal state
   const [alertModal, setAlertModal] = useState({
@@ -165,6 +169,40 @@ export default function AllergyTracker({ baby, onAllergiesChange }) {
     toast.success(`Đã xóa ${food} khỏi danh sách cần tránh`);
   };
 
+  const closeAlertModal = () => setAlertModal((prev) => ({ ...prev, isOpen: false }));
+
+  // Mở hộp thoại: chuyển focus vào trong (nút hành động chính). Đóng: trả focus về nút mở form.
+  useEffect(() => {
+    if (!alertModal.isOpen) return undefined;
+    const trigger = addButtonRef.current;
+    const buttons = dialogRef.current?.querySelectorAll('button');
+    if (buttons && buttons.length) buttons[buttons.length - 1].focus();
+    return () => {
+      trigger?.focus();
+    };
+  }, [alertModal.isOpen]);
+
+  // Escape đóng hộp thoại; Tab và Shift+Tab chỉ xoay vòng trong hộp thoại
+  const handleAlertKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      e.stopPropagation();
+      closeAlertModal();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+    const items = dialogRef.current ? [...dialogRef.current.querySelectorAll('button:not([disabled])')] : [];
+    if (!items.length) return;
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+
   return (
     <section className="font-display bg-theme-surface rounded-2xl p-5 sm:p-6 border border-theme-line shadow-sm space-y-6">
       {/* Header */}
@@ -180,6 +218,7 @@ export default function AllergyTracker({ baby, onAllergiesChange }) {
         </div>
         <button
           type="button"
+          ref={addButtonRef}
           onClick={() => setShowAddForm(!showAddForm)}
           aria-expanded={showAddForm}
           className="inline-flex items-center gap-1.5 min-h-[44px] px-4 py-2 bg-theme-brand-soft hover:bg-theme-sidebar text-theme-brand text-xs sm:text-sm font-bold rounded-2xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
@@ -390,6 +429,8 @@ export default function AllergyTracker({ baby, onAllergiesChange }) {
       {alertModal.isOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-theme-ink/50"
+          ref={dialogRef}
+          onKeyDown={handleAlertKeyDown}
           role="dialog"
           aria-modal="true"
           aria-labelledby="allergy-modal-title"
