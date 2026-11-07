@@ -127,9 +127,9 @@ export default function AppShell() {
     : null;
   const shouldShowExpiryNotice = isMom && tier !== 'Free' && tierDaysLeft !== null && tierDaysLeft <= 7;
 
-  // Module bé (/baby-nutrition...): khung ngoài dùng token theme (đổi theo giới tính bé qua data-baby-theme).
-  // Mọi trang khác giữ nguyên màu hồng cũ.
-  const inBabyModule = location.pathname.startsWith('/baby-nutrition');
+  // Module bé (/baby-nutrition...), hậu sản (/postpartum...) và thư giãn (/relax...): khung ngoài dùng token theme
+  // (module bé đổi theo giới tính bé qua data-baby-theme; các trang kia dùng bảng mặc định). Mọi trang khác giữ nguyên màu hồng cũ.
+  const inBabyModule = ['/baby-nutrition', '/postpartum', '/relax'].some((p) => location.pathname.startsWith(p));
   const shell = inBabyModule
     ? {
         root: 'bg-theme-page',
