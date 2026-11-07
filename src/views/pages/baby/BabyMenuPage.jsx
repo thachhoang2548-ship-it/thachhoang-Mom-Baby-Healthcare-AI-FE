@@ -532,7 +532,7 @@ export default function BabyMenuPage() {
           {/* Tiến độ ăn hôm nay */}
           <div className="w-full lg:w-72 p-4 rounded-2xl bg-theme-page border border-theme-line space-y-2 shrink-0">
             <div className="flex items-center justify-between text-xs font-bold text-theme-ink">
-              <span>Độ hoàn thành dinh dưỡng hôm nay</span>
+              <span>Món đã đánh dấu hôm nay</span>
               <span className={brandTextClass}>{eatenCoverage}%</span>
             </div>
             <div className="h-2.5 overflow-hidden rounded-full bg-theme-sidebar border border-theme-line">
