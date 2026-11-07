@@ -3,7 +3,9 @@ import { ShieldAlert, ShieldCheck, Plus, Trash2, AlertTriangle, AlertOctagon, In
 import toast from 'react-hot-toast';
 import babyService from '../../../models/services/babyService';
 
-export default function AllergyTracker({ baby }) {
+// onAllergiesChange({ allergies, foodHistory }): báo cho trang cha cập nhật ngay danh sách mới
+// (để lọc lại thực đơn và để hồ sơ bé gửi sang form sửa luôn là bản mới nhất).
+export default function AllergyTracker({ baby, onAllergiesChange }) {
   // Khởi tạo từ HỒ SƠ BÉ THẬT (foodHistory + allergies do backend lưu)
   const initialAllergies = baby?.allergies || [];
   const initialFoods = (baby?.foodHistory || []).map((name) => ({
@@ -17,6 +19,7 @@ export default function AllergyTracker({ baby }) {
 
   // Lưu foodHistory + allergies mới nhất về server
   const persist = async (foods, avoids) => {
+    onAllergiesChange?.({ allergies: avoids, foodHistory: foods.map((f) => f.name) });
     if (!baby?.id) return;
     try {
       await babyService.updateProfile(baby.id, {

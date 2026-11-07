@@ -122,6 +122,11 @@ export default function BabyDashPage() {
     loadBabies();
   }, [loadBabies]);
 
+  // AllergyTracker báo danh sách dị ứng/lịch sử ăn mới: cập nhật hồ sơ bé tại chỗ để thực đơn lọc lại ngay
+  const handleAllergiesChange = useCallback(({ allergies, foodHistory }) => {
+    setSelectedBaby((prev) => (prev ? { ...prev, allergies, foodHistory } : prev));
+  }, []);
+
   // ── Suy ra số liệu hiển thị từ dữ liệu engine ──────────────────────────────
   const goals = dailyMenu?.goals || null;
   const totals = dailyMenu?.nutrition_totals || {};
@@ -583,7 +588,7 @@ export default function BabyDashPage() {
       </div>
 
       {/* 5. Tầm soát dị ứng thực phẩm — nối với hồ sơ bé thật */}
-      <AllergyTracker baby={selectedBaby} />
+      <AllergyTracker baby={selectedBaby} onAllergiesChange={handleAllergiesChange} />
     </div>
   );
 }
