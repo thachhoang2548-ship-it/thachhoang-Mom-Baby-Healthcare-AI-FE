@@ -97,11 +97,15 @@ const getStageIdFromAge = (ageMonths) => {
   return 'infant';
 };
 
-const normalizeIngredient = (item) => ({
-  name: item?.ingredient?.vietnamese_name || item?.ingredient?.english_name || item?.name || 'Nguyên liệu',
-  amount: item?.weight_grams ? String(item.weight_grams) : item?.amount || '10',
-  unit: item?.unit || 'g',
-});
+// Chỉ lấy định lượng khi payload có; không tự đặt số hay đơn vị mặc định
+const normalizeIngredient = (item) => {
+  const amount = item?.weight_grams ? String(item.weight_grams) : item?.amount ? String(item.amount) : null;
+  return {
+    name: item?.ingredient?.vietnamese_name || item?.ingredient?.english_name || item?.name || 'Nguyên liệu',
+    amount,
+    unit: item?.weight_grams ? 'g' : item?.unit || '',
+  };
+};
 
 const mapFastApiRecipe = (key, recipe) => {
   if (!recipe) return null;
@@ -112,7 +116,7 @@ const mapFastApiRecipe = (key, recipe) => {
 
   const steps = (rawObj.cooking_steps || []).map((step, idx) => ({
     desc: step.step_description || step.description || step.desc || `Bước ${idx + 1}`,
-    time: step.duration_minutes ? `${step.duration_minutes} phút` : step.time || '5 phút',
+    time: step.duration_minutes ? `${step.duration_minutes} phút` : step.time || null,
   }));
 
   const ingredients = (rawObj.ingredients || []).map(normalizeIngredient);
@@ -123,30 +127,25 @@ const mapFastApiRecipe = (key, recipe) => {
     slot: meta.slot,
     name: rawObj.name_vi || rawObj.name_en || 'Món ăn cho bé',
     icon: meta.icon,
-    kcal: Math.round(rawObj.total_calories || 0),
+    kcal: rawObj.total_calories != null ? Math.round(rawObj.total_calories) : null,
     time: meta.time,
     status: rawObj.status ?? 0,
     protein: rawObj.total_protein_g != null ? `${Math.round(rawObj.total_protein_g * 10) / 10}g` : '—',
     iron: rawObj.total_iron_mg != null ? `${Math.round(rawObj.total_iron_mg * 10) / 10}mg` : '—',
-    tags: rawObj.tags?.length ? rawObj.tags : ['Dinh dưỡng', 'Phù hợp độ tuổi'],
-    ingredients: ingredients.length
-      ? ingredients
-      : [
-          { name: 'Gạo tẻ ngon', amount: '25', unit: 'g' },
-          { name: 'Rau củ tươi', amount: '15', unit: 'g' },
-        ],
-    steps: steps.length
-      ? steps
-      : [
-          { desc: 'Sơ chế nguyên liệu sạch, cắt nhỏ phù hợp với độ tuổi của bé.', time: '5 phút' },
-          { desc: 'Nấu chín mềm, điều chỉnh độ thô trước khi cho bé ăn.', time: '15 phút' },
-        ],
-    nutritionData: [
-      { name: 'Năng lượng', value: Math.round(rawObj.total_calories || 0) },
-      { name: 'Đạm', value: Math.round(rawObj.total_protein_g || 0) },
-      { name: 'Chất béo', value: Math.round(rawObj.total_fat_g || 0) },
-      { name: 'Tinh bột', value: Math.round(rawObj.total_carbs_g || 0) },
-    ],
+    // Không điền dữ liệu mẫu: thiếu gì thì để trống và giao diện nói rõ "chưa có dữ liệu"
+    tags: rawObj.tags?.length ? rawObj.tags : [],
+    ingredients,
+    steps,
+    hasNutrition: rawObj.total_calories != null,
+    nutritionData:
+      rawObj.total_calories != null
+        ? [
+            { name: 'Năng lượng', value: Math.round(rawObj.total_calories) },
+            { name: 'Đạm', value: Math.round(rawObj.total_protein_g || 0) },
+            { name: 'Chất béo', value: Math.round(rawObj.total_fat_g || 0) },
+            { name: 'Tinh bột', value: Math.round(rawObj.total_carbs_g || 0) },
+          ]
+        : [],
     eaten: false,
   };
 };
@@ -444,10 +443,11 @@ export default function BabyMenuPage() {
   const totalEatenNutrients = useMemo(() => {
     return eatenRecipesToday.reduce(
       (acc, r) => ({
-        kcal: acc.kcal + r.kcal,
+        kcal: acc.kcal + (r.kcal ?? 0),
         count: acc.count + 1,
+        unknown: acc.unknown + (r.kcal == null ? 1 : 0),
       }),
-      { kcal: 0, count: 0 }
+      { kcal: 0, count: 0, unknown: 0 }
     );
   }, [eatenRecipesToday]);
 
@@ -783,7 +783,7 @@ export default function BabyMenuPage() {
                           <span className="text-theme-muted font-medium block">Năng lượng</span>
                           <span className="inline-flex items-center gap-1 font-bold text-theme-ink">
                             <Flame className="h-3.5 w-3.5 text-theme-brand shrink-0" aria-hidden="true" />
-                            {recipe.kcal} kcal
+                            {recipe.kcal != null ? `${recipe.kcal} kcal` : '—'}
                           </span>
                         </div>
                         <div className="space-y-0.5 border-l border-theme-line pl-2.5">
@@ -802,12 +802,15 @@ export default function BabyMenuPage() {
                           Nguyên liệu chính:
                         </p>
                         <div className="flex flex-wrap gap-1.5">
+                          {recipe.ingredients.length === 0 && (
+                            <span className="text-xs font-medium text-theme-muted">Chưa có dữ liệu nguyên liệu cho món này.</span>
+                          )}
                           {recipe.ingredients.slice(0, 4).map((ing, idx) => (
                             <span
                               key={`${recipe.id}-ing-${idx}`}
                               className="rounded-md bg-theme-sidebar border border-theme-line px-2.5 py-1 text-xs font-semibold text-theme-ink"
                             >
-                              {ing.name} ({ing.amount}{ing.unit})
+                              {ing.name}{ing.amount ? ` (${ing.amount}${ing.unit})` : ''}
                             </span>
                           ))}
                           {recipe.ingredients.length > 4 && (
@@ -1016,7 +1019,7 @@ export default function BabyMenuPage() {
                         </div>
                         <h3 className="text-sm font-bold text-theme-ink truncate">{item.name}</h3>
                         <p className="text-xs font-semibold text-theme-muted">
-                          Theo công thức: <strong className="text-theme-ink">{item.kcal} kcal</strong> · Đạm: {item.protein}
+                          Theo công thức: <strong className="text-theme-ink">{item.kcal != null ? `${item.kcal} kcal` : 'chưa có dữ liệu'}</strong> · Đạm: {item.protein}
                         </p>
                       </div>
 
@@ -1036,7 +1039,7 @@ export default function BabyMenuPage() {
                     Tổng năng lượng theo công thức của các món đã đánh dấu (không phải lượng bé thực ăn):
                   </span>
                   <span className={`text-base font-bold ${brandTextClass}`}>
-                    {totalEatenNutrients.kcal} kcal ({totalEatenNutrients.count} cữ ăn)
+                    {totalEatenNutrients.kcal} kcal ({totalEatenNutrients.count} cữ ăn{totalEatenNutrients.unknown > 0 ? `, ${totalEatenNutrients.unknown} món chưa có dữ liệu năng lượng` : ''})
                   </span>
                 </div>
               </div>
@@ -1197,6 +1200,11 @@ export default function BabyMenuPage() {
             <div className="p-5">
               {modalTab === 'ingredients' && (
                 <div className="space-y-3">
+                  {selectedRecipe.ingredients.length === 0 && (
+                    <p className="rounded-2xl border border-dashed border-theme-line bg-theme-page p-4 text-xs sm:text-sm font-medium text-theme-muted">
+                      Chưa có dữ liệu nguyên liệu cho món này.
+                    </p>
+                  )}
                   {selectedRecipe.ingredients.map((item) => (
                     <label
                       key={`${selectedRecipe.id}-${item.name}`}
@@ -1209,7 +1217,7 @@ export default function BabyMenuPage() {
                         className="h-4 w-4 rounded border-theme-line text-theme-brand focus:ring-theme-brand"
                       />
                       <span className={checkedIngredients[item.name] ? 'text-theme-muted line-through' : ''}>
-                        {item.name}: <strong>{item.amount} {item.unit}</strong>
+                        {item.name}{item.amount ? <>: <strong>{item.amount} {item.unit}</strong></> : null}
                       </span>
                     </label>
                   ))}
@@ -1220,6 +1228,11 @@ export default function BabyMenuPage() {
                 <div className="space-y-4">
                   {!cookingMode ? (
                     <>
+                      {selectedRecipe.steps.length === 0 && (
+                        <p className="rounded-2xl border border-dashed border-theme-line bg-theme-page p-4 text-xs sm:text-sm font-medium text-theme-muted">
+                          Chưa có dữ liệu các bước chế biến cho món này.
+                        </p>
+                      )}
                       {selectedRecipe.steps.map((step, index) => (
                         <div
                           key={`${selectedRecipe.id}-step-${index}`}
@@ -1232,13 +1245,16 @@ export default function BabyMenuPage() {
                             <p className="text-xs sm:text-sm font-medium leading-relaxed text-theme-ink">
                               {step.desc}
                             </p>
-                            <span className="inline-flex items-center gap-1 text-xs font-semibold text-theme-muted">
-                              <Clock className="h-3.5 w-3.5" aria-hidden="true" />
-                              {step.time}
-                            </span>
+                            {step.time && (
+                              <span className="inline-flex items-center gap-1 text-xs font-semibold text-theme-muted">
+                                <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+                                {step.time}
+                              </span>
+                            )}
                           </div>
                         </div>
                       ))}
+                      {selectedRecipe.steps.length > 0 && (
                       <button
                         type="button"
                         onClick={() => {
@@ -1254,6 +1270,7 @@ export default function BabyMenuPage() {
                         <BookOpen className="h-4 w-4 shrink-0" aria-hidden="true" />
                         <span>Bắt đầu chế biến từng bước</span>
                       </button>
+                      )}
                     </>
                   ) : (
                     <div className="space-y-5 text-center">
@@ -1263,9 +1280,11 @@ export default function BabyMenuPage() {
                       <p className="text-base sm:text-lg font-bold leading-relaxed text-theme-ink">
                         {selectedRecipe.steps[currentStepIdx].desc}
                       </p>
-                      <p className="text-xs font-semibold text-theme-muted">
-                        Thời gian đề xuất: {selectedRecipe.steps[currentStepIdx].time}
-                      </p>
+                      {selectedRecipe.steps[currentStepIdx].time && (
+                        <p className="text-xs font-semibold text-theme-muted">
+                          Thời gian đề xuất: {selectedRecipe.steps[currentStepIdx].time}
+                        </p>
+                      )}
                       <div className="grid grid-cols-2 gap-2.5">
                         <button
                           type="button"
@@ -1304,6 +1323,13 @@ export default function BabyMenuPage() {
 
               {modalTab === 'nutrition' && (
                 <div className="space-y-5">
+                  {!selectedRecipe.hasNutrition && (
+                    <p className="rounded-2xl border border-dashed border-theme-line bg-theme-page p-4 text-xs sm:text-sm font-medium text-theme-muted">
+                      Chưa có dữ liệu dinh dưỡng cho món này.
+                    </p>
+                  )}
+                  {selectedRecipe.hasNutrition && (
+                  <>
                   <div className="rounded-2xl bg-theme-brand-soft border border-theme-line p-4 text-center">
                     <p className="text-xs font-bold text-theme-ink">Tổng năng lượng</p>
                     <p className={`mt-1 text-2xl sm:text-3xl font-bold ${brandTextClass}`}>
@@ -1341,6 +1367,8 @@ export default function BabyMenuPage() {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
+                  </>
+                  )}
                 </div>
               )}
             </div>
