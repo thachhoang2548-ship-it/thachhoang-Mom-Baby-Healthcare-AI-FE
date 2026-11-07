@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import {
@@ -20,7 +20,11 @@ import {
   Milk,
   AlertTriangle,
   Loader2,
-  Baby
+  Baby,
+  Search,
+  Filter,
+  RotateCcw,
+  CheckCircle2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import babyService from '../../../models/services/babyService';
@@ -63,6 +67,15 @@ const SLOT_META = {
   supplementary_snack: { slot: 'Phụ', time: '20:00', icon: Milk },
 };
 
+const MEAL_FILTER_OPTIONS = [
+  { id: 'all', label: 'Tất cả bữa' },
+  { id: 'breakfast', label: 'Bữa sáng' },
+  { id: 'lunch', label: 'Bữa trưa' },
+  { id: 'snack', label: 'Bữa chiều' },
+  { id: 'dinner', label: 'Bữa tối' },
+  { id: 'supplementary_snack', label: 'Bữa phụ' },
+];
+
 const getAgeMonthsFromBaby = (baby) => {
   if (!baby) return 0;
   if (Number.isFinite(Number(baby.ageMonths))) return Number(baby.ageMonths);
@@ -94,27 +107,28 @@ const mapFastApiRecipe = (key, recipe) => {
   if (!recipe) return null;
 
   const meta = SLOT_META[key] || { slot: 'Bữa ăn', time: '--:--', icon: Utensils };
-  const id = recipe.id || `${key}-${recipe.name_vi || recipe.name_en || 'recipe'}`;
+  const rawObj = typeof recipe === 'string' ? { name_vi: recipe } : recipe;
+  const id = rawObj.id || `${key}-${rawObj.name_vi || rawObj.name_en || 'recipe'}`;
 
-  const steps = (recipe.cooking_steps || []).map((step, idx) => ({
+  const steps = (rawObj.cooking_steps || []).map((step, idx) => ({
     desc: step.step_description || step.description || step.desc || `Bước ${idx + 1}`,
     time: step.duration_minutes ? `${step.duration_minutes} phút` : step.time || '5 phút',
   }));
 
-  const ingredients = (recipe.ingredients || []).map(normalizeIngredient);
+  const ingredients = (rawObj.ingredients || []).map(normalizeIngredient);
 
   return {
     id,
     slotKey: key,
     slot: meta.slot,
-    name: recipe.name_vi || recipe.name_en || 'Món ăn cho bé',
+    name: rawObj.name_vi || rawObj.name_en || 'Món ăn cho bé',
     icon: meta.icon,
-    kcal: Math.round(recipe.total_calories || 0),
+    kcal: Math.round(rawObj.total_calories || 0),
     time: meta.time,
-    status: recipe.status ?? 0,
-    protein: recipe.total_protein_g != null ? `${Math.round(recipe.total_protein_g * 10) / 10}g` : '—',
-    iron: recipe.total_iron_mg != null ? `${Math.round(recipe.total_iron_mg * 10) / 10}mg` : '—',
-    tags: recipe.tags?.length ? recipe.tags : ['Dinh dưỡng', 'Phù hợp độ tuổi'],
+    status: rawObj.status ?? 0,
+    protein: rawObj.total_protein_g != null ? `${Math.round(rawObj.total_protein_g * 10) / 10}g` : '—',
+    iron: rawObj.total_iron_mg != null ? `${Math.round(rawObj.total_iron_mg * 10) / 10}mg` : '—',
+    tags: rawObj.tags?.length ? rawObj.tags : ['Dinh dưỡng', 'Phù hợp độ tuổi'],
     ingredients: ingredients.length
       ? ingredients
       : [
@@ -128,10 +142,10 @@ const mapFastApiRecipe = (key, recipe) => {
           { desc: 'Nấu chín mềm, điều chỉnh độ thô trước khi cho bé ăn.', time: '15 phút' },
         ],
     nutritionData: [
-      { name: 'Năng lượng', value: Math.round(recipe.total_calories || 0) },
-      { name: 'Đạm', value: Math.round(recipe.total_protein_g || 0) },
-      { name: 'Chất béo', value: Math.round(recipe.total_fat_g || 0) },
-      { name: 'Tinh bột', value: Math.round(recipe.total_carbs_g || 0) },
+      { name: 'Năng lượng', value: Math.round(rawObj.total_calories || 0) },
+      { name: 'Đạm', value: Math.round(rawObj.total_protein_g || 0) },
+      { name: 'Chất béo', value: Math.round(rawObj.total_fat_g || 0) },
+      { name: 'Tinh bột', value: Math.round(rawObj.total_carbs_g || 0) },
     ],
     eaten: false,
   };
@@ -150,6 +164,7 @@ export default function BabyMenuPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('today');
   const [selectedStageId, setSelectedStageId] = useState('infant');
+  const [babies, setBabies] = useState([]);
   const [selectedBaby, setSelectedBaby] = useState(null);
   const [allergies, setAllergies] = useState([]);
   const [dailyMenu, setDailyMenu] = useState([]);
@@ -161,6 +176,17 @@ export default function BabyMenuPage() {
   const [cookingMode, setCookingMode] = useState(false);
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
   const [checkedIngredients, setCheckedIngredients] = useState({});
+  // Dấu "Đã cho bé ăn" chỉ nhớ tạm trong bộ nhớ, riêng từng bé: { [babyId]: { [recipeId]: true } }
+  const [eatenByBaby, setEatenByBaby] = useState({});
+  const [weeklyError, setWeeklyError] = useState(null);
+  // Mỗi lượt tải có số thứ tự; kết quả của lượt cũ (đã bị lượt mới thay thế) bị bỏ qua
+  const loadSeqRef = useRef(0);
+
+  // Các state tìm kiếm & bộ lọc món ăn (Hướng A: Khám phá món trong thực đơn hiện có)
+  const [searchQuery, setSearchQuery] = useState('');
+  const [mealSlotFilter, setMealSlotFilter] = useState('all');
+  const [eatenStatusFilter, setEatenStatusFilter] = useState('all');
+  const [allergyFilter, setAllergyFilter] = useState('all');
 
   // Bắt buộc gọi ở đầu component, TRƯỚC mọi return sớm
   useBabyTheme(selectedBaby);
@@ -169,23 +195,24 @@ export default function BabyMenuPage() {
   const activeStage = AGE_STAGES[selectedStageId];
   const ageMatchedStageId = getStageIdFromAge(ageMonths);
 
-  const loadMenus = useCallback(async (forceRefresh = false) => {
+  // Tải thực đơn ngày và tuần cho MỘT bé. Chỉ lượt tải mới nhất được ghi vào state.
+  const loadMenusForBaby = useCallback(async (baby, forceRefresh = false) => {
+    const seq = ++loadSeqRef.current;
+    const isStale = () => seq !== loadSeqRef.current;
+
+    // Xóa dữ liệu cũ trước để không bao giờ hiện thực đơn của bé khác dưới hồ sơ này
+    setSelectedBaby(baby);
+    setAllergies(baby.allergies || []);
+    setSelectedStageId(getStageIdFromAge(getAgeMonthsFromBaby(baby)));
+    setDailyMenu([]);
+    setWeeklyMenu(null);
+    setMenuError(null);
+    setWeeklyError(null);
     setLoading(true);
+
     try {
-      const profileRes = await babyService.getProfiles();
-      if (!(profileRes.success || profileRes.isSuccess) || !profileRes.data?.length) {
-        setDailyMenu([]);
-        setSelectedBaby(null);
-        setMenuError('Chưa có hồ sơ bé. Vui lòng tạo hồ sơ bé trước để nhận thực đơn.');
-        return;
-      }
-
-      const baby = profileRes.data[0];
-      setSelectedBaby(baby);
-      setAllergies(baby.allergies || []);
-      setSelectedStageId(getStageIdFromAge(getAgeMonthsFromBaby(baby)));
-
       const dailyRes = await babyService.getDailyMenu(baby.id, forceRefresh);
+      if (isStale()) return;
       if ((dailyRes.success || dailyRes.isSuccess) && dailyRes.data) {
         const meals = dailyRes.data.meals || {};
         const mapped = Object.keys(SLOT_META)
@@ -195,29 +222,68 @@ export default function BabyMenuPage() {
         setDailyMenu(mapped);
         setMenuError(mapped.length ? null : 'Chưa có công thức phù hợp cho bé trong hệ thống.');
       } else {
-        setDailyMenu([]);
         setMenuError(dailyRes.message || 'Không thể tải thực đơn cho bé.');
       }
-
-      try {
-        const weeklyRes = await babyService.getWeeklyMenu(baby.id);
-        if ((weeklyRes.success || weeklyRes.isSuccess) && weeklyRes.data) {
-          setWeeklyMenu(weeklyRes.data);
-        }
-      } catch (error) {
-        console.error('Failed to load weekly menu:', error);
-      }
     } catch (error) {
+      if (isStale()) return;
       console.error('Failed to load baby menu:', error);
       setMenuError(error.response?.data?.message || 'Dịch vụ dinh dưỡng hiện không khả dụng. Vui lòng thử lại sau.');
-    } finally {
-      setLoading(false);
     }
+
+    try {
+      const weeklyRes = await babyService.getWeeklyMenu(baby.id);
+      if (isStale()) return;
+      if ((weeklyRes.success || weeklyRes.isSuccess) && weeklyRes.data) {
+        setWeeklyMenu(weeklyRes.data);
+      } else {
+        setWeeklyError(weeklyRes.message || 'Không thể tải thực đơn tuần cho bé.');
+      }
+    } catch (error) {
+      if (isStale()) return;
+      console.error('Failed to load weekly menu:', error);
+      setWeeklyError('Không thể tải thực đơn tuần cho bé.');
+    }
+
+    if (!isStale()) setLoading(false);
   }, []);
 
+  // Khi mở trang: tải danh sách hồ sơ bé rồi tải thực đơn của bé đầu tiên.
+  // `loading` đã khởi tạo true; setState chỉ chạy trong hàm gọi lại sau khi dữ liệu về.
   useEffect(() => {
-    loadMenus();
-  }, [loadMenus]);
+    babyService
+      .getProfiles()
+      .then((profileRes) => {
+        const profileList = profileRes.data || [];
+        if (!(profileRes.success || profileRes.isSuccess) || !profileList.length) {
+          setBabies([]);
+          setDailyMenu([]);
+          setSelectedBaby(null);
+          setMenuError('Chưa có hồ sơ bé. Vui lòng tạo hồ sơ bé trước để nhận thực đơn.');
+          setLoading(false);
+          return undefined;
+        }
+
+        setBabies(profileList);
+        return loadMenusForBaby(profileList[0], false);
+      })
+      .catch((error) => {
+        console.error('Failed to load baby menu:', error);
+        setMenuError(error.response?.data?.message || 'Dịch vụ dinh dưỡng hiện không khả dụng. Vui lòng thử lại sau.');
+        setLoading(false);
+      });
+  }, [loadMenusForBaby]);
+
+  const handleSelectBaby = (targetBaby) => {
+    if (!targetBaby || targetBaby.id === selectedBaby?.id) return;
+    setSearchQuery('');
+    setMealSlotFilter('all');
+    setEatenStatusFilter('all');
+    setAllergyFilter('all');
+    loadMenusForBaby(targetBaby, false);
+    toast.success(`Đã chuyển sang thực đơn của bé ${targetBaby.name || 'yêu'}`);
+  };
+
+  const eatenMap = eatenByBaby[selectedBaby?.id];
 
   const activeRecipes = useMemo(() => {
     return dailyMenu.map((recipe) => {
@@ -230,13 +296,57 @@ export default function BabyMenuPage() {
 
       return {
         ...recipe,
+        eaten: Boolean(eatenMap?.[recipe.id]),
         ageRange: activeStage.range,
         stageTitle: activeStage.title,
         tags: isAvoided ? ['cần thay thế', 'tránh dị ứng', activeStage.range] : [...recipe.tags, activeStage.range],
         allergyWarning: isAvoided,
       };
     });
-  }, [activeStage.range, activeStage.title, allergies, dailyMenu]);
+  }, [activeStage.range, activeStage.title, allergies, dailyMenu, eatenMap]);
+
+  // Bộ lọc khám phá món ăn trong thực đơn hôm nay
+  const filteredRecipes = useMemo(() => {
+    return activeRecipes.filter((recipe) => {
+      // 1. Tìm kiếm theo từ khóa (tên món, nguyên liệu, cữ ăn)
+      if (searchQuery.trim()) {
+        const q = searchQuery.trim().toLowerCase();
+        const matchName = recipe.name.toLowerCase().includes(q);
+        const matchSlot = recipe.slot.toLowerCase().includes(q);
+        const matchIng = recipe.ingredients.some((ing) => ing.name.toLowerCase().includes(q));
+        if (!matchName && !matchSlot && !matchIng) return false;
+      }
+
+      // 2. Lọc theo cữ ăn
+      if (mealSlotFilter !== 'all' && recipe.slotKey !== mealSlotFilter) {
+        return false;
+      }
+
+      // 3. Lọc theo trạng thái ăn
+      if (eatenStatusFilter === 'eaten' && !recipe.eaten) return false;
+      if (eatenStatusFilter === 'uneaten' && recipe.eaten) return false;
+
+      // 4. Lọc theo dị ứng
+      if (allergyFilter === 'safe' && recipe.allergyWarning) return false;
+      if (allergyFilter === 'warning' && !recipe.allergyWarning) return false;
+
+      return true;
+    });
+  }, [activeRecipes, searchQuery, mealSlotFilter, eatenStatusFilter, allergyFilter]);
+
+  const hasActiveFilters = Boolean(
+    searchQuery.trim() ||
+    mealSlotFilter !== 'all' ||
+    eatenStatusFilter !== 'all' ||
+    allergyFilter !== 'all'
+  );
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setMealSlotFilter('all');
+    setEatenStatusFilter('all');
+    setAllergyFilter('all');
+  };
 
   const weeklySlots = useMemo(() => {
     const base = [
@@ -256,7 +366,34 @@ export default function BabyMenuPage() {
   const getWeeklyMealForDay = (slotKey, dayIndex) => {
     const dayMenu = weeklyMenu?.days?.[dayIndex];
     const recipe = dayMenu?.meals?.[slotKey];
-    return recipe?.name_vi || recipe?.name_en || 'Chưa có món';
+    return recipe?.name_vi || recipe?.name_en || (typeof recipe === 'string' ? recipe : 'Chưa có món');
+  };
+
+  // Món tuần chỉ mở được công thức khi payload CÓ nguyên liệu và các bước nấu thật;
+  // món chỉ có tên thì không dựng công thức mẫu (mapFastApiRecipe tự điền dữ liệu mẫu khi thiếu).
+  const hasRecipeDetail = (raw) =>
+    Boolean(raw) && typeof raw === 'object' && raw.ingredients?.length > 0 && raw.cooking_steps?.length > 0;
+
+  const getWeeklyRecipeItem = (slotKey, dayIndex) => {
+    const dayMenu = weeklyMenu?.days?.[dayIndex];
+    const rawRecipe = dayMenu?.meals?.[slotKey];
+    if (!hasRecipeDetail(rawRecipe)) return null;
+
+    const dayName = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'][dayIndex] || `Ngày ${dayIndex + 1}`;
+    const mapped = mapFastApiRecipe(slotKey, rawRecipe);
+    if (!mapped) return null;
+
+    return {
+      ...mapped,
+      slot: `${dayName} · ${mapped.slot}`,
+      ageRange: activeStage.range,
+      stageTitle: activeStage.title,
+    };
+  };
+
+  const handleOpenWeeklyRecipe = (slotKey, dayIndex) => {
+    const item = getWeeklyRecipeItem(slotKey, dayIndex);
+    if (item) handleOpenRecipe(item);
   };
 
   const getEatenCoverage = () => {
@@ -265,13 +402,22 @@ export default function BabyMenuPage() {
   };
 
   const handleMarkEaten = (id) => {
-    setDailyMenu((prev) => prev.map((item) => (item.id === id ? { ...item, eaten: !item.eaten } : item)));
+    if (!selectedBaby) return;
+    setEatenByBaby((prev) => {
+      const forBaby = { ...(prev[selectedBaby.id] || {}) };
+      if (forBaby[id]) delete forBaby[id];
+      else forBaby[id] = true;
+      return { ...prev, [selectedBaby.id]: forBaby };
+    });
     toast.success('Đã cập nhật trạng thái ăn của bé.');
   };
 
   const handleRegenerateMenu = async () => {
+    if (!selectedBaby) return;
     toast.loading('Đang tạo lại thực đơn phù hợp độ tuổi và dị ứng...', { id: 'regen' });
-    await loadMenus(true);
+    // Thực đơn mới nên các dấu "đã cho ăn" của bé này bắt đầu lại
+    setEatenByBaby((prev) => ({ ...prev, [selectedBaby.id]: {} }));
+    await loadMenusForBaby(selectedBaby, true);
     toast.success('Đã tải lại thực đơn mới.', { id: 'regen' });
   };
 
@@ -290,6 +436,21 @@ export default function BabyMenuPage() {
   const eatenCoverage = getEatenCoverage();
   const clampedEatenWidth = Math.max(0, Math.min(100, eatenCoverage));
 
+  // Món đã ăn hôm nay phục vụ cho tab Lịch sử
+  const eatenRecipesToday = useMemo(() => {
+    return activeRecipes.filter((r) => r.eaten);
+  }, [activeRecipes]);
+
+  const totalEatenNutrients = useMemo(() => {
+    return eatenRecipesToday.reduce(
+      (acc, r) => ({
+        kcal: acc.kcal + r.kcal,
+        count: acc.count + 1,
+      }),
+      { kcal: 0, count: 0 }
+    );
+  }, [eatenRecipesToday]);
+
   // Khi chưa có hồ sơ bé, biến --c-brand ở :root (#FF7A8A) chưa đạt 4,5:1 với chữ trắng;
   // dùng bg-theme-ink text-theme-surface nếu chưa có selectedBaby.
   const hasTheme = Boolean(selectedBaby);
@@ -303,7 +464,7 @@ export default function BabyMenuPage() {
 
   return (
     <div className="font-display rounded-3xl bg-theme-page p-4 sm:p-6 border border-theme-line space-y-6">
-      {/* Nút quay lại */}
+      {/* Nút quay lại & Bộ chọn hồ sơ bé (Multi-baby selector) */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button
           type="button"
@@ -314,14 +475,42 @@ export default function BabyMenuPage() {
           <span>Quay lại trang bé yêu</span>
         </button>
 
-        {selectedBaby && (
+        {/* Bộ chọn hồ sơ bé nếu có nhiều hơn 1 bé, hoặc badge thông tin bé nếu chỉ có 1 bé */}
+        {babies.length > 1 ? (
+          <div className="flex w-full min-w-0 flex-col gap-1.5 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
+            <label htmlFor="select-baby-menu" className="text-xs font-bold text-theme-ink flex items-center gap-1.5">
+              <Baby className="w-4 h-4 text-theme-brand shrink-0" aria-hidden="true" />
+              <span>Hồ sơ bé:</span>
+            </label>
+            <div className="relative w-full min-w-0 sm:w-auto">
+              <select
+                id="select-baby-menu"
+                value={selectedBaby?.id || ''}
+                onChange={(e) => {
+                  const target = babies.find((b) => String(b.id) === e.target.value);
+                  if (target) handleSelectBaby(target);
+                }}
+                className="w-full max-w-full min-w-0 sm:w-auto appearance-none min-h-[44px] bg-theme-surface border border-theme-line pl-3.5 pr-9 py-2 rounded-2xl text-xs sm:text-sm font-bold text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand cursor-pointer hover:bg-theme-sidebar transition-colors"
+              >
+                {babies.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name || b.babyName} ({b.gender === 0 ? 'Bé trai' : 'Bé gái'} · {getAgeMonthsFromBaby(b)} tháng)
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-theme-muted">
+                <ChevronRight className="w-4 h-4 rotate-90" aria-hidden="true" />
+              </div>
+            </div>
+          </div>
+        ) : selectedBaby ? (
           <div className="inline-flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-theme-surface border border-theme-line text-xs sm:text-sm">
             <Baby className="w-4 h-4 text-theme-brand shrink-0" aria-hidden="true" />
             <span className="font-bold text-theme-ink">{selectedBaby.name || selectedBaby.babyName}</span>
             <span className="text-theme-muted">•</span>
             <span className="font-semibold text-theme-muted">{ageMonths} tháng tuổi</span>
           </div>
-        )}
+        ) : null}
       </div>
 
       {/* 1. Đầu trang & thanh chuyển chế độ thực đơn (Hôm nay / 7 ngày / Lịch sử) */}
@@ -336,7 +525,7 @@ export default function BabyMenuPage() {
               Món ăn của bé hôm nay ({activeStage.range})
             </h1>
             <p className="max-w-2xl text-xs sm:text-sm font-medium leading-relaxed text-theme-muted">
-              WHO/CDC thường dùng mốc 6 tháng để bắt đầu ăn bổ sung, sau đó khẩu phần và kết cấu thay đổi rõ khi bé bước sang 12 tháng. Vì vậy giao diện chia thành 6-11 tháng và 12-24 tháng.
+              WHO/CDC khuyến nghị mốc 6 tháng bắt đầu ăn bổ sung, khẩu phần và kết cấu thay đổi rõ khi bước sang 12 tháng. Thực đơn dưới đây được cá nhân hóa theo độ tuổi và danh sách dị ứng của bé.
             </p>
           </div>
 
@@ -353,12 +542,12 @@ export default function BabyMenuPage() {
               />
             </div>
             <p className="text-xs font-medium text-theme-muted leading-snug">
-              Tích chọn từng món đã ăn để theo dõi tiến độ. Thực đơn vẫn cần theo phản ứng và khả năng nhai nuốt của bé.
+              Tích chọn từng món đã ăn để theo dõi tiến độ. Thực đơn vẫn cần theo phản ứng và khả năng nhai nuốt của bé. Dấu chỉ lưu tạm trên trang này, chưa lưu lên máy chủ.
             </p>
           </div>
         </div>
 
-        {/* Bộ lọc tab & nút tạo lại thực đơn ngay trên đầu */}
+        {/* Bộ lọc tab & nút tạo lại thực đơn */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-theme-line">
           <div className="flex w-full sm:w-auto gap-1.5 rounded-2xl border border-theme-line bg-theme-page p-1">
             {TAB_ITEMS.map((tab) => {
@@ -396,6 +585,124 @@ export default function BabyMenuPage() {
       {/* 2. TRỌNG TÂM: Danh sách món ăn / Thực đơn 7 ngày / Lịch sử */}
       {activeTab === 'today' && (
         <section className="space-y-4">
+          {/* Hướng A: Thanh tìm kiếm và bộ lọc khám phá món ăn trong thực đơn hôm nay */}
+          {!loading && activeRecipes.length > 0 && (
+            <div className="rounded-2xl border border-theme-line bg-theme-surface p-4 sm:p-5 shadow-sm space-y-3.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <h2 className="text-sm sm:text-base font-bold text-theme-ink flex items-center gap-2">
+                    <Search className="w-4 h-4 text-theme-brand shrink-0" aria-hidden="true" />
+                    <span>Khám phá món ăn trong thực đơn hôm nay</span>
+                  </h2>
+                  <p className="text-xs font-medium text-theme-muted">
+                    Lọc và tìm kiếm nhanh theo tên món hoặc nguyên liệu trong các cữ ăn đã gợi ý cho bé.
+                  </p>
+                </div>
+
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={resetFilters}
+                    className="inline-flex items-center gap-1.5 self-start sm:self-auto text-xs font-bold text-theme-muted hover:text-theme-ink px-2.5 py-1.5 rounded-md hover:bg-theme-sidebar transition-colors"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                    <span>Đặt lại bộ lọc</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Ô tìm kiếm từ khóa */}
+              <div className="relative">
+                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-theme-muted">
+                  <Search className="w-4 h-4" aria-hidden="true" />
+                </div>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Tìm theo tên món (cháo, súp, bơ...) hoặc nguyên liệu (cá hồi, bí đỏ, yến mạch)..."
+                  className="w-full min-h-[44px] rounded-2xl border border-theme-line bg-theme-page pl-10 pr-10 py-2.5 text-xs sm:text-sm font-semibold text-theme-ink placeholder:text-theme-muted focus:outline-none focus:ring-2 focus:ring-theme-brand transition-colors"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery('')}
+                    aria-label="Xóa từ khóa tìm kiếm"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 min-h-[32px] min-w-[32px] inline-flex items-center justify-center rounded-full text-theme-muted hover:text-theme-ink hover:bg-theme-sidebar transition-colors"
+                  >
+                    <X className="w-4 h-4" aria-hidden="true" />
+                  </button>
+                )}
+              </div>
+
+              {/* Bộ nút lọc cữ ăn và trạng thái */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-theme-line">
+                {/* Lọc theo cữ ăn */}
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-xs font-bold text-theme-ink mr-1 hidden sm:inline">Cữ ăn:</span>
+                  {MEAL_FILTER_OPTIONS.map((opt) => {
+                    const isSelected = mealSlotFilter === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setMealSlotFilter(opt.id)}
+                        className={`min-h-[36px] px-3 py-1 rounded-md text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+                          isSelected
+                            ? 'bg-theme-ink text-theme-surface'
+                            : 'bg-theme-page text-theme-ink border border-theme-line hover:bg-theme-sidebar'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Lọc theo trạng thái ăn & an toàn dị ứng */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <Filter className="w-3.5 h-3.5 text-theme-muted shrink-0" aria-hidden="true" />
+                    <span className="text-xs font-bold text-theme-ink">Trạng thái:</span>
+                  </div>
+                  <select
+                    value={eatenStatusFilter}
+                    onChange={(e) => setEatenStatusFilter(e.target.value)}
+                    aria-label="Lọc theo trạng thái ăn"
+                    className="appearance-none min-h-[36px] bg-theme-page border border-theme-line px-3 py-1 pr-7 rounded-md text-xs font-bold text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand cursor-pointer hover:bg-theme-sidebar transition-colors"
+                  >
+                    <option value="all">Tất cả trạng thái</option>
+                    <option value="uneaten">Chưa cho bé ăn</option>
+                    <option value="eaten">Bé đã ăn</option>
+                  </select>
+
+                  <select
+                    value={allergyFilter}
+                    onChange={(e) => setAllergyFilter(e.target.value)}
+                    aria-label="Lọc theo cảnh báo dị ứng"
+                    className="appearance-none min-h-[36px] bg-theme-page border border-theme-line px-3 py-1 pr-7 rounded-md text-xs font-bold text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand cursor-pointer hover:bg-theme-sidebar transition-colors"
+                  >
+                    <option value="all">Tất cả món</option>
+                    <option value="safe">Không có cảnh báo dị ứng</option>
+                    <option value="warning">Có cảnh báo dị ứng</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Thông báo số lượng kết quả */}
+              <div className="flex items-center justify-between text-xs font-semibold text-theme-muted pt-1">
+                <span>
+                  Hiển thị <strong>{filteredRecipes.length}</strong> / {activeRecipes.length} món trong thực đơn hôm nay
+                </span>
+                {hasActiveFilters && (
+                  <span className="text-theme-brand font-bold">
+                    Đang áp dụng bộ lọc trong thực đơn của bé
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
           {loading && (
             <div className="rounded-2xl border border-theme-line bg-theme-surface p-8 text-center space-y-3">
               <Loader2 className="w-7 h-7 mx-auto text-theme-ink animate-spin motion-reduce:animate-none" aria-hidden="true" />
@@ -414,9 +721,27 @@ export default function BabyMenuPage() {
             </div>
           )}
 
-          {!loading && activeRecipes.length > 0 && (
+          {!loading && activeRecipes.length > 0 && filteredRecipes.length === 0 && (
+            <div className="rounded-2xl border border-theme-line bg-theme-surface p-8 text-center space-y-3">
+              <Search className="w-8 h-8 mx-auto text-theme-muted" aria-hidden="true" />
+              <h3 className="text-base font-bold text-theme-ink">Không tìm thấy món ăn phù hợp</h3>
+              <p className="text-xs sm:text-sm font-medium text-theme-muted max-w-md mx-auto">
+                Không có món nào trong thực đơn hôm nay khớp với từ khóa &ldquo;{searchQuery}&rdquo; hoặc bộ lọc hiện tại.
+              </p>
+              <button
+                type="button"
+                onClick={resetFilters}
+                className="inline-flex items-center gap-2 min-h-[44px] px-4 py-2 rounded-2xl bg-theme-ink text-theme-surface hover:bg-theme-sidebar hover:text-theme-ink text-xs sm:text-sm font-bold transition-colors"
+              >
+                <RotateCcw className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span>Xem lại toàn bộ thực đơn</span>
+              </button>
+            </div>
+          )}
+
+          {!loading && filteredRecipes.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {activeRecipes.map((recipe) => {
+              {filteredRecipes.map((recipe) => {
                 const SlotIcon = recipe.icon || Utensils;
                 return (
                   <article
@@ -551,12 +876,25 @@ export default function BabyMenuPage() {
         </section>
       )}
 
+      {/* 3. BẢNG THỰC ĐƠN TUẦN 7 NGÀY - TƯƠNG TÁC XEM CÔNG THỨC */}
       {activeTab === 'weekly' && (
         <section className="overflow-x-auto rounded-2xl border border-theme-line bg-theme-surface p-5 sm:p-6 shadow-sm space-y-4">
-          <h2 className="flex items-center gap-2 text-base font-bold text-theme-ink">
-            <Calendar className="h-5 w-5 text-theme-brand shrink-0" aria-hidden="true" />
-            <span>Khung thực đơn 7 ngày · {activeStage.range}</span>
-          </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <h2 className="flex items-center gap-2 text-base font-bold text-theme-ink">
+              <Calendar className="h-5 w-5 text-theme-brand shrink-0" aria-hidden="true" />
+              <span>Khung thực đơn 7 ngày · {activeStage.range}</span>
+            </h2>
+            <p className="text-xs font-semibold text-theme-muted">
+              Mẹ có thể bấm vào từng món trong bảng để xem công thức và cách làm chi tiết.
+            </p>
+          </div>
+
+          {weeklyError && (
+            <div role="alert" className="rounded-2xl border border-status-warn-line bg-status-warn-bg p-3.5 text-xs sm:text-sm font-semibold text-status-warn-text">
+              {weeklyError}
+            </div>
+          )}
+          {loading && <p className="text-xs font-semibold text-theme-muted">Đang tải thực đơn tuần...</p>}
 
           <table className="w-full min-w-[760px] border-collapse text-left">
             <thead>
@@ -580,13 +918,43 @@ export default function BabyMenuPage() {
                         <span>{slot.label}</span>
                       </span>
                     </td>
-                    {Array.from({ length: 7 }).map((_, index) => (
-                      <td key={`${slot.key}-${index}`} className="px-1.5 py-2.5 align-top">
-                        <div className="rounded-2xl bg-theme-page border border-theme-line p-2.5 text-xs font-semibold leading-snug text-theme-ink min-h-[56px] flex items-center justify-center text-center">
-                          {getWeeklyMealForDay(slot.key, index)}
-                        </div>
-                      </td>
-                    ))}
+                    {Array.from({ length: 7 }).map((_, index) => {
+                      const mealName = getWeeklyMealForDay(slot.key, index);
+                      const hasMeal = mealName && mealName !== 'Chưa có món';
+                      const dayLabel = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'][index];
+                      const weeklyItem = hasMeal ? getWeeklyRecipeItem(slot.key, index) : null;
+
+                      return (
+                        <td key={`${slot.key}-${index}`} className="px-1.5 py-2.5 align-top">
+                          {hasMeal && weeklyItem ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenWeeklyRecipe(slot.key, index)}
+                              aria-label={`Xem công thức món ${mealName} bữa ${slot.label} ${dayLabel}`}
+                              title="Bấm để xem công thức và cách nấu"
+                              className="w-full text-left rounded-2xl bg-theme-page border border-theme-line p-2.5 text-xs font-semibold leading-snug text-theme-ink min-h-[64px] flex flex-col justify-between hover:bg-theme-sidebar transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand group cursor-pointer"
+                            >
+                              <span className="group-hover:text-theme-brand transition-colors line-clamp-2">
+                                {mealName}
+                              </span>
+                              <span className="inline-flex items-center gap-1 text-[12px] font-semibold text-theme-muted mt-1.5 group-hover:text-theme-ink transition-colors">
+                                <BookOpen className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                                <span>Xem cách nấu</span>
+                              </span>
+                            </button>
+                          ) : hasMeal ? (
+                            <div className="w-full rounded-2xl bg-theme-page border border-theme-line p-2.5 text-xs font-semibold leading-snug text-theme-ink min-h-[64px] flex flex-col justify-between">
+                              <span className="line-clamp-2">{mealName}</span>
+                              <span className="text-[12px] font-medium text-theme-muted mt-1.5">Chưa có công thức chi tiết</span>
+                            </div>
+                          ) : (
+                            <div className="rounded-2xl bg-theme-page/50 border border-dashed border-theme-line p-2.5 text-xs font-medium leading-snug text-theme-muted min-h-[64px] flex items-center justify-center text-center">
+                              Chưa có món
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })}
                   </tr>
                 );
               })}
@@ -595,17 +963,107 @@ export default function BabyMenuPage() {
         </section>
       )}
 
+      {/* 4. TAB LỊCH SỬ ĂN DẶM - TRÌNH BÀY MINH BẠCH VÀ HỮU ÍCH TRONG PHIÊN */}
       {activeTab === 'history' && (
-        <section className="rounded-2xl border border-theme-line bg-theme-surface p-8 text-center shadow-sm space-y-2">
-          <Award className="mx-auto h-10 w-10 text-theme-brand" aria-hidden="true" />
-          <h2 className="text-base font-bold text-theme-ink">Lịch sử ăn dặm</h2>
-          <p className="text-xs sm:text-sm font-medium text-theme-muted">
-            Chưa ghi nhận lịch sử ăn dặm nào trước đó của bé.
-          </p>
+        <section className="space-y-4">
+          <div className="rounded-2xl border border-theme-line bg-theme-surface p-5 sm:p-6 shadow-sm space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${brandBadgeClass}`}>
+                  <Award className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-theme-ink">
+                    Nhật ký các món bé đã ăn hôm nay
+                  </h2>
+                  <p className="text-xs font-medium text-theme-muted">
+                    Tổng kết các cữ ăn mẹ đã tích chọn trong phiên hiện tại.
+                  </p>
+                </div>
+              </div>
+
+              {eatenRecipesToday.length > 0 && (
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-status-ok text-theme-surface text-xs font-bold self-start sm:self-auto">
+                  <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+                  <span>Hoàn thành {eatenRecipesToday.length}/{activeRecipes.length} món</span>
+                </div>
+              )}
+            </div>
+
+            {/* Thông báo minh bạch về phạm vi dữ liệu trong phiên */}
+            <div className="rounded-2xl bg-theme-page border border-theme-line p-3.5 text-xs font-medium leading-relaxed text-theme-muted flex items-start gap-2.5">
+              <Info className="w-4 h-4 text-theme-brand shrink-0 mt-0.5" aria-hidden="true" />
+              <span>
+                <strong>Ghi chú phạm vi dữ liệu:</strong> Dấu &ldquo;Đã cho bé ăn&rdquo; chỉ được nhớ tạm trong bộ nhớ khi mẹ đang mở trang này (riêng cho từng bé). Dấu sẽ mất khi tải lại trang, rời khỏi trang hoặc khi tạo lại thực đơn; chưa được lưu lên máy chủ.
+              </span>
+            </div>
+
+            {/* Danh sách các món đã ăn hôm nay */}
+            {eatenRecipesToday.length > 0 ? (
+              <div className="space-y-3 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {eatenRecipesToday.map((item) => (
+                    <div
+                      key={`eaten-${item.id}`}
+                      className="rounded-2xl border border-theme-line bg-theme-page p-4 flex items-center justify-between gap-3"
+                    >
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-bold ${brandBadgeClass}`}>
+                            Bữa {item.slot}
+                          </span>
+                          <span className="text-xs font-semibold text-theme-muted">{item.time}</span>
+                        </div>
+                        <h3 className="text-sm font-bold text-theme-ink truncate">{item.name}</h3>
+                        <p className="text-xs font-semibold text-theme-muted">
+                          Theo công thức: <strong className="text-theme-ink">{item.kcal} kcal</strong> · Đạm: {item.protein}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenRecipe(item)}
+                        className="min-h-[40px] px-3 py-1.5 rounded-md border border-theme-line bg-theme-surface hover:bg-theme-sidebar text-xs font-bold text-theme-ink shrink-0 transition-colors"
+                      >
+                        Xem lại
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="p-4 rounded-2xl bg-theme-brand-soft border border-theme-line flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <span className="font-bold text-theme-ink">
+                    Tổng năng lượng theo công thức của các món đã đánh dấu (không phải lượng bé thực ăn):
+                  </span>
+                  <span className={`text-base font-bold ${brandTextClass}`}>
+                    {totalEatenNutrients.kcal} kcal ({totalEatenNutrients.count} cữ ăn)
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-dashed border-theme-line p-8 text-center space-y-3">
+                <Utensils className="w-8 h-8 mx-auto text-theme-muted" aria-hidden="true" />
+                <h3 className="text-sm sm:text-base font-bold text-theme-ink">
+                  Chưa có món nào được đánh dấu đã ăn hôm nay
+                </h3>
+                <p className="text-xs sm:text-sm font-medium text-theme-muted max-w-sm mx-auto">
+                  Mẹ có thể chuyển sang tab &ldquo;Hôm nay&rdquo; và bấm nút &ldquo;Đã cho bé ăn&rdquo; trên từng thẻ món để cập nhật tiến độ dinh dưỡng.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('today')}
+                  className={`inline-flex items-center gap-2 min-h-[44px] px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold transition-colors ${primaryBtnClass}`}
+                >
+                  <Utensils className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  <span>Xem thực đơn hôm nay</span>
+                </button>
+              </div>
+            )}
+          </div>
         </section>
       )}
 
-      {/* 3. Chọn giai đoạn độ tuổi ăn dặm & Gợi ý chuẩn bị kết cấu */}
+      {/* 5. Chọn giai đoạn độ tuổi ăn dặm & Gợi ý chuẩn bị kết cấu */}
       <section className="rounded-2xl border border-theme-line bg-theme-surface p-5 sm:p-6 shadow-sm space-y-5">
         <div>
           <h2 className="text-base sm:text-lg font-bold text-theme-ink">
