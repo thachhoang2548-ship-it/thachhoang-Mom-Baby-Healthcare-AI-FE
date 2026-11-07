@@ -127,6 +127,31 @@ export default function AppShell() {
     : null;
   const shouldShowExpiryNotice = isMom && tier !== 'Free' && tierDaysLeft !== null && tierDaysLeft <= 7;
 
+  // Module bé (/baby-nutrition...): khung ngoài dùng token theme (đổi theo giới tính bé qua data-baby-theme).
+  // Mọi trang khác giữ nguyên màu hồng cũ.
+  const inBabyModule = location.pathname.startsWith('/baby-nutrition');
+  const shell = inBabyModule
+    ? {
+        root: 'bg-theme-page',
+        line: 'border-theme-line',
+        logo: 'text-theme-brand',
+        badge: 'text-theme-brand',
+        navActive: 'bg-theme-brand-soft text-theme-brand',
+        sidebar: 'bg-theme-sidebar',
+        icon: 'text-theme-brand',
+        linkHover: 'hover:text-theme-brand',
+      }
+    : {
+        root: 'bg-[#FCF8F8] dark:bg-[#0E0C0F]',
+        line: 'border-pink-100 dark:border-gray-800',
+        logo: 'text-momPink-dark dark:text-pink-400',
+        badge: 'text-momPink-dark dark:text-pink-300',
+        navActive: 'bg-momPink-light text-momPink-dark dark:bg-momPink/20 dark:text-pink-300',
+        sidebar: '',
+        icon: 'text-momPink',
+        linkHover: 'hover:text-momPink',
+      };
+
   const handleLogoClick = () => {
     if (isAdmin) navigate('/admin');
     else if (isExpert) navigate('/expert');
@@ -150,7 +175,7 @@ export default function AppShell() {
         aria-current={active ? 'page' : undefined}
         className={`flex items-center gap-3 px-4 ${large ? 'py-4 text-lg' : 'py-3 text-base'} rounded-2xl font-semibold transition-colors ${
           active
-            ? 'bg-momPink-light text-momPink-dark dark:bg-momPink/20 dark:text-pink-300'
+            ? shell.navActive
             : 'text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-800'
         }`}
       >
@@ -161,12 +186,12 @@ export default function AppShell() {
   };
 
   return (
-    <div className="h-screen bg-[#FCF8F8] dark:bg-[#0E0C0F] text-gray-800 dark:text-gray-100 flex flex-col font-sans relative overflow-hidden">
+    <div className={`h-screen ${shell.root} text-gray-800 dark:text-gray-100 flex flex-col font-sans relative overflow-hidden`}>
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-white dark:bg-gray-900 border-b border-pink-100 dark:border-gray-800 py-3 px-4 sm:px-8 flex items-center justify-between gap-3">
+      <header className={`sticky top-0 z-30 bg-white dark:bg-gray-900 border-b ${shell.line} py-3 px-4 sm:px-8 flex items-center justify-between gap-3`}>
         <button onClick={handleLogoClick} className="flex items-center gap-3 text-left" aria-label="Về trang chủ">
           <img src={momOiLogo} alt="" className="h-12 w-12 rounded-full object-cover shadow" />
-          <span className="font-brand text-2xl font-extrabold leading-none text-momPink-dark dark:text-pink-400">
+          <span className={`font-brand text-2xl font-extrabold leading-none ${shell.logo}`}>
             Mom Ơi!
           </span>
         </button>
@@ -177,7 +202,7 @@ export default function AppShell() {
               <span className="text-base font-bold text-gray-800 dark:text-gray-100">
                 {fullName || 'Tài khoản của mẹ'}
               </span>
-              <span className="text-sm font-semibold text-momPink-dark dark:text-pink-300">{getRoleBadgeVi()}</span>
+              <span className={`text-sm font-semibold ${shell.badge}`}>{getRoleBadgeVi()}</span>
             </Link>
           )}
 
@@ -202,7 +227,7 @@ export default function AppShell() {
 
       <div className="flex-1 flex max-w-7xl w-full mx-auto pb-24 lg:pb-0 relative z-10 overflow-hidden">
         {/* Sidebar (máy tính) */}
-        <aside className="hidden lg:flex flex-col w-72 border-r border-pink-100 dark:border-gray-800 p-4 shrink-0 overflow-y-auto h-full">
+        <aside className={`hidden lg:flex flex-col w-72 border-r ${shell.line} ${shell.sidebar} p-4 shrink-0 overflow-y-auto h-full`}>
           <nav className="space-y-6 flex-1" aria-label="Menu chính">
             {navGroups.map(group => (
               <div key={group.title || 'main'}>
@@ -239,14 +264,14 @@ export default function AppShell() {
           {isMom && <MedicalDisclaimer className="mt-14" />}
           <footer className="mt-6 pt-5 border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-500 dark:text-gray-400">
             <span className="inline-flex items-center gap-2 text-center sm:text-left">
-              <Microscope className="w-4 h-4 text-momPink" />
+              <Microscope className={`w-4 h-4 ${shell.icon}`} />
               Khuyến nghị dinh dưỡng theo chuẩn WHO và dữ liệu USDA
             </span>
             <div className="flex items-center gap-4 shrink-0">
-              <a href="https://www.who.int/publications/i/item/9789240081864" target="_blank" rel="noopener noreferrer" className="hover:text-momPink inline-flex items-center gap-1">
+              <a href="https://www.who.int/publications/i/item/9789240081864" target="_blank" rel="noopener noreferrer" className={`${shell.linkHover} inline-flex items-center gap-1`}>
                 WHO <ExternalLink className="w-3.5 h-3.5" />
               </a>
-              <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener noreferrer" className="hover:text-momPink inline-flex items-center gap-1">
+              <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener noreferrer" className={`${shell.linkHover} inline-flex items-center gap-1`}>
                 USDA <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>
@@ -280,7 +305,7 @@ export default function AppShell() {
       )}
 
       {/* Thanh điều hướng dưới (điện thoại) */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-pink-100 dark:border-gray-800 grid grid-flow-col auto-cols-fr z-40 shadow-2xl" aria-label="Điều hướng nhanh">
+      <nav className={`lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t ${shell.line} grid grid-flow-col auto-cols-fr z-40 shadow-2xl`} aria-label="Điều hướng nhanh">
         {mobileMain.map(item => {
           const Icon = item.icon;
           const active = isPathActive(location.pathname, item.path);
@@ -289,7 +314,7 @@ export default function AppShell() {
               key={item.path}
               to={item.path}
               className={`flex flex-col items-center justify-center gap-1 py-2.5 min-h-[64px] text-sm font-semibold ${
-                active ? 'text-momPink-dark dark:text-pink-300' : 'text-gray-600 dark:text-gray-300'
+                active ? shell.badge : 'text-gray-600 dark:text-gray-300'
               }`}
             >
               <Icon className="w-7 h-7" />

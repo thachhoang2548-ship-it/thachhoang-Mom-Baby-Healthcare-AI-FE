@@ -14,19 +14,19 @@
 /*
   Token theme (BẢN NHÁP: giá trị lấy từ bản thử Figma, có thể đổi ở đây một chỗ).
   Giá trị là bộ ba RGB (không dấu phẩy) để Tailwind ghép được độ mờ, ví dụ bg-theme-brand/50.
-  Mặc định = hồng thương hiệu hiện tại nên chưa trang nào đổi diện mạo cho tới khi dùng class theme-*.
-  Lưu ý: --c-brand mặc định (#FF7A8A) chưa đạt tương phản 4,5:1 với chữ trắng; sẽ chỉnh khi chốt màu.
+  Mặc định (chưa có hồ sơ bé) = bảng hồng đất, giống theme bé gái; theme bé trai ghi đè bằng data-baby-theme.
+  Mọi cặp chữ/nền của bộ mặc định và hai theme đều đạt tương phản 4,5:1 (đã đo).
   Theme theo giới tính bé bật bằng data-baby-theme trên <html> (xem src/hooks/useBabyTheme.js).
 */
 :root {
-  --c-page: 255 247 248;
-  --c-sidebar: 255 241 243;
+  --c-page: 251 246 243;
+  --c-sidebar: 246 237 232;
   --c-surface: 255 255 255;
   --c-ink: 43 32 36;
   --c-muted: 107 91 96;
-  --c-brand: 255 122 138;
-  --c-brand-soft: 254 205 211;
-  --c-line: 242 228 230;
+  --c-brand: 171 66 86;
+  --c-brand-soft: 248 225 229;
+  --c-line: 234 223 218;
   /* Trạng thái: dùng chung mọi theme */
   --c-ok: 79 127 102;
   --c-warn-bg: 255 243 214;
