@@ -1,10 +1,70 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import babyService from '../../../models/services/babyService';
 import AllergyTracker from '../../components/baby/AllergyTracker';
-import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from 'recharts';
-import { Baby, Sparkles, AlertTriangle, Calendar, Award, ChevronRight, Activity, BookOpen, Pencil, Plus } from 'lucide-react';
+import { useBabyTheme } from '../../../hooks/useBabyTheme';
+import {
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ResponsiveContainer
+} from 'recharts';
+import {
+  Baby,
+  AlertTriangle,
+  ChevronRight,
+  Activity,
+  BookOpen,
+  Pencil,
+  Plus,
+  Sun,
+  Utensils,
+  Apple,
+  Moon,
+  Milk,
+  Flame,
+  Clock,
+  ShieldCheck,
+  Loader2,
+  HeartHandshake
+} from 'lucide-react';
 import toast from 'react-hot-toast';
+
+const MEAL_SLOTS = [
+  { key: 'breakfast', slot: 'Bữa sáng', icon: Sun, time: '07:30' },
+  { key: 'lunch', slot: 'Bữa trưa', icon: Utensils, time: '11:30' },
+  { key: 'snack', slot: 'Bữa chiều', icon: Apple, time: '15:30' },
+  { key: 'dinner', slot: 'Bữa tối', icon: Moon, time: '18:30' },
+  { key: 'supplementary_snack', slot: 'Bữa phụ', icon: Milk, time: '20:00' }
+];
+
+const getWeaningStage = (ageMonths) => {
+  if (!ageMonths) return 'Chưa bắt đầu ăn dặm';
+  if (ageMonths < 6) return 'Giai đoạn: Sữa mẹ hoàn toàn';
+  if (ageMonths <= 8) return 'Giai đoạn: Bột mịn / Cháo loãng (Ăn dặm ngọt)';
+  if (ageMonths <= 12) return 'Giai đoạn: Cháo đặc hạt nhuyễn / Thức ăn nghiền nhuyễn';
+  return 'Giai đoạn: Cơm nát / Thức ăn thái nhỏ cắt quân cờ';
+};
+
+// Nhãn trục Radar tách thành hai dòng ("Đạm" / "(Protein)") để không bị cắt khi màn hình hẹp
+function RadarAxisTick({ x, y, textAnchor, payload }) {
+  const label = String(payload?.value ?? '');
+  const cut = label.indexOf(' (');
+  const main = cut === -1 ? label : label.slice(0, cut);
+  const sub = cut === -1 ? null : label.slice(cut + 1);
+  return (
+    <text x={x} y={y} textAnchor={textAnchor} fill="rgb(var(--c-ink))" fontSize={12} fontWeight={600}>
+      <tspan x={x}>{main}</tspan>
+      {sub && (
+        <tspan x={x} dy={14}>
+          {sub}
+        </tspan>
+      )}
+    </text>
+  );
+}
 
 export default function BabyDashPage() {
   const navigate = useNavigate();
@@ -18,11 +78,25 @@ export default function BabyDashPage() {
 
   const isFetchingRef = React.useRef(false);
 
-  useEffect(() => {
-    loadBabies();
+  // Bắt buộc gọi ở đầu component, TRƯỚC mọi return sớm (loading, chưa có bé)
+  useBabyTheme(selectedBaby);
+
+  const loadDailyMenu = useCallback(async (babyId) => {
+    try {
+      const res = await babyService.getDailyMenu(babyId);
+      if ((res.success || res.isSuccess) && res.data) {
+        setDailyMenu(res.data);
+        setMenuError(null);
+      } else {
+        setMenuError(res.message || 'Không thể tải dữ liệu dinh dưỡng.');
+      }
+    } catch (err) {
+      console.error('Failed to load daily menu:', err);
+      setMenuError(err.response?.data?.message || 'Dịch vụ dinh dưỡng hiện không khả dụng.');
+    }
   }, []);
 
-  const loadBabies = async () => {
+  const loadBabies = useCallback(async () => {
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
 
@@ -37,27 +111,16 @@ export default function BabyDashPage() {
       }
     } catch (err) {
       console.error(err);
-      toast.error('Lỗi khi tải hồ sơ bé yêu 😢');
+      toast.error('Lỗi khi tải hồ sơ bé yêu.');
     } finally {
       setLoading(false);
       isFetchingRef.current = false;
     }
-  };
+  }, [loadDailyMenu]);
 
-  const loadDailyMenu = async (babyId) => {
-    try {
-      const res = await babyService.getDailyMenu(babyId);
-      if ((res.success || res.isSuccess) && res.data) {
-        setDailyMenu(res.data);
-        setMenuError(null);
-      } else {
-        setMenuError(res.message || 'Không thể tải dữ liệu dinh dưỡng.');
-      }
-    } catch (err) {
-      console.error('Failed to load daily menu:', err);
-      setMenuError(err.response?.data?.message || 'Dịch vụ dinh dưỡng hiện không khả dụng.');
-    }
-  };
+  useEffect(() => {
+    loadBabies();
+  }, [loadBabies]);
 
   // ── Suy ra số liệu hiển thị từ dữ liệu engine ──────────────────────────────
   const goals = dailyMenu?.goals || null;
@@ -65,88 +128,114 @@ export default function BabyDashPage() {
   const coverage = dailyMenu?.coverage_pct || {};
 
   // % sắt tính từ tổng thực tế / mục tiêu WHO (engine không trả sẵn trục này)
-  const ironPct = goals?.iron_mg > 0 ? Math.round((totals.iron_mg || 0) / goals.iron_mg * 100) : null;
+  const ironPct = goals?.iron_mg > 0 ? Math.round(((totals.iron_mg || 0) / goals.iron_mg) * 100) : null;
 
+  // clampPct chỉ để vẽ Radar (miền 0 đến 100); phần trăm hiển thị dạng chữ giữ giá trị thật (roundPct)
   const clampPct = (v) => Math.max(0, Math.min(100, Math.round(v || 0)));
-  const nutritionData = dailyMenu ? [
-    { subject: 'Calories', value: clampPct(coverage.calories), fullMark: 100 },
-    { subject: 'Đạm (Protein)', value: clampPct(coverage.protein_g), fullMark: 100 },
-    { subject: 'Chất béo (Fat)', value: clampPct(coverage.fat_g), fullMark: 100 },
-    { subject: 'Tinh bột (Carbs)', value: clampPct(coverage.carbs_g), fullMark: 100 },
-    { subject: 'Sắt (Iron)', value: clampPct(ironPct), fullMark: 100 }
-  ] : [];
+  const roundPct = (v) => Math.round(v || 0);
+  const nutritionData = dailyMenu
+    ? [
+        { subject: 'Calories', value: clampPct(coverage.calories), fullMark: 100 },
+        { subject: 'Đạm (Protein)', value: clampPct(coverage.protein_g), fullMark: 100 },
+        { subject: 'Chất béo (Fat)', value: clampPct(coverage.fat_g), fullMark: 100 },
+        { subject: 'Tinh bột (Carbs)', value: clampPct(coverage.carbs_g), fullMark: 100 },
+        { subject: 'Sắt (Iron)', value: clampPct(ironPct), fullMark: 100 }
+      ]
+    : [];
 
   // Map meals của engine → 4-5 cữ hiển thị
-  const MEAL_SLOTS = [
-    { key: 'breakfast', slot: 'Bữa Sáng ☀️', emoji: '🥣', time: '07:30' },
-    { key: 'lunch', slot: 'Bữa Trưa 🍲', emoji: '🍲', time: '11:30' },
-    { key: 'snack', slot: 'Bữa Chiều 🍌', emoji: '🍌', time: '15:30' },
-    { key: 'dinner', slot: 'Bữa Tối 🌙', emoji: '🥣', time: '18:30' },
-    { key: 'supplementary_snack', slot: 'Bữa Phụ 🍼', emoji: '🍼', time: '20:00' }
-  ];
   const todayMeals = MEAL_SLOTS
     .filter(({ key }) => dailyMenu?.meals?.[key])
-    .map(({ key, slot, emoji, time }) => ({
+    .map(({ key, slot, icon, time }) => ({
       slot,
-      emoji,
+      icon,
       time,
       recipe: dailyMenu.meals[key].name_vi || dailyMenu.meals[key].name_en,
       kcal: Math.round(dailyMenu.meals[key].total_calories || 0)
     }));
 
-  const getWeaningStage = (ageMonths) => {
-    if (!ageMonths) return 'Chưa bắt đầu ăn dặm';
-    if (ageMonths < 6) return 'Giai đoạn: Sữa mẹ hoàn toàn 🍼';
-    if (ageMonths <= 8) return 'Giai đoạn: Bột mịn / Cháo loãng (Ăn dặm ngọt)';
-    if (ageMonths <= 12) return 'Giai đoạn: Cháo đặc hạt nhuyễn / Thức ăn nghiền nhuyễn';
-    return 'Giai đoạn: Cơm nát / Thức ăn thái nhỏ cắt quân cờ';
-  };
-
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-5 animate-fade-in">
-        <div className="relative flex items-center justify-center">
-          {/* Outer glowing pulse */}
-          <div className="absolute w-20 h-20 bg-pink-100 dark:bg-pink-950/20 rounded-full animate-ping opacity-75"></div>
-          {/* Inner rotating gradient ring */}
-          <div className="w-16 h-16 rounded-full border-4 border-momPink-light border-t-momPink animate-spin"></div>
-          {/* Center emoji */}
-          <div className="absolute text-2xl animate-bounce" style={{ animationDuration: '2s' }}>
-            👶
-          </div>
+      <div className="font-display flex flex-col items-center justify-center min-h-[50vh] px-4 py-12 text-center animate-fade-in">
+        <div className="w-14 h-14 rounded-2xl bg-theme-sidebar border border-theme-line flex items-center justify-center text-theme-ink mb-4">
+          <Loader2 className="w-7 h-7 animate-spin motion-reduce:animate-none" aria-hidden="true" />
         </div>
-        <div className="text-center space-y-1">
-          <h3 className="text-sm font-black text-gray-700 dark:text-white uppercase tracking-wider">
-            Đang tải thông tin bé yêu...
-          </h3>
-          <p className="text-[11px] text-gray-400 dark:text-gray-400 font-bold">
-            Chuẩn bị thực đơn dinh dưỡng chuẩn WHO & AI
-          </p>
-        </div>
+        <h2 className="text-base font-bold text-theme-ink">
+          Đang tải thông tin bé yêu...
+        </h2>
+        <p className="text-sm text-theme-muted font-medium mt-1">
+          Chuẩn bị thực đơn dinh dưỡng chuẩn WHO và AI
+        </p>
       </div>
     );
   }
 
-  // If there are no babies, prompt them to go to growth logs setup
+  // Trạng thái trống: chưa có hồ sơ bé (màu mặc định chưa bật data-baby-theme)
   if (!selectedBaby) {
     return (
-      <div className="max-w-md mx-auto text-center space-y-6 pt-12">
-        <div className="w-16 h-16 rounded-full bg-pink-50 text-momPink flex items-center justify-center mx-auto shadow-md">
-          <Baby className="w-8 h-8" />
+      <div className="font-display max-w-2xl mx-auto py-6 sm:py-10 animate-fade-in">
+        <div className="bg-theme-surface rounded-2xl border border-theme-line p-6 sm:p-10 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 pb-6 border-b border-theme-line">
+            <div className="w-14 h-14 rounded-2xl bg-theme-sidebar border border-theme-line flex items-center justify-center text-theme-ink shrink-0">
+              <Baby className="w-7 h-7" aria-hidden="true" />
+            </div>
+            <div className="space-y-1">
+              <h1 className="text-xl sm:text-2xl font-bold text-theme-ink">
+                Chưa thiết lập bé yêu
+              </h1>
+              <p className="text-sm text-theme-muted font-medium leading-relaxed">
+                Mami chưa thiết lập hồ sơ bé sơ sinh. Vui lòng bấm vào nút dưới đây để tạo hồ sơ và mở khóa các tính năng theo dõi chuẩn WHO.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="p-4 rounded-2xl bg-theme-page border border-theme-line space-y-1.5">
+              <div className="flex items-center gap-2 text-theme-ink font-bold text-sm">
+                <Utensils className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span>Thực đơn ăn dặm</span>
+              </div>
+              <p className="text-xs text-theme-muted font-medium leading-relaxed">
+                Gợi ý cữ ăn và định lượng vi chất hàng ngày theo tháng tuổi của bé.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-theme-page border border-theme-line space-y-1.5">
+              <div className="flex items-center gap-2 text-theme-ink font-bold text-sm">
+                <Activity className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span>Biểu đồ WHO</span>
+              </div>
+              <p className="text-xs text-theme-muted font-medium leading-relaxed">
+                Theo dõi cân nặng và chiều cao của bé đối chiếu chuẩn tăng trưởng WHO.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-theme-page border border-theme-line space-y-1.5">
+              <div className="flex items-center gap-2 text-theme-ink font-bold text-sm">
+                <ShieldCheck className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span>Tầm soát dị ứng</span>
+              </div>
+              <p className="text-xs text-theme-muted font-medium leading-relaxed">
+                Ghi nhận phản ứng thực phẩm mới và tự động lọc món cần tránh.
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-2 text-xs text-theme-muted font-medium">
+              <HeartHandshake className="w-4 h-4 shrink-0 text-theme-ink" aria-hidden="true" />
+              <span>Giao diện sẽ tự động điều chỉnh tông màu theo hồ sơ bé trai hoặc bé gái.</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/baby-nutrition/create-baby')}
+              className="inline-flex items-center justify-center gap-2 min-h-[44px] px-6 py-3 rounded-2xl bg-theme-ink text-theme-surface text-sm font-bold transition-colors hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-ink focus-visible:ring-offset-2 shrink-0"
+            >
+              <Plus className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>Thêm hồ sơ bé ngay</span>
+            </button>
+          </div>
         </div>
-        <div className="space-y-2">
-          <h3 className="text-lg font-black text-gray-800 dark:text-white uppercase">Chưa thiết lập bé yêu</h3>
-          <p className="text-xs text-gray-500 font-semibold max-w-xs mx-auto leading-relaxed">
-            Mami chưa thiết lập hồ sơ bé sơ sinh. Vui lòng bấm vào nút dưới đây để tạo hồ sơ và mở khóa các tính năng theo dõi chuẩn WHO.
-          </p>
-        </div>
-        <button
-          onClick={() => navigate('/baby-nutrition/create-baby')}
-          className="px-6 py-3 bg-gradient-to-r from-momPink to-momPurple text-white text-xs font-extrabold rounded-xl transition hover:opacity-95 shadow active:scale-95"
-        >
-          <Plus className="w-4 h-4 inline mr-1" />
-          Thêm hồ sơ bé ngay
-        </button>
       </div>
     );
   }
@@ -175,28 +264,28 @@ export default function BabyDashPage() {
       });
 
       if (isAvoided) {
-        if (meal.slot.includes('Sáng')) {
+        if (meal.slot.toLowerCase().includes('sáng')) {
           return {
             ...meal,
             recipe: 'Cháo gạo rây bí đỏ sữa hạt (Tránh dị ứng)',
             kcal: 120
           };
         }
-        if (meal.slot.includes('Trưa')) {
+        if (meal.slot.toLowerCase().includes('trưa')) {
           return {
             ...meal,
             recipe: 'Súp lườn gà khoai tây bông cải (Tránh dị ứng)',
             kcal: 175
           };
         }
-        if (meal.slot.includes('Chiều')) {
+        if (meal.slot.toLowerCase().includes('chiều')) {
           return {
             ...meal,
             recipe: 'Đu đủ chín nghiền sữa chua (Tránh dị ứng)',
             kcal: 85
           };
         }
-        if (meal.slot.includes('Tối')) {
+        if (meal.slot.toLowerCase().includes('tối')) {
           return {
             ...meal,
             recipe: 'Cháo chim bồ câu hạt sen bí ngô (Tránh dị ứng)',
@@ -209,172 +298,292 @@ export default function BabyDashPage() {
   };
 
   const activeMeals = getFilteredMeals();
+  const genderLabel =
+    selectedBaby.gender === 0 || selectedBaby.gender === 'male' || selectedBaby.gender === 'boy'
+      ? 'Bé trai'
+      : selectedBaby.gender === 1 || selectedBaby.gender === 'female' || selectedBaby.gender === 'girl'
+      ? 'Bé gái'
+      : null;
+
+  const targetMetrics = goals
+    ? [
+        {
+          label: 'Năng lượng',
+          target: `${Math.round(goals.calories)} kcal`,
+          actual: totals.calories != null ? `${Math.round(totals.calories)} kcal` : null,
+          pct: roundPct(coverage.calories)
+        },
+        {
+          label: 'Chất đạm (Protein)',
+          target: `${Math.round(goals.protein_g)} g`,
+          actual: totals.protein_g != null ? `${Math.round(totals.protein_g * 10) / 10} g` : null,
+          pct: roundPct(coverage.protein_g)
+        },
+        {
+          label: 'Chất sắt (Iron)',
+          target: `${Math.round(goals.iron_mg)} mg`,
+          actual: totals.iron_mg != null ? `${Math.round(totals.iron_mg * 10) / 10} mg` : null,
+          pct: ironPct !== null ? roundPct(ironPct) : null
+        },
+        {
+          label: 'Chất béo (Fat)',
+          target: `${Math.round(goals.fat_g)} g`,
+          actual: totals.fat_g != null ? `${Math.round(totals.fat_g * 10) / 10} g` : null,
+          pct: roundPct(coverage.fat_g)
+        }
+      ]
+    : [];
 
   return (
-    <div className="space-y-6">
-      
-      {/* Baby Info Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-gray-800 p-5 rounded-3xl border border-pink-100/40 dark:border-gray-750 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-tr from-momPink to-momPurple flex items-center justify-center text-white text-xl shadow-md font-bold">
-            👶
+    <div className="font-display rounded-3xl bg-theme-page p-4 sm:p-6 border border-theme-line space-y-6">
+      {/* 1. Hồ sơ bé & Điều hướng nhanh */}
+      <section className="bg-theme-surface rounded-2xl border border-theme-line p-5 sm:p-6 shadow-sm space-y-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-4">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-theme-brand-soft border border-theme-line flex items-center justify-center text-theme-brand shrink-0">
+              <Baby className="w-6 h-6 sm:w-7 sm:h-7" aria-hidden="true" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-lg sm:text-xl font-bold text-theme-ink">
+                  Bé {selectedBaby.name}
+                </h1>
+                {genderLabel && (
+                  <span className="px-2.5 py-0.5 rounded-full bg-theme-brand-soft text-theme-brand text-xs font-semibold">
+                    {genderLabel}
+                  </span>
+                )}
+                <span className="px-2.5 py-0.5 rounded-full bg-theme-sidebar text-theme-ink text-xs font-semibold border border-theme-line">
+                  {ageMonths} tháng tuổi
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm font-semibold text-status-ok">
+                {getWeaningStage(ageMonths)}
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-black text-gray-850 dark:text-white uppercase tracking-wide">
-              Bé {selectedBaby.name} 🧸
-            </h2>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">
-              Tuổi: {ageMonths} tháng tuổi
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() =>
-              navigate('/baby-nutrition/edit-baby', { state: { baby: selectedBaby } })
-            }
-            className="flex items-center gap-1.5 px-3.5 py-2 text-[11px] font-black text-momPink-dark border border-momPink/30 bg-pink-50/50 hover:bg-pink-100/60 dark:bg-pink-950/20 dark:border-pink-900/30 dark:text-pink-400 rounded-xl transition active:scale-95"
-          >
-            <Pencil className="w-3.5 h-3.5" /> Chỉnh sửa bé
-          </button>
-          <span className="px-3.5 py-1.5 bg-momGreen-light/85 text-momGreen-dark text-[10px] font-extrabold rounded-full border border-momGreen-200">
-            {getWeaningStage(ageMonths)}
-          </span>
-        </div>
-      </div>
 
-      {/* Alert Banner: BR07/BR08 (Iron deficiency warning) */}
+          <button
+            type="button"
+            onClick={() => navigate('/baby-nutrition/edit-baby', { state: { baby: selectedBaby } })}
+            className="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 py-2.5 rounded-2xl border border-theme-line bg-theme-surface hover:bg-theme-sidebar text-theme-ink text-xs sm:text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2 self-start md:self-auto"
+          >
+            <Pencil className="w-4 h-4 text-theme-brand shrink-0" aria-hidden="true" />
+            <span>Chỉnh sửa hồ sơ bé</span>
+          </button>
+        </div>
+
+        {/* Lối tắt điều hướng chính */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4 border-t border-theme-line">
+          <button
+            type="button"
+            onClick={() => navigate('/baby-nutrition/menu')}
+            className="min-h-[48px] px-4 py-3 rounded-2xl bg-theme-brand hover:opacity-95 text-theme-surface text-sm font-semibold flex items-center justify-between gap-3 transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
+          >
+            <span className="inline-flex items-center gap-2.5">
+              <BookOpen className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span>Xem thực đơn tuần</span>
+            </span>
+            <ChevronRight className="w-4 h-4 shrink-0" aria-hidden="true" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate('/baby-nutrition/growth')}
+            className="min-h-[48px] px-4 py-3 rounded-2xl bg-theme-sidebar hover:bg-theme-brand-soft/60 text-theme-ink border border-theme-line text-sm font-semibold flex items-center justify-between gap-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
+          >
+            <span className="inline-flex items-center gap-2.5">
+              <Activity className="w-4 h-4 text-theme-brand shrink-0" aria-hidden="true" />
+              <span>Chỉ số tăng trưởng WHO</span>
+            </span>
+            <ChevronRight className="w-4 h-4 text-theme-muted shrink-0" aria-hidden="true" />
+          </button>
+        </div>
+      </section>
+
+      {/* 2. Cảnh báo thiếu hụt vi chất BR07 */}
       {isIronLow && (
-        <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-2xl flex items-start gap-3 text-amber-950 dark:bg-amber-950/20 dark:border-amber-900/40 dark:text-amber-300 animate-slide-in">
-          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+        <section
+          role="alert"
+          className="bg-status-warn-bg border border-status-warn-line rounded-2xl p-4 sm:p-5 flex items-start gap-3.5 text-status-warn-text"
+        >
+          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" aria-hidden="true" />
           <div className="space-y-1">
-            <h4 className="text-xs font-bold uppercase tracking-wider">Cảnh báo thiếu hụt vi chất (BR07)</h4>
-            <p className="text-[11px] leading-relaxed font-semibold">
+            <h2 className="text-sm font-bold">
+              Cảnh báo thiếu hụt vi chất (BR07)
+            </h2>
+            <p className="text-xs sm:text-sm leading-relaxed font-medium">
               Hôm nay chỉ số Sắt đạt {ironPct}% (dưới 60% nhu cầu khuyến nghị của WHO). Bé có nguy cơ mệt mỏi và chậm tăng trưởng. Hãy bổ sung cháo thịt bò, lòng đỏ trứng nấu chín hoặc rau bina vào cữ ăn tiếp theo.
             </p>
           </div>
-        </div>
+        </section>
       )}
 
-      {/* Navigation Shortcuts */}
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          onClick={() => navigate('/baby-nutrition/menu')}
-          className="py-3.5 bg-gradient-to-r from-momPink to-momPurple hover:opacity-95 text-white text-xs font-black rounded-2xl flex items-center justify-center gap-2 shadow-sm transition active:scale-95"
-        >
-          <BookOpen className="w-4 h-4" /> Xem Thực Đơn Tuần
-        </button>
-        <button
-          onClick={() => navigate('/baby-nutrition/growth')}
-          className="py-3.5 bg-gradient-to-r from-momGreen to-emerald-500 hover:opacity-95 text-white text-xs font-black rounded-2xl flex items-center justify-center gap-2 shadow-sm transition active:scale-95"
-        >
-          <Activity className="w-4 h-4" /> Chỉ Số Tăng Trưởng
-        </button>
-      </div>
-
-      {/* Daily goals vs RadarChart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Daily Target Numbers */}
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-pink-100/50 dark:border-gray-750 shadow-sm space-y-4">
+      {/* 3. Thực đơn gợi ý hôm nay (đặt làm trọng tâm theo định hướng tập trung thức ăn cho bé) */}
+      <section className="bg-theme-surface rounded-2xl border border-theme-line p-5 sm:p-6 shadow-sm space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-theme-line">
           <div>
-            <h3 className="text-xs font-extrabold text-gray-800 dark:text-white uppercase tracking-wider">
-              Mục tiêu dinh dưỡng chuẩn WHO (Hàng ngày)
-            </h3>
-            <p className="text-[9px] text-gray-400 font-semibold mt-0.5">Giá trị đề xuất cho trẻ {ageMonths} tháng tuổi</p>
+            <h2 className="text-base sm:text-lg font-bold text-theme-ink">
+              Thực đơn gợi ý hôm nay
+            </h2>
+            <p className="text-xs text-theme-muted font-medium mt-0.5">
+              Các cữ ăn được tự động rà soát theo danh sách thực phẩm cần tránh của bé
+            </p>
           </div>
-
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            {goals ? [
-              { label: 'Năng lượng ⚡', value: `${Math.round(goals.calories)} kcal`, color: 'bg-momPink-light/30 text-momPink-dark' },
-              { label: 'Chất đạm (Protein) 🥩', value: `${Math.round(goals.protein_g)} g`, color: 'bg-momPurple-light/30 text-momPurple-dark' },
-              { label: 'Chất sắt (Iron) 🍳', value: `${Math.round(goals.iron_mg)} mg`, color: 'bg-momGreen-light/30 text-momGreen-dark' },
-              { label: 'Chất béo (Fat) 🥑', value: `${Math.round(goals.fat_g)} g`, color: 'bg-momAmber-light/30 text-momAmber-dark' }
-            ].map((goal, i) => (
-              <div key={i} className={`p-3.5 rounded-2xl flex flex-col justify-between ${goal.color}`}>
-                <span className="text-[10px] font-bold uppercase">{goal.label}</span>
-                <span className="text-base font-black mt-1.5">{goal.value}</span>
-              </div>
-            )) : (
-              <p className="col-span-2 text-[11px] text-gray-400 font-semibold p-3">
-                {menuError || 'Đang tải mục tiêu dinh dưỡng...'}
-              </p>
-            )}
-          </div>
+          <span className="px-3 py-1 rounded-full bg-theme-brand-soft text-theme-brand text-xs font-bold">
+            {todayMeals.length} cữ ăn
+          </span>
         </div>
 
-        {/* RadarChart of actual coverages */}
-        <div className="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-pink-100/50 dark:border-gray-750 shadow-sm space-y-4 flex flex-col justify-between">
+        {todayMeals.length === 0 ? (
+          <div className="p-4 rounded-2xl bg-theme-page border border-theme-line text-xs sm:text-sm text-theme-muted font-medium">
+            {menuError || 'Chưa tải được thực đơn gợi ý. Vui lòng thử lại sau.'}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+            {activeMeals.map((meal, idx) => {
+              const SlotIcon = meal.icon || Utensils;
+              return (
+                <article
+                  key={idx}
+                  className="p-4 rounded-2xl border border-theme-line bg-theme-page/60 flex items-center justify-between gap-3"
+                >
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center shrink-0 mt-0.5">
+                      <SlotIcon className="w-5 h-5" aria-hidden="true" />
+                    </div>
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-theme-brand">
+                        <span>{meal.slot}</span>
+                        <span className="text-theme-muted">•</span>
+                        <span className="inline-flex items-center gap-1 text-theme-muted">
+                          <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+                          Lúc {meal.time}
+                        </span>
+                      </div>
+                      <h3 className="text-sm font-bold text-theme-ink leading-snug break-words">
+                        {meal.recipe}
+                      </h3>
+                      <p className="inline-flex items-center gap-1 text-xs font-semibold text-theme-muted">
+                        <Flame className="w-3.5 h-3.5 text-theme-brand" aria-hidden="true" />
+                        <span>{meal.kcal} kcal</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => navigate('/baby-nutrition/menu')}
+                    className="inline-flex items-center gap-1 min-h-[44px] px-3 py-2 rounded-lg text-xs font-bold text-theme-brand hover:bg-theme-brand-soft/60 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+                  >
+                    <span>Chi tiết</span>
+                    <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* 4. Mục tiêu dinh dưỡng WHO & Biểu đồ mức độ đáp ứng */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Mục tiêu dinh dưỡng hàng ngày */}
+        <section className="bg-theme-surface rounded-2xl border border-theme-line p-5 sm:p-6 shadow-sm space-y-4">
           <div>
-            <h3 className="text-xs font-extrabold text-gray-800 dark:text-white uppercase tracking-wider">
-              Tỷ lệ đạt mục tiêu dinh dưỡng hôm nay (%)
-            </h3>
-            <p className="text-[9px] text-gray-400 font-semibold mt-0.5">Biểu đồ Radar thể hiện mức độ đáp ứng vi chất</p>
+            <h2 className="text-base font-bold text-theme-ink">
+              Mục tiêu dinh dưỡng chuẩn WHO (hàng ngày)
+            </h2>
+            <p className="text-xs text-theme-muted font-medium mt-0.5">
+              Giá trị đề xuất cho trẻ {ageMonths} tháng tuổi
+            </p>
           </div>
 
-          <div className="h-56 w-full flex items-center justify-center">
+          {targetMetrics.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+              {targetMetrics.map((metric, i) => (
+                <div
+                  key={i}
+                  className="p-4 rounded-2xl bg-theme-page border border-theme-line flex flex-col justify-between gap-2"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-semibold text-theme-muted">
+                      {metric.label}
+                    </span>
+                    {metric.pct !== null && (
+                      <span className="text-xs font-bold text-theme-brand">
+                        Đạt {metric.pct}%
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-lg font-bold text-theme-ink">
+                      {metric.target}
+                    </span>
+                    {metric.actual && (
+                      <span className="text-xs font-medium text-theme-muted">
+                        Thực đơn: {metric.actual}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs sm:text-sm text-theme-muted font-medium p-3 rounded-2xl bg-theme-page border border-theme-line">
+              {menuError || 'Đang tải mục tiêu dinh dưỡng...'}
+            </p>
+          )}
+        </section>
+
+        {/* Biểu đồ Radar tỷ lệ đáp ứng */}
+        <section className="bg-theme-surface rounded-2xl border border-theme-line p-5 sm:p-6 shadow-sm space-y-4 flex flex-col justify-between">
+          <div>
+            <h2 className="text-base font-bold text-theme-ink">
+              Tỷ lệ đạt mục tiêu dinh dưỡng hôm nay (%)
+            </h2>
+            <p className="text-xs text-theme-muted font-medium mt-0.5">
+              Biểu đồ thể hiện mức độ đáp ứng vi chất từ thực đơn
+            </p>
+          </div>
+
+          <div className="h-60 sm:h-72 w-full flex items-center justify-center">
             {nutritionData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="75%" data={nutritionData}>
-                  <PolarGrid stroke="#e2e8f0" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9, fontWeight: 'bold', fill: '#475569' }} />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 8 }} />
-                  <Radar name="Bé yêu" dataKey="value" stroke="#FF7A8A" fill="#FF7A8A" fillOpacity={0.4} />
+                <RadarChart
+                  cx="50%"
+                  cy="50%"
+                  outerRadius="62%"
+                  margin={{ top: 12, right: 12, bottom: 12, left: 12 }}
+                  data={nutritionData}
+                >
+                  <PolarGrid stroke="rgb(var(--c-line))" />
+                  <PolarAngleAxis dataKey="subject" tick={<RadarAxisTick />} />
+                  <PolarRadiusAxis
+                    angle={54}
+                    domain={[0, 100]}
+                    tick={{ fontSize: 12, fill: 'rgb(var(--c-muted))' }}
+                  />
+                  <Radar
+                    name="Bé yêu"
+                    dataKey="value"
+                    stroke="rgb(var(--c-brand))"
+                    fill="rgb(var(--c-brand))"
+                    fillOpacity={0.28}
+                  />
                 </RadarChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-[11px] text-gray-400 font-semibold text-center px-6">
+              <p className="text-xs sm:text-sm text-theme-muted font-medium text-center px-4">
                 {menuError || 'Đang tính toán mức đáp ứng dinh dưỡng từ thực đơn hôm nay...'}
               </p>
             )}
           </div>
-        </div>
-
+        </section>
       </div>
 
-      {/* Today's Meal Slots */}
-      <div className="bg-white dark:bg-gray-800 p-5 rounded-3xl border border-pink-100/50 dark:border-gray-750 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xs font-extrabold text-gray-880 dark:text-white uppercase tracking-wider">
-            Thực đơn gợi ý hôm nay 🥣
-          </h3>
-          <span className="text-[9px] bg-momPink-light/75 text-momPink-dark px-2.5 py-0.5 rounded-full font-bold">{todayMeals.length} Cữ</span>
-        </div>
-
-        {todayMeals.length === 0 && (
-          <p className="text-[11px] text-gray-400 font-semibold p-2">
-            {menuError || 'Chưa tải được thực đơn gợi ý. Vui lòng thử lại sau.'}
-          </p>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          {activeMeals.map((meal, idx) => (
-            <div
-              key={idx}
-              className="p-3.5 border border-pink-50/50 dark:border-gray-700 bg-pink-50/10 dark:bg-gray-900 rounded-2xl flex items-center justify-between gap-3 shadow-sm"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">{meal.emoji}</span>
-                <div>
-                  <p className="text-[9px] text-momPink font-black uppercase">{meal.slot}</p>
-                  <h4 className="text-xs font-bold text-gray-800 dark:text-white mt-0.5">{meal.recipe}</h4>
-                  <p className="text-[9px] text-gray-400 font-semibold mt-0.5">{meal.kcal} kcal | Lúc {meal.time}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => navigate('/baby-nutrition/menu')}
-                className="text-[10px] font-black text-momPurple hover:text-momPurple-dark flex items-center gap-0.5"
-              >
-                Xem <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Allergy Tracker embedded below — nối với hồ sơ bé thật */}
+      {/* 5. Tầm soát dị ứng thực phẩm — nối với hồ sơ bé thật */}
       <AllergyTracker baby={selectedBaby} />
-
     </div>
   );
 }

@@ -11,6 +11,49 @@
   --border-color: rgba(255, 255, 255, 0.6);
 }
 
+/*
+  Token theme (BẢN NHÁP: giá trị lấy từ bản thử Figma, có thể đổi ở đây một chỗ).
+  Giá trị là bộ ba RGB (không dấu phẩy) để Tailwind ghép được độ mờ, ví dụ bg-theme-brand/50.
+  Mặc định = hồng thương hiệu hiện tại nên chưa trang nào đổi diện mạo cho tới khi dùng class theme-*.
+  Lưu ý: --c-brand mặc định (#FF7A8A) chưa đạt tương phản 4,5:1 với chữ trắng; sẽ chỉnh khi chốt màu.
+  Theme theo giới tính bé bật bằng data-baby-theme trên <html> (xem src/hooks/useBabyTheme.js).
+*/
+:root {
+  --c-page: 255 247 248;
+  --c-sidebar: 255 241 243;
+  --c-surface: 255 255 255;
+  --c-ink: 43 32 36;
+  --c-muted: 107 91 96;
+  --c-brand: 255 122 138;
+  --c-brand-soft: 254 205 211;
+  --c-line: 242 228 230;
+  /* Trạng thái: dùng chung mọi theme */
+  --c-ok: 79 127 102;
+  --c-warn-bg: 255 243 214;
+  --c-warn-line: 217 150 43;
+  --c-warn-text: 110 67 0;
+}
+
+[data-baby-theme='girl'] {
+  --c-page: 251 246 243;
+  --c-sidebar: 246 237 232;
+  --c-ink: 43 32 36;
+  --c-muted: 107 91 96;
+  --c-brand: 171 66 86;
+  --c-brand-soft: 248 225 229;
+  --c-line: 234 223 218;
+}
+
+[data-baby-theme='boy'] {
+  --c-page: 242 246 248;
+  --c-sidebar: 233 240 244;
+  --c-ink: 29 42 51;
+  --c-muted: 86 107 119;
+  --c-brand: 46 109 147;
+  --c-brand-soft: 220 235 243;
+  --c-line: 216 227 233;
+}
+
 body {
   font-family: "Inter", sans-serif;
 }
