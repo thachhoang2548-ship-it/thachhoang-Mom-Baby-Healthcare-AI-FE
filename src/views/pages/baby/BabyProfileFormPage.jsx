@@ -187,7 +187,13 @@ export default function BabyProfileFormPage() {
       // ── Step 3: Save baby profile ──────────────────────────────────────────
       if (isEditMode) {
         // Update existing baby profile
-        const updateRes = await babyService.updateBabyProfile(existingBaby.id, payload);
+        // Gửi lại dị ứng và lịch sử ăn hiện có: form này không chỉnh hai mục đó, nếu thiếu thì
+        // babyService.updateProfile sẽ thay bằng danh sách rỗng và xóa dữ liệu trên server.
+        const updateRes = await babyService.updateBabyProfile(existingBaby.id, {
+          ...payload,
+          allergies: existingBaby.allergies,
+          foodHistory: existingBaby.foodHistory,
+        });
         const isOk = updateRes?.isSuccess || updateRes?.success;
         if (!isOk) {
           toast.error(updateRes?.message || 'Cập nhật hồ sơ bé không thành công.');
