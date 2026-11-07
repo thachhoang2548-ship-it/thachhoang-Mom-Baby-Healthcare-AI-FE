@@ -140,6 +140,7 @@ export default function AppShell() {
         sidebar: 'bg-theme-sidebar',
         icon: 'text-theme-brand',
         linkHover: 'hover:text-theme-brand',
+        muted: 'text-theme-muted',
       }
     : {
         root: 'bg-[#FCF8F8] dark:bg-[#0E0C0F]',
@@ -150,6 +151,7 @@ export default function AppShell() {
         sidebar: '',
         icon: 'text-momPink',
         linkHover: 'hover:text-momPink',
+        muted: 'text-gray-500 dark:text-gray-400',
       };
 
   const handleLogoClick = () => {
@@ -232,7 +234,7 @@ export default function AppShell() {
             {navGroups.map(group => (
               <div key={group.title || 'main'}>
                 {group.title && (
-                  <p className="px-4 mb-2 text-sm font-bold text-gray-500 dark:text-gray-400">{group.title}</p>
+                  <p className={`px-4 mb-2 text-sm font-bold ${shell.muted}`}>{group.title}</p>
                 )}
                 <div className="space-y-1">
                   {group.items.map(item => <NavLink key={item.path} item={item} />)}
@@ -262,7 +264,7 @@ export default function AppShell() {
           </div>
 
           {isMom && <MedicalDisclaimer className="mt-14" />}
-          <footer className="mt-6 pt-5 border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-500 dark:text-gray-400">
+          <footer className={`mt-6 pt-5 border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm ${shell.muted}`}>
             <span className="inline-flex items-center gap-2 text-center sm:text-left">
               <Microscope className={`w-4 h-4 ${shell.icon}`} />
               Khuyến nghị dinh dưỡng theo chuẩn WHO và dữ liệu USDA
