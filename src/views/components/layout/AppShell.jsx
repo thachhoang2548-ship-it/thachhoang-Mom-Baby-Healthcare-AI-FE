@@ -6,6 +6,7 @@ import momOiLogo from '../../../assets/Logo/mom-oi-submark-cropped.png';
 import { getTierNameVi } from '../../../utils/tierHelpers';
 import { getFullName } from '../../../utils/displayName';
 import MedicalDisclaimer from '../common/MedicalDisclaimer';
+import { useOnlineStatus } from '../../../hooks/useOnlineStatus';
 
 import {
   Calendar, Heart, Baby, Sparkles, LogOut, Activity, MessageSquare, Home, User, Settings,
@@ -20,6 +21,7 @@ const isPathActive = (pathname, path) =>
 export default function AppShell() {
   const { user, tier, tierExpiresAt, logout, token, isAuthenticated } = useAuthController();
   const { journeyStage, fetchProfile, momProfile } = useProfileController();
+  const online = useOnlineStatus();
   const navigate = useNavigate();
   const location = useLocation();
   // Menu "Thêm" gắn với trang đang mở: chuyển trang là tự đóng
@@ -38,10 +40,11 @@ export default function AppShell() {
 
   // 1. Fetch profile once when authenticated and profile is missing
   useEffect(() => {
-    if (isAuthenticated && token && !momProfile && isMom) {
+    // Khi mất mạng không gọi tải hồ sơ (sẽ báo lỗi vô ích); có mạng lại thì tự tải
+    if (isAuthenticated && token && !momProfile && isMom && online) {
       fetchProfile();
     }
-  }, [isAuthenticated, token, momProfile, isMom, fetchProfile]);
+  }, [isAuthenticated, token, momProfile, isMom, fetchProfile, online]);
 
   // 2. Auto redirect special roles away from Mom pages to their respective portals
   useEffect(() => {
@@ -258,6 +261,11 @@ export default function AppShell() {
                 <Link to="/upgrade" className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-base font-bold text-center">
                   Gia hạn ngay
                 </Link>
+              </div>
+            )}
+            {!online && (
+              <div role="status" className="mb-5 rounded-2xl border border-status-warn-line bg-status-warn-bg px-5 py-4 text-base font-semibold text-status-warn-text">
+                Bạn đang offline. Các tính năng cần mạng tạm thời chưa dùng được. Mục Thư giãn vẫn nghe được nếu trước đó mẹ đã mở khi có mạng.
               </div>
             )}
             <Outlet />
