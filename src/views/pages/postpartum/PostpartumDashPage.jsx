@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfileController as useActualProfileController } from '../../../controllers/profileController';
 import postpartumService from '../../../models/services/postpartumService';
@@ -13,18 +13,28 @@ import {
   CheckCircle2,
   Heart,
   ShieldCheck,
-  Smile,
   Sparkles,
   Stethoscope,
+  Loader2,
+  Clock,
+  Droplets,
+  Moon,
+  Footprints,
+  PhoneCall,
+  Frown,
+  Meh,
+  Smile,
+  Laugh,
+  Zap,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const MOODS = [
-  { score: 1, emoji: '😔', label: 'Rất mệt' },
-  { score: 2, emoji: '😐', label: 'Tạm ổn' },
-  { score: 3, emoji: '😊', label: 'Dễ chịu' },
-  { score: 4, emoji: '😄', label: 'Vui vẻ' },
-  { score: 5, emoji: '💃', label: 'Nhiều năng lượng' },
+  { score: 1, label: 'Rất mệt', icon: Frown },
+  { score: 2, label: 'Tạm ổn', icon: Meh },
+  { score: 3, label: 'Dễ chịu', icon: Smile },
+  { score: 4, label: 'Vui vẻ', icon: Laugh },
+  { score: 5, label: 'Nhiều năng lượng', icon: Zap },
 ];
 
 const DAILY_CARE_ITEMS = [
@@ -35,46 +45,44 @@ const DAILY_CARE_ITEMS = [
 
 export default function PostpartumDashPage() {
   const navigate = useNavigate();
-  const { momProfile, fetchProfile } = useActualProfileController();
+  const { fetchProfile } = useActualProfileController();
   const [loading, setLoading] = useState(true);
   const [setupMode, setSetupMode] = useState(false);
   const [daysPostpartum, setDaysPostpartum] = useState(0);
   const [recoveryPhase, setRecoveryPhase] = useState('Đang cập nhật');
   const [exerciseSchedule, setExerciseSchedule] = useState(null);
-  const [deliveryDate, setDeliveryDate] = useState(new Date().toISOString().substring(0, 10));
+  const [deliveryDate, setDeliveryDate] = useState(() => new Date().toISOString().substring(0, 10));
   const [deliveryType, setDeliveryType] = useState('natural');
   const [isBreastfeeding, setIsBreastfeeding] = useState(true);
   const [submittingSetup, setSubmittingSetup] = useState(false);
   const [selectedMood, setSelectedMood] = useState(null);
   const [latestEpdsScore, setLatestEpdsScore] = useState(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // Số thứ tự lượt tải để tránh race condition khi gọi API bất đồng bộ
+  const loadSeqRef = useRef(0);
 
-  const currentPhase = useMemo(() => {
-    if (daysPostpartum <= 7) return 'Tuần 1 - Nghỉ ngơi hoàn toàn';
-    if (daysPostpartum <= 42) return 'Tuần 2-6 - Phục hồi nhẹ nhàng';
-    return 'Sau 6 tuần - Ổn định lâu dài';
-  }, [daysPostpartum]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
+    const currentSeq = ++loadSeqRef.current;
     setLoading(true);
     try {
       const profile = await fetchProfile();
+      if (currentSeq !== loadSeqRef.current) return;
+
       if (profile?.deliveryDate) {
         const deliveryTime = new Date(profile.deliveryDate).getTime();
         const diffDays = Math.max(0, Math.floor((Date.now() - deliveryTime) / (1000 * 60 * 60 * 24)));
         setDaysPostpartum(diffDays);
 
         const recoveryRes = await postpartumService.getRecoveryPlan(diffDays);
-        if (recoveryRes.isSuccess && recoveryRes.data) {
+        if (currentSeq !== loadSeqRef.current) return;
+        if (recoveryRes && recoveryRes.isSuccess && recoveryRes.data) {
           setRecoveryPhase(recoveryRes.data.recoveryPhase || 'Đang phục hồi');
-          setExerciseSchedule(recoveryRes.data.exerciseSchedule);
+          setExerciseSchedule(recoveryRes.data.exerciseSchedule || null);
         }
 
         try {
           const todayRes = await dailyMonitoringService.getTodayMonitoring();
+          if (currentSeq !== loadSeqRef.current) return;
           if (todayRes && (todayRes.isSuccess || todayRes.success || todayRes.Success) && todayRes.data) {
             const entry = todayRes.data.data;
             if (entry?.moodScore) setSelectedMood(entry.moodScore);
@@ -85,8 +93,9 @@ export default function PostpartumDashPage() {
 
         try {
           const epdsRes = await postpartumService.getLatestEpds();
+          if (currentSeq !== loadSeqRef.current) return;
           if (epdsRes && (epdsRes.isSuccess || epdsRes.success || epdsRes.Success) && epdsRes.data) {
-            setLatestEpdsScore(epdsRes.data.score || 0);
+            setLatestEpdsScore(epdsRes.data.score ?? null);
           }
         } catch (epdsErr) {
           console.error('Error fetching latest EPDS score:', epdsErr);
@@ -95,19 +104,32 @@ export default function PostpartumDashPage() {
         setSetupMode(true);
       }
     } catch (err) {
+      if (currentSeq !== loadSeqRef.current) return;
       console.error(err);
       toast.error('Có lỗi xảy ra khi tải dữ liệu');
     } finally {
-      setLoading(false);
+      if (currentSeq === loadSeqRef.current) {
+        setLoading(false);
+      }
     }
-  };
+  }, [fetchProfile]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const currentPhase = useMemo(() => {
+    if (daysPostpartum <= 7) return 'Tuần 1 - Nghỉ ngơi hoàn toàn';
+    if (daysPostpartum <= 42) return 'Tuần 2-6 - Phục hồi nhẹ nhàng';
+    return 'Sau 6 tuần - Ổn định lâu dài';
+  }, [daysPostpartum]);
 
   const handleSetupSubmit = async (event) => {
     event.preventDefault();
     setSubmittingSetup(true);
     try {
       const res = await postpartumService.setupPostpartum(deliveryDate, deliveryType, isBreastfeeding);
-      if (res.isSuccess) {
+      if (res && res.isSuccess) {
         toast.success('Khởi tạo hành trình hậu sản thành công!');
         setSetupMode(false);
         await loadData();
@@ -143,353 +165,408 @@ export default function PostpartumDashPage() {
     }
   };
 
+  // 1. Trạng thái Đang tải dữ liệu (Loading skeleton sạch sẽ)
   if (loading) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-28 bg-pink-50/70 rounded-3xl" />
-        <div className="grid grid-cols-1 xl:grid-cols-[1.05fr_0.95fr] gap-6">
-          <div className="space-y-6">
-            <div className="h-44 bg-pink-50/60 rounded-3xl" />
-            <div className="h-80 bg-pink-50/60 rounded-3xl" />
-          </div>
-          <div className="h-[520px] bg-pink-50/60 rounded-3xl" />
+      <div className="font-display rounded-3xl bg-theme-page p-4 sm:p-6 border border-theme-line space-y-6">
+        <div className="rounded-2xl border border-theme-line bg-theme-surface p-8 text-center space-y-3">
+          <Loader2 className="w-7 h-7 mx-auto text-theme-ink animate-spin motion-reduce:animate-none" aria-hidden="true" />
+          <p className="text-sm font-bold text-theme-ink">Đang tải hành trình phục hồi của mẹ...</p>
         </div>
       </div>
     );
   }
 
+  // 2. Trạng thái Thiết lập thông tin hậu sản (Setup Mode)
   if (setupMode) {
     return (
-      <div className="max-w-md mx-auto space-y-6 pt-6">
-        <div className="text-center space-y-2">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-momPink to-momPurple flex items-center justify-center text-white mx-auto shadow-lg">
-            <Heart className="w-6 h-6 animate-pulse" />
-          </div>
-          <h2 className="text-lg font-black text-gray-850 dark:text-white uppercase tracking-wider">
-            Khởi động lộ trình hậu sản
-          </h2>
-          <p className="text-xs text-gray-500 font-semibold max-w-xs mx-auto leading-relaxed">
-            Thiết lập thông tin sinh để Mom Ơi! cá nhân hóa bài tập phục hồi, gợi ý chăm sóc và theo dõi tinh thần cho mami.
-          </p>
-        </div>
-
-        <form onSubmit={handleSetupSubmit} className="bg-white dark:bg-gray-800 border border-pink-100/50 dark:border-gray-700/50 p-6 rounded-3xl shadow-sm space-y-5">
-          <div className="space-y-1">
-            <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Ngày sinh của bé</label>
-            <input
-              type="date"
-              value={deliveryDate}
-              onChange={(event) => setDeliveryDate(event.target.value)}
-              className="w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-750 dark:bg-gray-900 rounded-xl text-xs font-bold focus:ring-1 focus:ring-momPink/30"
-              required
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Phương pháp sinh</label>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { value: 'natural', label: 'Sinh thường' },
-                { value: 'cesarean', label: 'Sinh mổ' },
-              ].map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setDeliveryType(option.value)}
-                  className={`py-2.5 rounded-xl text-xs font-bold border transition-all duration-300 ${
-                    deliveryType === option.value
-                      ? 'border-momPink bg-momPink-light/35 text-momPink-dark'
-                      : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300'
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
+      <div className="font-display rounded-3xl bg-theme-page p-4 sm:p-6 border border-theme-line">
+        <div className="max-w-md mx-auto space-y-6 py-4">
+          <div className="text-center space-y-2">
+            <div className="w-12 h-12 rounded-2xl bg-theme-brand-soft text-theme-brand border border-theme-line flex items-center justify-center mx-auto">
+              <Heart className="w-6 h-6" aria-hidden="true" />
             </div>
-          </div>
-
-          <label className="flex items-center justify-between p-3 bg-pink-50/30 rounded-xl border border-pink-100/25 cursor-pointer">
-            <div>
-              <p className="text-xs font-bold text-gray-800 dark:text-white">Nuôi con bằng sữa mẹ?</p>
-              <p className="text-[10px] text-gray-400 font-semibold mt-0.5">Cá nhân hóa mẹo kích sữa và dinh dưỡng lợi sữa.</p>
-            </div>
-            <input
-              type="checkbox"
-              checked={isBreastfeeding}
-              onChange={(event) => setIsBreastfeeding(event.target.checked)}
-              className="w-4 h-4 text-momPink border-gray-300 rounded focus:ring-momPink"
-            />
-          </label>
-
-          <button
-            type="submit"
-            disabled={submittingSetup}
-            className="w-full py-3 bg-gradient-to-r from-momPink to-momPurple text-white text-xs font-extrabold rounded-xl hover:opacity-95 shadow-md active:scale-95 transition-all disabled:opacity-60"
-          >
-            {submittingSetup ? 'Đang kích hoạt...' : 'Bắt đầu ngay'}
-          </button>
-        </form>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="relative overflow-hidden bg-white dark:bg-gray-800 p-5 rounded-3xl border border-pink-100/40 dark:border-gray-700/50 shadow-sm">
-        <div className="absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-pink-50/80 to-transparent pointer-events-none" />
-        <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-50 text-momPink-dark border border-pink-100 text-[10px] font-black uppercase tracking-wider mb-3">
-              <Sparkles className="w-3.5 h-3.5" />
-              Hồi phục hậu sản
-            </div>
-            <h2 className="text-xl font-black text-gray-850 dark:text-white uppercase tracking-wider flex items-center gap-2">
-              Ngày hậu sản thứ {daysPostpartum}
-            </h2>
-            <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold mt-1">
-              Đồng hành hồi phục thể chất, tinh thần và nhịp chăm bé sau sinh.
+            <h1 className="text-xl sm:text-2xl font-bold text-theme-ink">
+              Khởi động lộ trình hậu sản
+            </h1>
+            <p className="text-xs sm:text-sm text-theme-muted font-medium max-w-sm mx-auto leading-relaxed">
+              Thiết lập thông tin sinh để Mom Ơi! cá nhân hóa bài tập phục hồi, gợi ý chăm sóc và theo dõi tinh thần cho mami.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 min-w-full lg:min-w-[420px]">
-            <div className="rounded-2xl border border-pink-100 bg-pink-50/45 p-3">
-              <p className="text-[10px] font-black uppercase text-gray-400">Giai đoạn</p>
-              <p className="text-xs font-extrabold text-gray-850 mt-1">{currentPhase}</p>
+          <form onSubmit={handleSetupSubmit} className="bg-theme-surface border border-theme-line p-5 sm:p-6 rounded-2xl shadow-sm space-y-5">
+            <div className="space-y-1.5">
+              <label htmlFor="delivery-date-input" className="text-xs font-bold text-theme-ink block">
+                Ngày sinh của bé
+              </label>
+              <input
+                id="delivery-date-input"
+                type="date"
+                value={deliveryDate}
+                onChange={(event) => setDeliveryDate(event.target.value)}
+                className="w-full min-h-[44px] px-3.5 py-2.5 border border-theme-line bg-theme-page rounded-2xl text-xs sm:text-sm font-bold text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand"
+                required
+              />
             </div>
-            <div className="rounded-2xl border border-violet-100 bg-violet-50/45 p-3">
-              <p className="text-[10px] font-black uppercase text-gray-400">Phục hồi</p>
-              <p className="text-xs font-extrabold text-gray-850 mt-1">{recoveryPhase}</p>
+
+            <div className="space-y-1.5">
+              <span className="text-xs font-bold text-theme-ink block">Phương pháp sinh</span>
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { value: 'natural', label: 'Sinh thường' },
+                  { value: 'cesarean', label: 'Sinh mổ' },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setDeliveryType(option.value)}
+                    className={`min-h-[44px] py-2.5 px-3 rounded-2xl text-xs sm:text-sm font-bold border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+                      deliveryType === option.value
+                        ? 'border-theme-brand bg-theme-brand text-theme-surface'
+                        : 'border-theme-line bg-theme-page hover:bg-theme-sidebar text-theme-ink'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="rounded-2xl border border-emerald-100 bg-emerald-50/55 p-3 col-span-2 sm:col-span-1">
-              <p className="text-[10px] font-black uppercase text-gray-400">EPDS</p>
-              <p className="text-xs font-extrabold text-gray-850 mt-1">
+
+            <label className="flex items-start justify-between gap-3 p-3.5 bg-theme-page rounded-2xl border border-theme-line cursor-pointer hover:bg-theme-sidebar transition-colors">
+              <div className="space-y-0.5">
+                <p className="text-xs sm:text-sm font-bold text-theme-ink">Nuôi con bằng sữa mẹ?</p>
+                <p className="text-xs text-theme-muted font-medium">Cá nhân hóa mẹo kích sữa và dinh dưỡng lợi sữa.</p>
+              </div>
+              <input
+                type="checkbox"
+                checked={isBreastfeeding}
+                onChange={(event) => setIsBreastfeeding(event.target.checked)}
+                className="w-4 h-4 mt-0.5 rounded border-theme-line text-theme-brand focus:ring-theme-brand"
+              />
+            </label>
+
+            <button
+              type="submit"
+              disabled={submittingSetup}
+              className="w-full min-h-[44px] py-3 bg-theme-brand hover:bg-theme-ink text-theme-surface text-xs sm:text-sm font-bold rounded-2xl shadow-sm transition-colors disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+            >
+              {submittingSetup ? 'Đang kích hoạt...' : 'Bắt đầu ngay'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. Trạng thái Dashboard chính
+  return (
+    <div className="font-display rounded-3xl bg-theme-page p-4 sm:p-6 border border-theme-line space-y-6">
+      {/* 3.1. Hero Banner: Hành trình phục hồi của mẹ là trung tâm */}
+      <section className="bg-theme-surface p-5 sm:p-6 rounded-2xl border border-theme-line shadow-sm space-y-4">
+        <div className="flex flex-col gap-4">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-theme-brand-soft text-theme-brand text-xs font-bold">
+              <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Hồi phục hậu sản</span>
+            </div>
+            <h1 className="text-xl sm:text-2xl font-bold text-theme-ink">
+              Ngày hậu sản thứ {daysPostpartum}
+            </h1>
+            <p className="text-xs sm:text-sm text-theme-muted font-medium leading-relaxed max-w-2xl">
+              Đồng hành hồi phục thể chất, tinh thần và nhịp chăm sóc bé sau sinh.
+            </p>
+          </div>
+
+          {/* Ba chỉ số trạng thái phục hồi */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 w-full">
+            <div className="rounded-2xl border border-theme-line bg-theme-page p-3.5 space-y-1">
+              <span className="text-xs font-semibold text-theme-muted block">Giai đoạn</span>
+              <p className="text-xs sm:text-sm font-bold text-theme-ink leading-snug">{currentPhase}</p>
+            </div>
+            <div className="rounded-2xl border border-theme-line bg-theme-page p-3.5 space-y-1">
+              <span className="text-xs font-semibold text-theme-muted block">Phục hồi</span>
+              <p className="text-xs sm:text-sm font-bold text-theme-ink leading-snug">{recoveryPhase}</p>
+            </div>
+            <div className="rounded-2xl border border-theme-line bg-theme-page p-3.5 space-y-1 col-span-2 sm:col-span-1">
+              <span className="text-xs font-semibold text-theme-muted block">EPDS tâm lý</span>
+              <p className="text-xs sm:text-sm font-bold text-theme-ink leading-snug">
                 {latestEpdsScore === null ? 'Chưa có điểm' : `${latestEpdsScore}/30`}
               </p>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      {latestEpdsScore >= 13 && (
-        <div className="bg-pink-50 border-l-4 border-pink-400 p-4 rounded-2xl flex items-start gap-3 text-pink-850 dark:bg-pink-950/20 dark:border-pink-900/40 dark:text-pink-300 animate-slide-in">
-          <AlertTriangle className="w-5 h-5 text-pink-500 shrink-0 mt-0.5" />
+      {/* 3.2. Cảnh báo tâm lý EPDS nếu điểm >= 13 */}
+      {latestEpdsScore !== null && latestEpdsScore >= 13 && (
+        <section
+          role="alert"
+          aria-label="Cảnh báo trầm cảm sau sinh"
+          className="rounded-2xl border border-status-warn-line bg-status-warn-bg p-4 sm:p-5 text-status-warn-text space-y-2 flex items-start gap-3"
+        >
+          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5 text-status-warn-text" aria-hidden="true" />
           <div className="space-y-1">
-            <h4 className="text-xs font-bold uppercase tracking-wider">Cảnh báo trầm cảm sau sinh (EPDS từ 13 điểm)</h4>
-            <p className="text-[11px] leading-relaxed font-semibold">
+            <h2 className="text-sm font-bold">Cảnh báo trầm cảm sau sinh (EPDS từ 13 điểm)</h2>
+            <p className="text-xs sm:text-sm font-medium leading-relaxed">
               Điểm EPDS cho thấy mami đang chịu áp lực tâm lý lớn. Đừng chịu đựng một mình, hãy kết nối với bác sĩ tâm lý của Mom Ơi! hoặc liên hệ Hotline hỗ trợ: 1800 599 920.
             </p>
           </div>
-        </div>
+        </section>
       )}
 
+      {/* 3.3. Lưới nội dung 2 cột: Cột trái (Vận động, cảm xúc) - Cột phải (Tinh thần, chăm sóc, an toàn) */}
       <div className="grid grid-cols-1 xl:grid-cols-[1.05fr_0.95fr] gap-6 items-start">
+        {/* CỘT TRÁI */}
         <div className="space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-pink-100/50 dark:border-gray-700/50 shadow-sm space-y-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-extrabold text-gray-800 dark:text-white uppercase tracking-wider">
-                  Theo dõi cảm xúc hôm nay
-                </h3>
-                <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
-                  Chọn trạng thái gần nhất với cảm xúc hiện tại của mami.
-                </p>
-              </div>
-              <Smile className="w-5 h-5 text-momPink" />
-            </div>
-
-            <div className="grid gap-2 pt-1 sm:[grid-template-columns:repeat(5,minmax(0,1fr))] [grid-template-columns:repeat(2,minmax(0,1fr))]">
-              {MOODS.map((mood) => (
-                <button
-                  key={mood.score}
-                  onClick={() => logMood(mood.score, mood.label)}
-                  className={`group min-h-[82px] rounded-2xl border flex flex-col items-center justify-center gap-1.5 px-2 transition-all duration-300 ${
-                    selectedMood === mood.score
-                      ? 'border-momPink bg-pink-50 shadow-sm scale-[1.02]'
-                      : 'border-pink-100/60 bg-pink-50/20 hover:border-pink-200 hover:bg-pink-50/60'
-                  }`}
-                  title={mood.label}
-                >
-                  <span className="text-2xl transition-transform group-hover:scale-110">{mood.emoji}</span>
-                  <span className="text-[10px] font-bold text-gray-500 text-center leading-tight">{mood.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-pink-100/50 dark:border-gray-700/50 shadow-sm space-y-4">
-            <div className="flex items-center gap-2 pb-2 border-b border-pink-50 dark:border-gray-700/50">
-              <Activity className="w-5 h-5 text-momPurple" />
-              <div>
-                <h3 className="text-sm font-extrabold text-gray-850 dark:text-white uppercase tracking-wider">
-                  Lộ trình vận động hồi phục
-                </h3>
-                <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
-                  Tập luyện an toàn theo từng mốc thời gian hồi sức.
-                </p>
+          {/* Lộ trình vận động hồi phục theo tuần */}
+          <section className="bg-theme-surface rounded-2xl p-5 sm:p-6 border border-theme-line shadow-sm space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-theme-line">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center shrink-0">
+                  <Activity className="w-5 h-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-theme-ink">Lộ trình vận động hồi phục</h2>
+                  <p className="text-xs text-theme-muted font-medium">Tập luyện an toàn theo từng mốc thời gian hồi sức.</p>
+                </div>
               </div>
             </div>
 
             <div className="space-y-4">
               {[
-                { week: 'Tuần 1', title: 'Kegel & hít thở cơ hoành', desc: 'Hồi phục cơ sàn chậu và kích hoạt tuần hoàn máu sâu vùng chậu.', unlock: daysPostpartum >= 0 },
-                { week: 'Tuần 2-5', title: 'Đi bộ nhẹ nhàng', desc: 'Vận động cường độ thấp, hỗ trợ lưu thông máu và giảm căng cứng cơ.', unlock: daysPostpartum >= 7 },
-                { week: 'Tuần 6+', title: 'Bài tập cơ bụng sâu', desc: 'Tập trung core nhẹ, chỉ bắt đầu khi cơ thể đã sẵn sàng.', unlock: daysPostpartum >= 42 },
+                {
+                  week: 'Tuần 1',
+                  title: 'Kegel & hít thở cơ hoành',
+                  desc: 'Hồi phục cơ sàn chậu và kích hoạt tuần hoàn máu sâu vùng chậu.',
+                  unlock: daysPostpartum >= 0,
+                },
+                {
+                  week: 'Tuần 2-5',
+                  title: 'Đi bộ nhẹ nhàng',
+                  desc: 'Vận động cường độ thấp, hỗ trợ lưu thông máu và giảm căng cứng cơ.',
+                  unlock: daysPostpartum >= 7,
+                },
+                {
+                  week: 'Tuần 6+',
+                  title: 'Bài tập cơ bụng sâu',
+                  desc: 'Tập trung core nhẹ, chỉ bắt đầu khi cơ thể đã sẵn sàng.',
+                  unlock: daysPostpartum >= 42,
+                },
               ].map((item, index) => (
-                <div key={item.week} className={`flex gap-3 relative ${index !== 2 ? 'pb-4' : ''}`}>
-                  {index !== 2 && <div className="absolute left-4 top-9 bottom-0 w-0.5 bg-pink-100 dark:bg-gray-700" />}
-                  <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-[10px] shrink-0 border ${
-                    item.unlock
-                      ? 'bg-momPink-light/80 text-momPink-dark border-pink-250'
-                      : 'bg-gray-100 text-gray-400 border-gray-200'
-                  }`}>
-                    {item.week}
+                <div key={item.week} className="flex items-start gap-3 relative">
+                  {index !== 2 && (
+                    <div className="absolute left-4 top-9 bottom-0 w-0.5 bg-theme-line" aria-hidden="true" />
+                  )}
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 border transition-colors ${
+                      item.unlock
+                        ? 'bg-theme-brand-soft text-theme-brand border-theme-brand'
+                        : 'bg-theme-sidebar text-theme-muted border-theme-line'
+                    }`}
+                  >
+                    {index + 1}
                   </div>
-                  <div>
-                    <div className="flex items-center gap-1.5">
-                      <h4 className={`text-xs font-extrabold ${item.unlock ? 'text-gray-800 dark:text-white' : 'text-gray-450 dark:text-gray-500'}`}>
-                        {item.title}
-                      </h4>
+                  <div className="space-y-1 flex-1 min-w-0 pb-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-bold text-theme-muted">{item.week}:</span>
+                      <h3 className="text-xs sm:text-sm font-bold text-theme-ink">{item.title}</h3>
                       {!item.unlock && (
-                        <span className="text-[8px] bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded-full font-bold">Khóa</span>
+                        <span className="text-xs bg-theme-sidebar border border-theme-line text-theme-muted px-2 py-0.5 rounded-md font-semibold">
+                          Chưa đến mốc
+                        </span>
                       )}
                     </div>
-                    <p className="text-[10px] text-gray-550 dark:text-gray-400 font-semibold mt-0.5 leading-relaxed">
-                      {item.desc}
-                    </p>
+                    <p className="text-xs text-theme-muted font-medium leading-relaxed">{item.desc}</p>
                   </div>
                 </div>
               ))}
             </div>
 
-            {exerciseSchedule && (
-              <div className="mt-3 p-3 bg-momPurple-light/25 border border-momPurple/20 rounded-2xl">
-                <span className="text-[8px] font-black bg-momPurple-dark text-white px-2 py-0.5 rounded-full uppercase">Đề xuất hôm nay</span>
-                <p className="text-xs font-semibold text-momPurple-dark mt-2 leading-relaxed">
+            {/* Đề xuất vận động hôm nay từ API */}
+            {exerciseSchedule?.activeExercise && (
+              <div className="rounded-2xl p-4 bg-theme-page border border-theme-line space-y-1.5">
+                <span className="inline-block text-xs font-bold text-theme-brand bg-theme-brand-soft px-2.5 py-0.5 rounded-md">
+                  Đề xuất hôm nay
+                </span>
+                <p className="text-xs sm:text-sm font-semibold text-theme-ink leading-relaxed">
                   {exerciseSchedule.activeExercise}
                 </p>
               </div>
             )}
-          </div>
+          </section>
 
-          <div className="bg-gradient-to-br from-white via-pink-50/45 to-violet-50/45 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 rounded-3xl p-5 border border-pink-100/60 dark:border-gray-700/50 shadow-sm space-y-4">
+          {/* Theo dõi cảm xúc hôm nay */}
+          <section className="bg-theme-surface rounded-2xl p-5 sm:p-6 border border-theme-line shadow-sm space-y-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-sm font-extrabold text-gray-850 dark:text-white uppercase tracking-wider">
-                  Nhịp hồi phục của mami
-                </h3>
-                <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
-                  Những mốc nhỏ giúp một ngày hậu sản nhẹ hơn.
+                <h2 className="text-base font-bold text-theme-ink">Theo dõi cảm xúc hôm nay</h2>
+                <p className="text-xs text-theme-muted font-medium mt-0.5">
+                  Chọn trạng thái gần nhất với cảm xúc hiện tại của mami.
                 </p>
               </div>
-              <Heart className="w-5 h-5 text-momPink fill-momPink/20" />
+              <div className="w-8 h-8 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center shrink-0">
+                <Smile className="w-4 h-4" aria-hidden="true" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 pt-1">
+              {MOODS.map((mood) => {
+                const MoodIcon = mood.icon;
+                const isSelected = selectedMood === mood.score;
+                return (
+                  <button
+                    key={mood.score}
+                    type="button"
+                    onClick={() => logMood(mood.score, mood.label)}
+                    className={`min-h-[76px] rounded-2xl border p-3 flex flex-col items-center justify-center gap-1.5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+                      isSelected
+                        ? 'border-theme-brand bg-theme-brand text-theme-surface'
+                        : 'border-theme-line bg-theme-page hover:bg-theme-sidebar text-theme-ink'
+                    }`}
+                    title={mood.label}
+                  >
+                    <MoodIcon className={`w-5 h-5 ${isSelected ? 'text-theme-surface' : 'text-theme-brand'}`} aria-hidden="true" />
+                    <span className="text-xs font-bold text-center leading-tight">{mood.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* Nhịp hồi phục của mami (Nghỉ ngơi, nước, vận động) */}
+          <section className="bg-theme-surface rounded-2xl p-5 sm:p-6 border border-theme-line shadow-sm space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-base font-bold text-theme-ink">Nhịp hồi phục của mami</h2>
+                <p className="text-xs text-theme-muted font-medium mt-0.5">
+                  Những mốc nhỏ tham khảo giúp một ngày hậu sản nhẹ nhàng hơn.
+                </p>
+              </div>
+              <div className="w-8 h-8 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center shrink-0">
+                <Heart className="w-4 h-4" aria-hidden="true" />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
-                { title: 'Nghỉ ngơi', value: '2-3', note: 'giấc ngắn' },
-                { title: 'Uống nước', value: '2L', note: 'chia đều ngày' },
-                { title: 'Vận động', value: '10-15', note: 'phút nhẹ' },
-              ].map((item) => (
-                <div key={item.title} className="rounded-2xl bg-white/80 dark:bg-gray-900/40 border border-pink-100/70 dark:border-gray-700 p-3">
-                  <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">{item.title}</p>
-                  <p className="text-lg font-black text-gray-900 dark:text-white mt-1">{item.value}</p>
-                  <p className="text-[10px] font-semibold text-gray-500">{item.note}</p>
-                </div>
-              ))}
+                { title: 'Nghỉ ngơi', value: '2-3', note: 'giấc ngắn', icon: Moon },
+                { title: 'Uống nước', value: '2L', note: 'chia đều ngày', icon: Droplets },
+                { title: 'Vận động', value: '10-15', note: 'phút nhẹ', icon: Footprints },
+              ].map((item) => {
+                const ItemIcon = item.icon;
+                return (
+                  <div key={item.title} className="rounded-2xl bg-theme-page border border-theme-line p-3.5 space-y-1">
+                    <div className="flex items-center justify-between text-theme-muted">
+                      <span className="text-xs font-semibold">{item.title}</span>
+                      <ItemIcon className="w-3.5 h-3.5" aria-hidden="true" />
+                    </div>
+                    <p className="text-lg font-bold text-theme-ink">{item.value}</p>
+                    <p className="text-xs text-theme-muted font-medium">{item.note}</p>
+                  </div>
+                );
+              })}
             </div>
 
-            <div className="rounded-2xl bg-white/70 dark:bg-gray-900/40 border border-violet-100 dark:border-gray-700 p-3 flex items-start gap-2.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-              <p className="text-[11px] text-gray-600 dark:text-gray-300 font-semibold leading-relaxed">
+            <div className="rounded-2xl bg-theme-page border border-theme-line p-3.5 flex items-start gap-2.5">
+              <CheckCircle2 className="w-4 h-4 text-status-ok shrink-0 mt-0.5" aria-hidden="true" />
+              <p className="text-xs text-theme-ink font-medium leading-relaxed">
                 Nếu hôm nay mami chỉ làm được một việc, hãy ưu tiên ăn một bữa đủ chất và ngủ bù khi bé ngủ.
               </p>
             </div>
-          </div>
+          </section>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-6">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-pink-100/50 dark:border-gray-700/50 shadow-sm space-y-4">
+        {/* CỘT PHẢI */}
+        <div className="space-y-6">
+          {/* Đánh giá sức khỏe tinh thần (EPDS Gate) */}
+          <section className="bg-theme-surface rounded-2xl p-5 sm:p-6 border border-theme-line shadow-sm space-y-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-sm font-extrabold text-gray-850 dark:text-white uppercase tracking-wider">
-                  Đánh giá sức khỏe tinh thần
-                </h3>
-                <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
+                <h2 className="text-base font-bold text-theme-ink">Đánh giá sức khỏe tinh thần</h2>
+                <p className="text-xs text-theme-muted font-medium mt-0.5">
                   Tầm soát EPDS và theo dõi dấu hiệu cần hỗ trợ.
                 </p>
               </div>
-              <ShieldCheck className="w-5 h-5 text-emerald-500" />
+              <div className="w-8 h-8 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center shrink-0">
+                <ShieldCheck className="w-4 h-4 text-status-ok" aria-hidden="true" />
+              </div>
             </div>
 
             <TierGate requiredTier="MomHienDai">
               <button
+                type="button"
                 onClick={() => navigate('/postpartum/epds')}
-                className="w-full flex items-center justify-between p-4 bg-gradient-to-tr from-pink-50/70 to-pink-100/30 hover:from-pink-100/55 border border-pink-200/60 rounded-2xl text-left transition shadow-sm"
+                className="w-full flex items-center justify-between p-4 bg-theme-page hover:bg-theme-sidebar border border-theme-line rounded-2xl text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand group"
               >
                 <div className="space-y-1 pr-3">
-                  <h4 className="text-xs font-extrabold text-pink-700 dark:text-pink-300">Tầm soát trầm cảm EPDS</h4>
-                  <p className="text-[10px] text-gray-500 font-semibold leading-relaxed">
-                    Khảo sát 10 câu hỏi chuẩn y khoa để tự đánh giá sức khỏe tâm lý sau sinh.
+                  <h3 className="text-xs sm:text-sm font-bold text-theme-ink group-hover:text-theme-brand transition-colors">
+                    Tầm soát trầm cảm sau sinh (EPDS)
+                  </h3>
+                  <p className="text-xs text-theme-muted font-medium leading-relaxed">
+                    Khảo sát 10 câu hỏi để tự đánh giá sức khỏe tâm lý sau sinh.
                   </p>
                 </div>
-                <ArrowRight className="w-5 h-5 text-pink-500 shrink-0" />
+                <ArrowRight className="w-4 h-4 text-theme-brand shrink-0" aria-hidden="true" />
               </button>
             </TierGate>
-          </div>
+          </section>
 
-          <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-pink-100/50 dark:border-gray-700/50 shadow-sm space-y-4">
-            <div className="flex items-center gap-2">
-              <CalendarCheck className="w-5 h-5 text-momPink" />
-              <h3 className="text-sm font-extrabold text-gray-850 dark:text-white uppercase tracking-wider">
-                Nhắc việc chăm sóc hôm nay
-              </h3>
+          {/* Nhắc việc chăm sóc hôm nay */}
+          <section className="bg-theme-surface rounded-2xl p-5 sm:p-6 border border-theme-line shadow-sm space-y-4">
+            <div className="flex items-center gap-2.5 pb-2 border-b border-theme-line">
+              <div className="w-8 h-8 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center shrink-0">
+                <CalendarCheck className="w-4 h-4" aria-hidden="true" />
+              </div>
+              <h2 className="text-base font-bold text-theme-ink">Nhắc việc chăm sóc hôm nay</h2>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {DAILY_CARE_ITEMS.map((item) => (
-                <div key={item} className="flex items-start gap-2.5 rounded-2xl bg-pink-50/45 border border-pink-100/60 p-3">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                  <p className="text-[11px] text-gray-600 font-semibold leading-relaxed">{item}</p>
+                <div key={item} className="flex items-start gap-2.5 rounded-2xl bg-theme-page border border-theme-line p-3.5">
+                  <CheckCircle2 className="w-4 h-4 text-status-ok shrink-0 mt-0.5" aria-hidden="true" />
+                  <p className="text-xs sm:text-sm text-theme-ink font-medium leading-relaxed">{item}</p>
                 </div>
               ))}
             </div>
-          </div>
+          </section>
 
-          <div className="bg-gradient-to-br from-violet-50 via-white to-pink-50 dark:from-gray-800 dark:via-gray-800 dark:to-gray-800 rounded-3xl p-5 border border-violet-100/70 dark:border-gray-700/50 shadow-sm space-y-4">
-            <div className="flex items-center gap-2">
-              <Baby className="w-5 h-5 text-momPurple" />
-              <h3 className="text-sm font-extrabold text-gray-850 dark:text-white uppercase tracking-wider">
-                Theo dõi bé yêu
-              </h3>
+          {/* Theo dõi bé yêu (Tham khảo nhịp sinh hoạt) */}
+          <section className="bg-theme-surface rounded-2xl p-5 sm:p-6 border border-theme-line shadow-sm space-y-4">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center shrink-0">
+                <Baby className="w-4 h-4" aria-hidden="true" />
+              </div>
+              <h2 className="text-base font-bold text-theme-ink">Theo dõi bé yêu (Tham khảo)</h2>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-2xl bg-white/80 border border-violet-100 p-3">
-                <p className="text-[10px] font-black uppercase text-gray-400">Cữ bú</p>
-                <p className="text-lg font-black text-gray-850 mt-1">6-8</p>
-                <p className="text-[9px] text-gray-400 font-semibold">lần/ngày</p>
+              <div className="rounded-2xl bg-theme-page border border-theme-line p-3.5 space-y-1">
+                <span className="text-xs font-semibold text-theme-muted block">Cữ bú</span>
+                <p className="text-lg font-bold text-theme-ink">6-8</p>
+                <p className="text-xs text-theme-muted font-medium">lần/ngày</p>
               </div>
-              <div className="rounded-2xl bg-white/80 border border-violet-100 p-3">
-                <p className="text-[10px] font-black uppercase text-gray-400">Tã ướt</p>
-                <p className="text-lg font-black text-gray-850 mt-1">5+</p>
-                <p className="text-[9px] text-gray-400 font-semibold">lần/ngày</p>
+              <div className="rounded-2xl bg-theme-page border border-theme-line p-3.5 space-y-1">
+                <span className="text-xs font-semibold text-theme-muted block">Tã ướt</span>
+                <p className="text-lg font-bold text-theme-ink">5+</p>
+                <p className="text-xs text-theme-muted font-medium">lần/ngày</p>
               </div>
             </div>
-            <p className="text-[11px] text-gray-500 font-semibold leading-relaxed">
+            <p className="text-xs text-theme-muted font-medium leading-relaxed">
               Nếu bé bú kém, ngủ li bì, sốt hoặc vàng da tăng nhanh, mami nên liên hệ bác sĩ để được hướng dẫn kịp thời.
             </p>
-          </div>
+          </section>
 
-          <div className="rounded-3xl p-5 border border-emerald-100 bg-emerald-50/60 shadow-sm flex items-start gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-white text-emerald-600 flex items-center justify-center shrink-0">
-              <Stethoscope className="w-5 h-5" />
+          {/* Khối Cần hỗ trợ ngay? (An toàn y tế) */}
+          <section className="rounded-2xl p-4 sm:p-5 border border-status-warn-line bg-status-warn-bg text-status-warn-text shadow-sm flex items-start gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-theme-surface text-status-warn-text border border-status-warn-line flex items-center justify-center shrink-0">
+              <Stethoscope className="w-5 h-5" aria-hidden="true" />
             </div>
-            <div>
-              <h3 className="text-sm font-extrabold text-gray-850 uppercase tracking-wider">Cần hỗ trợ ngay?</h3>
-              <p className="text-[11px] text-gray-600 font-semibold leading-relaxed mt-1">
+            <div className="space-y-1">
+              <h2 className="text-xs sm:text-sm font-bold">Cần hỗ trợ ngay?</h2>
+              <p className="text-xs sm:text-sm font-medium leading-relaxed">
                 Khi có chảy máu nhiều, sốt cao, đau tăng nhanh hoặc ý nghĩ làm hại bản thân, hãy gọi người thân và liên hệ cơ sở y tế gần nhất.
               </p>
             </div>
-          </div>
+          </section>
         </div>
       </div>
     </div>
