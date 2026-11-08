@@ -140,6 +140,13 @@ export default function LandingPage() {
     applyBabyThemeToDom(null);
   }, []);
 
+  // Bấm mục lục thì cuộn mượt tới phần đó. Chỉ bật khi người dùng không yêu cầu giảm chuyển động.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.classList.add('motion-safe:scroll-smooth');
+    return () => root.classList.remove('motion-safe:scroll-smooth');
+  }, []);
+
   // Thanh bên dính: tô đậm chặng đang nằm giữa màn hình (chỉ đổi state khi đổi chặng)
   useEffect(() => {
     const nodes = JOURNEY_CHAPTERS.map((chapter) => document.getElementById(`chang-${chapter.id}`)).filter(Boolean);
@@ -264,20 +271,20 @@ export default function LandingPage() {
                   Lịch khám, dinh dưỡng chuẩn WHO và theo dõi phục hồi, gói trong một cuốn sổ tay dễ mở bằng một tay.
                 </p>
 
-                <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                   <button
                     type="button"
                     onClick={() => navigate(user ? '/dashboard' : '/register')}
-                    className="inline-flex min-h-[48px] items-center justify-center gap-2 whitespace-nowrap rounded-full bg-theme-brand px-7 py-3 text-base font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
+                    className="inline-flex min-h-[48px] items-center justify-center gap-2 whitespace-nowrap rounded-full bg-theme-brand px-6 py-3 text-base font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
                   >
-                    <span>{user ? 'Mở bàn đồng hành của mẹ' : 'Tạo sổ tay miễn phí'}</span>
+                    <span>{user ? 'Vào sổ tay của mẹ' : 'Tạo sổ tay miễn phí'}</span>
                     <ChevronRight className="h-5 w-5" aria-hidden="true" />
                   </button>
                   <a
                     href="#hanh-trinh"
-                    className="inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-full border border-theme-line bg-theme-surface px-6 py-3 text-base font-semibold text-theme-ink transition-colors hover:border-theme-brand/40 hover:bg-theme-sidebar focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
+                    className="inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-full border border-theme-line bg-theme-surface px-5 py-3 text-base font-semibold text-theme-ink transition-colors hover:border-theme-brand/40 hover:bg-theme-sidebar focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
                   >
-                    Khám phá 4 giai đoạn
+                    Xem 4 giai đoạn
                   </a>
                 </div>
               </div>
@@ -535,7 +542,7 @@ export default function LandingPage() {
                 onClick={() => navigate(user ? '/dashboard' : '/register')}
                 className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-theme-brand px-7 py-3 text-base font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
               >
-                <span>{user ? 'Tiếp tục chăm sóc' : 'Tạo sổ tay miễn phí'}</span>
+                <span>{user ? 'Vào sổ tay của mẹ' : 'Tạo sổ tay miễn phí'}</span>
                 <ChevronRight className="h-5 w-5" />
               </button>
             </div>
