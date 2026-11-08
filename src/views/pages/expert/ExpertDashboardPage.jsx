@@ -35,7 +35,7 @@ function RecipeTable({ title, icon, recipes, onApprove, onReject }) {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <span className="inline-flex items-center gap-1.5 text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full font-bold">
+          <span className="inline-flex items-center gap-1.5 text-xs bg-status-ok-bg text-status-ok-text border border-status-ok-line px-3 py-1 rounded-full font-bold">
             <BadgeCheck className="w-3.5 h-3.5" aria-hidden="true" />
             <span>{approved.length} đã duyệt</span>
           </span>
@@ -77,7 +77,7 @@ function RecipeTable({ title, icon, recipes, onApprove, onReject }) {
                   <tr
                     key={item.id}
                     className={`transition-colors hover:bg-theme-page/50 ${
-                      isApproved || localApproved ? "bg-emerald-50/20" : ""
+                      isApproved || localApproved ? "bg-status-ok-bg/20" : ""
                     }`}
                   >
                     <td className="px-5 py-4 text-xs font-bold text-theme-muted">{idx + 1}</td>
@@ -107,12 +107,12 @@ function RecipeTable({ title, icon, recipes, onApprove, onReject }) {
 
                     <td className="px-5 py-4 text-center whitespace-nowrap">
                       {isApproved || localApproved ? (
-                        <span className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-800 font-bold px-2.5 py-1 rounded-full border border-emerald-200">
+                        <span className="inline-flex items-center gap-1 text-xs bg-status-ok-bg text-status-ok-text font-bold px-2.5 py-1 rounded-full border border-status-ok-line">
                           <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
                           <span>Đã duyệt</span>
                         </span>
                       ) : localRejected ? (
-                        <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-800 font-bold px-2.5 py-1 rounded-full border border-red-200">
+                        <span className="inline-flex items-center gap-1 text-xs bg-status-danger-bg text-status-danger-text font-bold px-2.5 py-1 rounded-full border border-status-danger-line">
                           <XCircle className="w-3.5 h-3.5" aria-hidden="true" />
                           <span>Đã từ chối</span>
                         </span>
@@ -130,7 +130,7 @@ function RecipeTable({ title, icon, recipes, onApprove, onReject }) {
                           <button
                             type="button"
                             onClick={() => onApprove(item.id)}
-                            className="min-h-[44px] px-3.5 py-2 bg-status-ok hover:bg-emerald-800 text-white rounded-2xl text-xs font-bold transition-colors inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+                            className="min-h-[44px] px-3.5 py-2 bg-status-ok hover:bg-status-ok-text text-theme-surface rounded-2xl text-xs font-bold transition-colors inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
                           >
                             <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
                             <span>Duyệt</span>
@@ -138,7 +138,7 @@ function RecipeTable({ title, icon, recipes, onApprove, onReject }) {
                           <button
                             type="button"
                             onClick={() => onReject(item)}
-                            className="min-h-[44px] px-3.5 py-2 bg-red-50 text-red-800 hover:bg-red-100 rounded-2xl text-xs font-bold transition-colors border border-red-200 inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
+                            className="min-h-[44px] px-3.5 py-2 bg-status-danger-bg text-status-danger-text hover:bg-status-danger-bg rounded-2xl text-xs font-bold transition-colors border border-status-danger-line inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger-text"
                           >
                             <XCircle className="w-3.5 h-3.5" aria-hidden="true" />
                             <span>Từ chối</span>
@@ -398,7 +398,7 @@ export default function ExpertDashboardPage() {
         >
           <div className="bg-theme-surface rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl border border-theme-line">
             <div className="flex items-center justify-between gap-3">
-              <h3 id="reject-recipe-title" className="font-bold text-base text-red-800 flex items-center gap-2">
+              <h3 id="reject-recipe-title" className="font-bold text-base text-status-danger-text flex items-center gap-2">
                 <XCircle className="w-5 h-5" aria-hidden="true" />
                 <span>Từ chối công thức món ăn</span>
               </h3>

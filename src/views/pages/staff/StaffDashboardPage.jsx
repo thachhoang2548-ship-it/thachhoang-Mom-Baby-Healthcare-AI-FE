@@ -257,7 +257,7 @@ export default function StaffDashboardPage() {
             </div>
           ) : riskUsers.length === 0 ? (
             <div className="text-center py-16 bg-theme-surface rounded-3xl border border-theme-line space-y-2">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-status-ok border border-emerald-200 flex items-center justify-center mx-auto">
+              <div className="w-12 h-12 rounded-2xl bg-status-ok-bg text-status-ok border border-status-ok-line flex items-center justify-center mx-auto">
                 <UserCheck className="w-6 h-6" aria-hidden="true" />
               </div>
               <h3 className="text-base font-bold text-theme-ink">Hệ thống đang ở trạng thái ổn định</h3>
@@ -273,7 +273,7 @@ export default function StaffDashboardPage() {
                   className="bg-theme-surface rounded-3xl p-5 sm:p-6 border border-theme-line shadow-sm space-y-4"
                 >
                   <div className="flex justify-between items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 text-xs bg-red-50 border border-red-200 text-red-800 font-bold px-3 py-1 rounded-full">
+                    <span className="inline-flex items-center gap-1.5 text-xs bg-status-danger-bg border border-status-danger-line text-status-danger-text font-bold px-3 py-1 rounded-full">
                       <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>{r.severity || "Ưu tiên cao"}</span>
                     </span>
@@ -311,7 +311,7 @@ export default function StaffDashboardPage() {
                     <button
                       type="button"
                       onClick={() => handleResolve(r.alertId || r.id, r.fullName || r.email)}
-                      className="min-h-[44px] px-4 py-2.5 bg-theme-page hover:bg-emerald-50 border border-theme-line text-theme-ink font-bold text-xs sm:text-sm rounded-2xl transition-colors inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+                      className="min-h-[44px] px-4 py-2.5 bg-theme-page hover:bg-status-ok-bg border border-theme-line text-theme-ink font-bold text-xs sm:text-sm rounded-2xl transition-colors inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
                     >
                       <CheckCircle className="w-4 h-4 text-status-ok" aria-hidden="true" />
                       <span>Đã xử lý</span>
@@ -334,7 +334,7 @@ export default function StaffDashboardPage() {
 
           {weaningRequests.length === 0 ? (
             <div className="text-center py-16 bg-theme-surface rounded-3xl border border-theme-line space-y-2">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-status-ok border border-emerald-200 flex items-center justify-center mx-auto">
+              <div className="w-12 h-12 rounded-2xl bg-status-ok-bg text-status-ok border border-status-ok-line flex items-center justify-center mx-auto">
                 <CheckCircle className="w-6 h-6" aria-hidden="true" />
               </div>
               <h3 className="text-base font-bold text-theme-ink">Không có yêu cầu chờ duyệt</h3>
@@ -371,7 +371,7 @@ export default function StaffDashboardPage() {
                     <button
                       type="button"
                       onClick={() => handleApproveWeaningFood(req.id, req.foodName, req.isRealApi)}
-                      className="flex-1 md:flex-initial min-h-[44px] px-4 py-2.5 bg-status-ok hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm rounded-2xl transition-colors inline-flex items-center justify-center gap-1.5"
+                      className="flex-1 md:flex-initial min-h-[44px] px-4 py-2.5 bg-status-ok hover:bg-status-ok-text text-theme-surface font-bold text-xs sm:text-sm rounded-2xl transition-colors inline-flex items-center justify-center gap-1.5"
                     >
                       <ThumbsUp className="w-4 h-4" aria-hidden="true" />
                       <span>Chấp nhận</span>
@@ -379,7 +379,7 @@ export default function StaffDashboardPage() {
                     <button
                       type="button"
                       onClick={() => handleRejectWeaningFood(req.id, req.foodName, req.isRealApi)}
-                      className="flex-1 md:flex-initial min-h-[44px] px-4 py-2.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-800 font-bold text-xs sm:text-sm rounded-2xl transition-colors inline-flex items-center justify-center gap-1.5"
+                      className="flex-1 md:flex-initial min-h-[44px] px-4 py-2.5 bg-status-danger-bg hover:bg-status-danger-bg border border-status-danger-line text-status-danger-text font-bold text-xs sm:text-sm rounded-2xl transition-colors inline-flex items-center justify-center gap-1.5"
                     >
                       <ThumbsDown className="w-4 h-4" aria-hidden="true" />
                       <span>Từ chối</span>

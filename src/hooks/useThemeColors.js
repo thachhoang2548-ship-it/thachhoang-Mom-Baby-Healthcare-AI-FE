@@ -4,6 +4,8 @@ import { useSyncExternalStore } from 'react';
 // Hook này đọc các token theme hiện hành và tự cập nhật khi đổi sáng/tối hoặc đổi theme bé.
 const TOKENS = {
   brand: '--c-brand',
+  brandSoft: '--c-brand-soft',
+  info: '--c-info',
   ink: '--c-ink',
   muted: '--c-muted',
   line: '--c-line',
@@ -17,6 +19,8 @@ const TOKENS = {
 // Giá trị theme sáng mặc định, dùng khi chưa đọc được CSS
 const FALLBACK = {
   brand: [171, 66, 86],
+  brandSoft: [248, 225, 229],
+  info: [46, 109, 147],
   ink: [43, 32, 36],
   muted: [107, 91, 96],
   line: [234, 223, 218],

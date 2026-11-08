@@ -35,10 +35,11 @@ import {
   YAxis,
 } from "recharts";
 import toast from "react-hot-toast";
-
-const PLAN_COLORS = ["#AB4256", "#4F7F66", "#2E6D93", "#D9962B", "#6B5B60"];
+import { useThemeColors } from "../../../hooks/useThemeColors";
 
 export default function AdminDashboardPage() {
+  const colors = useThemeColors();
+  const planColors = [colors.brand, colors.ok, colors.info, colors.warn, colors.muted];
   const [activeTab, setActiveTab] = useState("users");
   const [users, setUsers] = useState([]);
   const [riskUsers, setRiskUsers] = useState([]);
@@ -318,7 +319,7 @@ export default function AdminDashboardPage() {
                     label: "Tổng doanh thu",
                     value: formatMoney(revenueSummary.totalRevenue),
                     icon: DollarSign,
-                    iconBox: "bg-emerald-50 text-status-ok border border-emerald-200",
+                    iconBox: "bg-status-ok-bg text-status-ok border border-status-ok-line",
                   },
                   {
                     label: "Doanh thu tháng này",
@@ -378,17 +379,17 @@ export default function AdminDashboardPage() {
                     ) : (
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={revenueChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EADFDA" />
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={colors.line} />
                           <XAxis
                             dataKey="label"
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fontSize: 12, fill: "#6B5B60", fontWeight: 600 }}
+                            tick={{ fontSize: 12, fill: colors.muted, fontWeight: 600 }}
                           />
                           <YAxis
                             axisLine={false}
                             tickLine={false}
-                            tick={{ fontSize: 12, fill: "#6B5B60", fontWeight: 600 }}
+                            tick={{ fontSize: 12, fill: colors.muted, fontWeight: 600 }}
                             tickFormatter={(value) => `${Number(value) / 1000}k`}
                             width={46}
                           />
@@ -397,17 +398,17 @@ export default function AdminDashboardPage() {
                             labelFormatter={(label) => `Ngày ${label}`}
                             contentStyle={{
                               borderRadius: 16,
-                              border: "1px solid #EADFDA",
-                              backgroundColor: "#FFFFFF",
-                              color: "#2B2024",
+                              border: `1px solid ${colors.line}`,
+                              backgroundColor: colors.surface,
+                              color: colors.ink,
                             }}
                           />
                           <Area
                             type="monotone"
                             dataKey="revenue"
-                            stroke="#AB4256"
+                            stroke={colors.brand}
                             strokeWidth={2.5}
-                            fill="#F8E1E5"
+                            fill={colors.brandSoft}
                             fillOpacity={0.75}
                           />
                         </AreaChart>
@@ -445,7 +446,7 @@ export default function AdminDashboardPage() {
                             {planChartData.map((entry, index) => (
                               <Cell
                                 key={entry.name}
-                                fill={PLAN_COLORS[index % PLAN_COLORS.length]}
+                                fill={planColors[index % planColors.length]}
                               />
                             ))}
                           </Pie>
@@ -453,9 +454,9 @@ export default function AdminDashboardPage() {
                             formatter={(value, name) => [formatMoney(value), name]}
                             contentStyle={{
                               borderRadius: 16,
-                              border: "1px solid #EADFDA",
-                              backgroundColor: "#FFFFFF",
-                              color: "#2B2024",
+                              border: `1px solid ${colors.line}`,
+                              backgroundColor: colors.surface,
+                              color: colors.ink,
                             }}
                           />
                         </PieChart>
@@ -470,7 +471,7 @@ export default function AdminDashboardPage() {
                       >
                         <span
                           className="w-3 h-3 rounded-full shrink-0"
-                          style={{ backgroundColor: PLAN_COLORS[index % PLAN_COLORS.length] }}
+                          style={{ backgroundColor: planColors[index % planColors.length] }}
                         />
                         <span className="truncate">{plan.name}</span>
                       </div>
@@ -502,30 +503,30 @@ export default function AdminDashboardPage() {
                         data={planChartData}
                         margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EADFDA" />
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={colors.line} />
                         <XAxis
                           dataKey="name"
                           axisLine={false}
                           tickLine={false}
-                          tick={{ fontSize: 12, fill: "#6B5B60", fontWeight: 600 }}
+                          tick={{ fontSize: 12, fill: colors.muted, fontWeight: 600 }}
                         />
                         <YAxis
                           allowDecimals={false}
                           axisLine={false}
                           tickLine={false}
-                          tick={{ fontSize: 12, fill: "#6B5B60", fontWeight: 600 }}
+                          tick={{ fontSize: 12, fill: colors.muted, fontWeight: 600 }}
                           width={38}
                         />
                         <Tooltip
                           formatter={(value) => [value, "Lượt mua"]}
                           contentStyle={{
                             borderRadius: 16,
-                            border: "1px solid #EADFDA",
-                            backgroundColor: "#FFFFFF",
-                            color: "#2B2024",
+                            border: `1px solid ${colors.line}`,
+                            backgroundColor: colors.surface,
+                            color: colors.ink,
                           }}
                         />
-                        <Bar dataKey="transactionCount" radius={[10, 10, 0, 0]} fill="#4F7F66" barSize={34} />
+                        <Bar dataKey="transactionCount" radius={[10, 10, 0, 0]} fill={colors.ok} barSize={34} />
                       </RechartsBarChart>
                     </ResponsiveContainer>
                   )}
@@ -643,12 +644,12 @@ export default function AdminDashboardPage() {
                           </td>
                           <td className="py-3.5 px-5">
                             {isLocked ? (
-                              <span className="bg-red-50 border border-red-200 text-red-800 font-bold px-2.5 py-0.5 rounded-full text-xs inline-flex items-center gap-1">
+                              <span className="bg-status-danger-bg border border-status-danger-line text-status-danger-text font-bold px-2.5 py-0.5 rounded-full text-xs inline-flex items-center gap-1">
                                 <Lock className="w-3.5 h-3.5" aria-hidden="true" />
                                 <span>Đã khóa</span>
                               </span>
                             ) : (
-                              <span className="bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full text-xs inline-flex items-center gap-1">
+                              <span className="bg-status-ok-bg border border-status-ok-line text-status-ok-text font-bold px-2.5 py-0.5 rounded-full text-xs inline-flex items-center gap-1">
                                 <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
                                 <span>Hoạt động</span>
                               </span>
@@ -660,8 +661,8 @@ export default function AdminDashboardPage() {
                               onClick={() => handleLockToggle(u)}
                               className={`min-h-[44px] px-3.5 py-2 rounded-2xl font-bold text-xs transition-colors inline-flex items-center gap-1.5 ${
                                 isLocked
-                                  ? "bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100"
-                                  : "bg-red-50 border border-red-200 text-red-800 hover:bg-red-100"
+                                  ? "bg-status-ok-bg border border-status-ok-line text-status-ok-text hover:bg-status-ok-bg"
+                                  : "bg-status-danger-bg border border-status-danger-line text-status-danger-text hover:bg-status-danger-bg"
                               }`}
                             >
                               {isLocked ? (
@@ -689,7 +690,7 @@ export default function AdminDashboardPage() {
       ) : activeTab === "risk" ? (
         <section className="space-y-4">
           <h2 className="text-lg font-bold text-theme-ink flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-red-700" aria-hidden="true" />
+            <ShieldAlert className="w-5 h-5 text-status-danger-text" aria-hidden="true" />
             <span>Danh sách mẹ kích hoạt cảnh báo nguy cơ cao</span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -703,10 +704,10 @@ export default function AdminDashboardPage() {
               riskUsers.map((r) => (
                 <article
                   key={r.id || r.userId}
-                  className="bg-theme-surface rounded-3xl p-5 sm:p-6 border border-red-200 shadow-sm space-y-2.5"
+                  className="bg-theme-surface rounded-3xl p-5 sm:p-6 border border-status-danger-line shadow-sm space-y-2.5"
                 >
                   <div className="flex justify-between items-center gap-2">
-                    <span className="text-xs bg-red-50 border border-red-200 text-red-800 font-bold px-3 py-1 rounded-full">
+                    <span className="text-xs bg-status-danger-bg border border-status-danger-line text-status-danger-text font-bold px-3 py-1 rounded-full">
                       Nguy cơ cao
                     </span>
                     <span className="text-xs text-theme-muted font-medium">
@@ -733,7 +734,7 @@ export default function AdminDashboardPage() {
           <section className="bg-theme-surface rounded-3xl border border-theme-line p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2.5">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 text-status-ok flex items-center justify-center">
+                <div className="w-10 h-10 rounded-2xl bg-status-ok-bg border border-status-ok-line text-status-ok flex items-center justify-center">
                   <Database className="w-5 h-5" aria-hidden="true" />
                 </div>
                 <div>
@@ -782,7 +783,7 @@ export default function AdminDashboardPage() {
               <button
                 type="submit"
                 disabled={usdaLoading}
-                className="min-h-[48px] px-5 py-2.5 bg-status-ok hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm rounded-2xl transition-colors inline-flex items-center gap-2 disabled:bg-theme-line disabled:text-theme-muted"
+                className="min-h-[48px] px-5 py-2.5 bg-status-ok hover:bg-status-ok-text text-theme-surface font-bold text-xs sm:text-sm rounded-2xl transition-colors inline-flex items-center gap-2 disabled:bg-theme-line disabled:text-theme-muted"
               >
                 <RefreshCw
                   className={`w-4 h-4 ${usdaLoading ? "animate-spin motion-reduce:animate-none" : ""}`}

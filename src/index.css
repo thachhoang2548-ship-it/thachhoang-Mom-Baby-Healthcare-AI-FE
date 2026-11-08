@@ -39,6 +39,8 @@
   --c-ok-bg: 236 253 245;
   --c-ok-line: 167 243 208;
   --c-ok-text: 6 95 70;
+  /* Màu thông tin (xanh dương), dùng cho biểu đồ nhiều nhóm */
+  --c-info: 46 109 147;
 }
 
 [data-baby-theme='girl'] {
@@ -89,6 +91,7 @@
   --c-ok-bg: 20 50 40;
   --c-ok-line: 45 100 78;
   --c-ok-text: 167 243 208;
+  --c-info: 110 176 214;
 }
 
 [data-color-scheme='dark'][data-baby-theme='boy'] {
