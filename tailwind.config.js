@@ -31,6 +31,12 @@ export default {
           'warn-bg': 'rgb(var(--c-warn-bg) / <alpha-value>)',
           'warn-line': 'rgb(var(--c-warn-line) / <alpha-value>)',
           'warn-text': 'rgb(var(--c-warn-text) / <alpha-value>)',
+          'danger-bg': 'rgb(var(--c-danger-bg) / <alpha-value>)',
+          'danger-line': 'rgb(var(--c-danger-line) / <alpha-value>)',
+          'danger-text': 'rgb(var(--c-danger-text) / <alpha-value>)',
+          'ok-bg': 'rgb(var(--c-ok-bg) / <alpha-value>)',
+          'ok-line': 'rgb(var(--c-ok-line) / <alpha-value>)',
+          'ok-text': 'rgb(var(--c-ok-text) / <alpha-value>)',
         },
       },
       fontFamily: {

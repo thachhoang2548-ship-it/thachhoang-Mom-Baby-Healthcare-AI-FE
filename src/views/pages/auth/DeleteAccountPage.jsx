@@ -118,9 +118,9 @@ export default function DeleteAccountPage() {
                 Bạn cũng có thể thực hiện ngay trong ứng dụng tại mục <strong>Hồ sơ của mẹ → Xóa tài khoản</strong>.
               </p>
 
-              <div className="mt-5 flex items-start gap-3 rounded-2xl border border-red-300 bg-red-50 p-4">
-                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-700" />
-                <p className="text-sm leading-relaxed text-red-900">
+              <div className="mt-5 flex items-start gap-3 rounded-2xl border border-status-danger-line bg-status-danger-bg p-4">
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-status-danger-text" />
+                <p className="text-sm leading-relaxed text-status-danger-text">
                   Việc xóa là <strong>vĩnh viễn</strong>. Bạn sẽ không thể đăng nhập lại hay khôi phục dữ liệu. Gói dịch vụ còn hạn (nếu có) cũng sẽ mất.
                 </p>
               </div>
@@ -152,7 +152,7 @@ export default function DeleteAccountPage() {
                     autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="min-h-[48px] w-full rounded-2xl border border-theme-line bg-theme-page/50 px-4 text-sm font-medium text-theme-ink focus:border-red-600 focus:bg-theme-surface focus:outline-none focus:ring-2 focus:ring-red-600/20"
+                    className="min-h-[48px] w-full rounded-2xl border border-theme-line bg-theme-page/50 px-4 text-sm font-medium text-theme-ink focus:border-status-danger-text focus:bg-theme-surface focus:outline-none focus:ring-2 focus:ring-status-danger-text/20"
                   />
                 </div>
                 <div>
@@ -165,7 +165,7 @@ export default function DeleteAccountPage() {
                     autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="min-h-[48px] w-full rounded-2xl border border-theme-line bg-theme-page/50 px-4 text-sm font-medium text-theme-ink focus:border-red-600 focus:bg-theme-surface focus:outline-none focus:ring-2 focus:ring-red-600/20"
+                    className="min-h-[48px] w-full rounded-2xl border border-theme-line bg-theme-page/50 px-4 text-sm font-medium text-theme-ink focus:border-status-danger-text focus:bg-theme-surface focus:outline-none focus:ring-2 focus:ring-status-danger-text/20"
                   />
                 </div>
                 <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-theme-line bg-theme-page/50 p-3.5">
@@ -181,7 +181,7 @@ export default function DeleteAccountPage() {
                 </label>
 
                 {error ? (
-                  <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-800">
+                  <p role="alert" className="rounded-2xl border border-status-danger-line bg-status-danger-bg px-4 py-2.5 text-sm font-semibold text-status-danger-text">
                     {error}
                   </p>
                 ) : null}
@@ -189,7 +189,7 @@ export default function DeleteAccountPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex min-h-[48px] w-full items-center justify-center rounded-full bg-red-700 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-theme-line disabled:text-theme-muted"
+                  className="flex min-h-[48px] w-full items-center justify-center rounded-full bg-red-700 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger-text focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-theme-line disabled:text-theme-muted"
                 >
                   {submitting ? 'Đang xóa tài khoản...' : 'Xóa vĩnh viễn tài khoản'}
                 </button>

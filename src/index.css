@@ -32,6 +32,13 @@
   --c-warn-bg: 255 243 214;
   --c-warn-line: 217 150 43;
   --c-warn-text: 110 67 0;
+  /* Lỗi/nguy hiểm và thành công (nền, viền, chữ). Nút đặc "Khẩn cấp"/"Xóa" giữ đỏ cố định bg-red-700 text-white. */
+  --c-danger-bg: 254 242 242;
+  --c-danger-line: 252 165 165;
+  --c-danger-text: 153 27 27;
+  --c-ok-bg: 236 253 245;
+  --c-ok-line: 167 243 208;
+  --c-ok-text: 6 95 70;
 }
 
 [data-baby-theme='girl'] {
@@ -76,6 +83,12 @@
   --c-warn-bg: 58 44 14;
   --c-warn-line: 217 150 43;
   --c-warn-text: 247 214 140;
+  --c-danger-bg: 72 26 28;
+  --c-danger-line: 127 45 48;
+  --c-danger-text: 254 202 202;
+  --c-ok-bg: 20 50 40;
+  --c-ok-line: 45 100 78;
+  --c-ok-text: 167 243 208;
 }
 
 [data-color-scheme='dark'][data-baby-theme='boy'] {

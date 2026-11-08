@@ -192,7 +192,7 @@ export default function LoginPage() {
                   />
                 </div>
                 {errors.email && (
-                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-700">
+                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-status-danger-text">
                     <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                     <span>{errors.email.message}</span>
                   </p>
@@ -230,7 +230,7 @@ export default function LoginPage() {
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-700">
+                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-status-danger-text">
                     <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                     <span>{errors.password.message}</span>
                   </p>
@@ -240,9 +240,9 @@ export default function LoginPage() {
               {loginError && (
                 <div
                   role="alert"
-                  className="flex items-start gap-2.5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-800 sm:text-sm"
+                  className="flex items-start gap-2.5 rounded-2xl border border-status-danger-line bg-status-danger-bg px-4 py-3 text-xs font-semibold text-status-danger-text sm:text-sm"
                 >
-                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-700" />
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-status-danger-text" />
                   <span>{loginError}</span>
                 </div>
               )}

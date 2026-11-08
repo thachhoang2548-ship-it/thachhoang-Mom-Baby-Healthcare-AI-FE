@@ -178,7 +178,7 @@ export default function RegisterPage() {
                   />
                 </div>
                 {errors.fullName && (
-                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-700">
+                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-status-danger-text">
                     <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                     <span>{errors.fullName.message}</span>
                   </p>
@@ -208,7 +208,7 @@ export default function RegisterPage() {
                   />
                 </div>
                 {errors.email && (
-                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-700">
+                  <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-status-danger-text">
                     <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                     <span>{errors.email.message}</span>
                   </p>
@@ -247,7 +247,7 @@ export default function RegisterPage() {
                     </button>
                   </div>
                   {errors.password && (
-                    <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-700">
+                    <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-status-danger-text">
                       <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                       <span>{errors.password.message}</span>
                     </p>
@@ -277,7 +277,7 @@ export default function RegisterPage() {
                     />
                   </div>
                   {errors.confirmPassword && (
-                    <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-red-700">
+                    <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-status-danger-text">
                       <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                       <span>{errors.confirmPassword.message}</span>
                     </p>
