@@ -1,8 +1,25 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import adminService from "../../../models/services/adminService";
 import AdminPaymentsPanel from "./AdminPaymentsPanel";
 import AdminFeedbackPanel from "./AdminFeedbackPanel";
-import { Users, Lock, Unlock, UserPlus, ShieldAlert, FileText, Settings, CheckCircle2, Database, RefreshCw, Edit, Plus, DollarSign, CreditCard, TrendingUp } from "lucide-react";
+import {
+  Users,
+  Lock,
+  Unlock,
+  UserPlus,
+  ShieldAlert,
+  FileText,
+  Settings,
+  CheckCircle2,
+  Database,
+  RefreshCw,
+  Edit,
+  Plus,
+  DollarSign,
+  CreditCard,
+  TrendingUp,
+  X,
+} from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -19,21 +36,22 @@ import {
 } from "recharts";
 import toast from "react-hot-toast";
 
+const PLAN_COLORS = ["#AB4256", "#4F7F66", "#2E6D93", "#D9962B", "#6B5B60"];
+
 export default function AdminDashboardPage() {
-  const [activeTab, setActiveTab] = useState("users"); // "users" | "risk" | "rules"
+  const [activeTab, setActiveTab] = useState("users");
   const [users, setUsers] = useState([]);
   const [riskUsers, setRiskUsers] = useState([]);
   const [businessRules, setBusinessRules] = useState([]);
   const [revenueSummary, setRevenueSummary] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Modal create staff/expert
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createForm, setCreateForm] = useState({
     email: "",
     password: "",
     fullName: "",
-    role: "Staff" // "Staff" | "Expert"
+    role: "Staff",
   });
 
   const formatMoney = (amount) =>
@@ -50,14 +68,10 @@ export default function AdminDashboardPage() {
     value: Number(item.revenue || 0),
   }));
 
-  const planColors = ["#ec4899", "#8b5cf6", "#06b6d4", "#10b981", "#f59e0b"];
-
-  // USDA sync states
   const [usdaQuery, setUsdaQuery] = useState("milk");
   const [usdaMaxItems, setUsdaMaxItems] = useState(5);
   const [usdaLoading, setUsdaLoading] = useState(false);
 
-  // Edit Business Rule States
   const [showRuleModal, setShowRuleModal] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
   const [ruleForm, setRuleForm] = useState({
@@ -67,80 +81,11 @@ export default function AdminDashboardPage() {
     targetMetric: "EPDS_SCORE",
     operator: ">=",
     thresholdValue: 9,
-    severity: 1, // 0: Critical, 1: High, 2: Medium, 3: Warning
-    isActive: true
+    severity: 1,
+    isActive: true,
   });
 
-  const handleOpenEditRule = (rule) => {
-    setEditingRule(rule);
-    setRuleForm({
-      code: rule.code || rule.ruleName || "RULE_01",
-      title: rule.title || rule.name || "Cấu hình quy tắc",
-      description: rule.description || "",
-      targetMetric: rule.targetMetric || "EPDS_SCORE",
-      operator: rule.operator || ">=",
-      thresholdValue: rule.thresholdValue ?? rule.value ?? 9,
-      severity: rule.severity ?? 1,
-      isActive: rule.isActive ?? true
-    });
-    setShowRuleModal(true);
-  };
-
-  const handleOpenCreateRule = () => {
-    setEditingRule(null);
-    setRuleForm({
-      code: "RULE_NEW",
-      title: "Quy tắc mới",
-      description: "Mô tả quy tắc mới",
-      targetMetric: "EPDS_SCORE",
-      operator: ">=",
-      thresholdValue: 10,
-      severity: 1,
-      isActive: true
-    });
-    setShowRuleModal(true);
-  };
-
-  const handleRuleSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (editingRule) {
-        const res = await adminService.updateBusinessRule(editingRule.id, ruleForm);
-        if (res.isSuccess || res.success) {
-          toast.success("Đã cập nhật quy tắc vận hành thành công! 🎉");
-          setShowRuleModal(false);
-          loadData();
-        }
-      } else {
-        const res = await adminService.createBusinessRule(ruleForm);
-        if (res.isSuccess || res.success) {
-          toast.success("Đã tạo mới quy tắc vận hành! 🎉");
-          setShowRuleModal(false);
-          loadData();
-        }
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleUsdaSync = async (e) => {
-    e.preventDefault();
-    if (!usdaQuery.trim()) return;
-    setUsdaLoading(true);
-    try {
-      const res = await adminService.syncUsdaData(usdaQuery, parseInt(usdaMaxItems));
-      if (res.isSuccess || res.success) {
-        toast.success(res.message || res.data || `Đã đồng bộ dữ liệu dinh dưỡng "${usdaQuery}"!`);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setUsdaLoading(false);
-    }
-  };
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       if (activeTab === "users") {
@@ -168,11 +113,82 @@ export default function AdminDashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab]);
 
   useEffect(() => {
     loadData();
-  }, [activeTab]);
+  }, [loadData]);
+
+  const handleOpenEditRule = (rule) => {
+    setEditingRule(rule);
+    setRuleForm({
+      code: rule.code || rule.ruleName || "RULE_01",
+      title: rule.title || rule.name || "Cấu hình quy tắc",
+      description: rule.description || "",
+      targetMetric: rule.targetMetric || "EPDS_SCORE",
+      operator: rule.operator || ">=",
+      thresholdValue: rule.thresholdValue ?? rule.value ?? 9,
+      severity: rule.severity ?? 1,
+      isActive: rule.isActive ?? true,
+    });
+    setShowRuleModal(true);
+  };
+
+  const handleOpenCreateRule = () => {
+    setEditingRule(null);
+    setRuleForm({
+      code: "RULE_NEW",
+      title: "Quy tắc mới",
+      description: "Mô tả quy tắc mới",
+      targetMetric: "EPDS_SCORE",
+      operator: ">=",
+      thresholdValue: 10,
+      severity: 1,
+      isActive: true,
+    });
+    setShowRuleModal(true);
+  };
+
+  const handleRuleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editingRule) {
+        const res = await adminService.updateBusinessRule(editingRule.id, ruleForm);
+        if (res.isSuccess || res.success) {
+          toast.success("Đã cập nhật quy tắc vận hành thành công.");
+          setShowRuleModal(false);
+          loadData();
+        }
+      } else {
+        const res = await adminService.createBusinessRule(ruleForm);
+        if (res.isSuccess || res.success) {
+          toast.success("Đã tạo mới quy tắc vận hành.");
+          setShowRuleModal(false);
+          loadData();
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUsdaSync = async (e) => {
+    e.preventDefault();
+    if (!usdaQuery.trim()) return;
+    setUsdaLoading(true);
+    try {
+      const res = await adminService.syncUsdaData(usdaQuery, parseInt(usdaMaxItems, 10));
+      if (res.isSuccess || res.success) {
+        toast.success(
+          res.message || res.data || `Đã đồng bộ dữ liệu dinh dưỡng "${usdaQuery}"!`
+        );
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setUsdaLoading(false);
+    }
+  };
 
   const handleLockToggle = async (user) => {
     try {
@@ -199,7 +215,7 @@ export default function AdminDashboardPage() {
     try {
       const res = await adminService.createStaffOrExpert(createForm);
       if (res.isSuccess || res.success) {
-        toast.success(`Đã tạo tài khoản ${createForm.role} thành công! 🎉`);
+        toast.success(`Đã tạo tài khoản ${createForm.role} thành công.`);
         setShowCreateModal(false);
         setCreateForm({ email: "", password: "", fullName: "", role: "Staff" });
         loadData();
@@ -210,240 +226,375 @@ export default function AdminDashboardPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12">
-      {/* Admin Banner Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-gray-900 to-slate-800 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
-        <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="z-10">
-          <div className="flex items-center gap-2 text-blue-400 font-extrabold text-xs uppercase tracking-wider mb-1">
-            <Settings className="w-4 h-4" /> System Administrator Portal
+    <div className="font-display space-y-6 max-w-6xl mx-auto pb-12 text-theme-ink">
+      {/* Header */}
+      <header className="bg-theme-surface rounded-3xl border border-theme-line p-6 sm:p-8 shadow-sm flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5">
+        <div className="space-y-2 max-w-2xl">
+          <div className="inline-flex items-center gap-2 rounded-full bg-theme-brand-soft text-theme-ink px-3.5 py-1.5 text-xs font-bold border border-theme-brand/20">
+            <Settings className="w-4 h-4 text-theme-brand" aria-hidden="true" />
+            <span>Quản trị vận hành hệ thống</span>
           </div>
-          <h1 className="text-2xl font-black">Cổng Quản Trị Hệ Thống ⚙️</h1>
-          <p className="text-xs text-slate-300 mt-1 max-w-xl font-medium leading-relaxed">
-            Quản lý tài khoản người dùng, phân quyền Nhân viên / Chuyên gia, giám sát nguy cơ sức khỏe và cấu hình quy tắc vận hành.
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-theme-ink tracking-tight">
+            Cổng quản trị Mom Ơi!
+          </h1>
+          <p className="text-sm text-theme-muted font-medium leading-relaxed">
+            Theo dõi doanh thu hội viên, quản lý tài khoản người dùng, phân quyền nhân sự chuyên môn và cấu hình tham số cảnh báo y khoa.
           </p>
         </div>
 
-        {/* Tab switcher */}
-        <div className="flex bg-white/10 p-1.5 rounded-2xl backdrop-blur-md border border-white/20 z-10 shrink-0 flex-wrap gap-1">
+        <div className="flex flex-wrap gap-2 shrink-0" role="tablist" aria-label="Phân hệ quản trị">
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "users"}
             onClick={() => setActiveTab("users")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-              activeTab === "users" ? "bg-white text-gray-900 shadow-md" : "text-slate-200 hover:text-white"
+            className={`min-h-[44px] px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-colors inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+              activeTab === "users"
+                ? "bg-theme-brand text-theme-surface shadow-sm"
+                : "bg-theme-page text-theme-ink border border-theme-line hover:bg-theme-brand-soft"
             }`}
           >
-            <Users className="w-4 h-4 text-blue-500" /> Người Dùng
+            <Users className="w-4 h-4" aria-hidden="true" />
+            <span>Người dùng & doanh thu</span>
           </button>
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "risk"}
             onClick={() => setActiveTab("risk")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-              activeTab === "risk" ? "bg-white text-gray-900 shadow-md" : "text-slate-200 hover:text-white"
+            className={`min-h-[44px] px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-colors inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+              activeTab === "risk"
+                ? "bg-theme-brand text-theme-surface shadow-sm"
+                : "bg-theme-page text-theme-ink border border-theme-line hover:bg-theme-brand-soft"
             }`}
           >
-            <ShieldAlert className="w-4 h-4 text-red-500" /> Nguy Cơ Cao
+            <ShieldAlert className="w-4 h-4" aria-hidden="true" />
+            <span>Nguy cơ cao</span>
           </button>
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "rules"}
             onClick={() => setActiveTab("rules")}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-              activeTab === "rules" ? "bg-white text-gray-900 shadow-md" : "text-slate-200 hover:text-white"
+            className={`min-h-[44px] px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-colors inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+              activeTab === "rules"
+                ? "bg-theme-brand text-theme-surface shadow-sm"
+                : "bg-theme-page text-theme-ink border border-theme-line hover:bg-theme-brand-soft"
             }`}
           >
-            <FileText className="w-4 h-4 text-emerald-500" /> Quy Tắc DB
+            <FileText className="w-4 h-4" aria-hidden="true" />
+            <span>Quy tắc & dữ liệu</span>
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* Main View */}
+      {/* Main Content */}
       {loading ? (
-        <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-xs font-bold text-gray-500">Đang tải dữ liệu quản trị...</p>
+        <div className="text-center py-16 bg-theme-surface rounded-3xl border border-theme-line">
+          <p className="text-sm font-semibold text-theme-muted">Đang tải dữ liệu quản trị...</p>
         </div>
       ) : activeTab === "users" ? (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div className="flex justify-between items-center flex-wrap gap-3">
-            <h2 className="text-base font-extrabold text-gray-850 dark:text-white flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" /> Quản Lý Danh Sách Người Dùng Hợp Tác
+            <h2 className="text-lg font-bold text-theme-ink flex items-center gap-2">
+              <Users className="w-5 h-5 text-theme-brand" aria-hidden="true" />
+              <span>Tổng quan vận hành & danh sách tài khoản</span>
             </h2>
             <button
+              type="button"
               onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-bold shadow-md flex items-center gap-2 transition-all"
+              className="min-h-[44px] px-4 py-2.5 bg-theme-brand hover:bg-theme-ink text-theme-surface rounded-2xl text-xs sm:text-sm font-bold shadow-sm inline-flex items-center gap-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
             >
-              <UserPlus className="w-4 h-4" /> Tạo Nhân Viên / Chuyên Gia
+              <UserPlus className="w-4 h-4" aria-hidden="true" />
+              <span>Tạo tài khoản Nhân viên / Chuyên gia</span>
             </button>
           </div>
 
           {revenueSummary && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                  { label: "Tổng doanh thu", value: formatMoney(revenueSummary.totalRevenue), icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-50" },
-                  { label: "Tháng này", value: formatMoney(revenueSummary.monthlyRevenue), icon: TrendingUp, color: "text-blue-600", bg: "bg-blue-50" },
-                  { label: "Hôm nay", value: formatMoney(revenueSummary.todayRevenue), icon: CreditCard, color: "text-pink-600", bg: "bg-pink-50" },
-                  { label: "Khách đã mua", value: revenueSummary.payingUserCount || 0, icon: Users, color: "text-amber-600", bg: "bg-amber-50" },
+                  {
+                    label: "Tổng doanh thu",
+                    value: formatMoney(revenueSummary.totalRevenue),
+                    icon: DollarSign,
+                    iconBox: "bg-emerald-50 text-status-ok border border-emerald-200",
+                  },
+                  {
+                    label: "Doanh thu tháng này",
+                    value: formatMoney(revenueSummary.monthlyRevenue),
+                    icon: TrendingUp,
+                    iconBox: "bg-theme-brand-soft text-theme-brand border border-theme-brand/20",
+                  },
+                  {
+                    label: "Doanh thu hôm nay",
+                    value: formatMoney(revenueSummary.todayRevenue),
+                    icon: CreditCard,
+                    iconBox: "bg-theme-page text-theme-ink border border-theme-line",
+                  },
+                  {
+                    label: "Hội viên trả phí",
+                    value: revenueSummary.payingUserCount || 0,
+                    icon: Users,
+                    iconBox: "bg-status-warn-bg text-status-warn-text border border-status-warn-line/40",
+                  },
                 ].map((item) => {
                   const Icon = item.icon;
                   return (
-                    <div key={item.label} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-4 shadow-sm">
+                    <article
+                      key={item.label}
+                      className="bg-theme-surface rounded-3xl border border-theme-line p-5 shadow-sm"
+                    >
                       <div className="flex items-center justify-between gap-3">
                         <div>
-                          <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">{item.label}</p>
-                          <p className="text-lg font-black text-gray-900 dark:text-white mt-1">{item.value}</p>
+                          <p className="text-xs font-bold text-theme-muted">{item.label}</p>
+                          <p className="text-xl font-extrabold text-theme-ink mt-1">{item.value}</p>
                         </div>
-                        <div className={`w-10 h-10 rounded-2xl ${item.bg} ${item.color} flex items-center justify-center`}>
-                          <Icon className="w-5 h-5" />
+                        <div className={`w-11 h-11 rounded-2xl ${item.iconBox} flex items-center justify-center shrink-0`}>
+                          <Icon className="w-5 h-5" aria-hidden="true" />
                         </div>
                       </div>
-                    </div>
+                    </article>
                   );
                 })}
               </div>
 
-              <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
-                <div className="xl:col-span-3 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-5 shadow-sm">
+              <div className="grid grid-cols-1 xl:grid-cols-5 gap-5">
+                <section className="xl:col-span-3 bg-theme-surface rounded-3xl border border-theme-line p-5 sm:p-6 shadow-sm">
                   <div className="flex items-center justify-between gap-3 mb-4">
                     <div>
-                      <h3 className="text-xs font-black uppercase tracking-wider text-gray-500">Xu hướng doanh thu</h3>
-                      <p className="text-[11px] font-semibold text-gray-400 mt-1">Theo 14 ngày gần nhất</p>
+                      <h3 className="text-base font-bold text-theme-ink">Xu hướng doanh thu</h3>
+                      <p className="text-xs font-medium text-theme-muted mt-0.5">Theo 14 ngày gần nhất</p>
                     </div>
-                    <div className="w-10 h-10 rounded-2xl bg-pink-50 text-pink-600 flex items-center justify-center">
-                      <TrendingUp className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center">
+                      <TrendingUp className="w-5 h-5" aria-hidden="true" />
                     </div>
                   </div>
                   <div className="h-72">
                     {revenueChartData.length === 0 ? (
-                      <div className="h-full rounded-2xl bg-gray-50 dark:bg-gray-900/50 flex items-center justify-center text-xs font-bold text-gray-400">
+                      <div className="h-full rounded-2xl bg-theme-page border border-theme-line flex items-center justify-center text-xs sm:text-sm font-semibold text-theme-muted">
                         Chưa có dữ liệu doanh thu.
                       </div>
                     ) : (
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={revenueChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                          <defs>
-                            <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#ec4899" stopOpacity={0.35} />
-                              <stop offset="95%" stopColor="#ec4899" stopOpacity={0.03} />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                          <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 700 }} />
-                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 700 }} tickFormatter={(value) => `${Number(value) / 1000}k`} width={42} />
-                          <Tooltip formatter={(value) => [formatMoney(value), "Doanh thu"]} labelFormatter={(label) => `Ngày ${label}`} contentStyle={{ borderRadius: 16, border: "1px solid #fce7f3", boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)" }} />
-                          <Area type="monotone" dataKey="revenue" stroke="#ec4899" strokeWidth={3} fill="url(#revenueGradient)" />
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EADFDA" />
+                          <XAxis
+                            dataKey="label"
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 12, fill: "#6B5B60", fontWeight: 600 }}
+                          />
+                          <YAxis
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 12, fill: "#6B5B60", fontWeight: 600 }}
+                            tickFormatter={(value) => `${Number(value) / 1000}k`}
+                            width={46}
+                          />
+                          <Tooltip
+                            formatter={(value) => [formatMoney(value), "Doanh thu"]}
+                            labelFormatter={(label) => `Ngày ${label}`}
+                            contentStyle={{
+                              borderRadius: 16,
+                              border: "1px solid #EADFDA",
+                              backgroundColor: "#FFFFFF",
+                              color: "#2B2024",
+                            }}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="revenue"
+                            stroke="#AB4256"
+                            strokeWidth={2.5}
+                            fill="#F8E1E5"
+                            fillOpacity={0.75}
+                          />
                         </AreaChart>
                       </ResponsiveContainer>
                     )}
                   </div>
-                </div>
+                </section>
 
-                <div className="xl:col-span-2 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-5 shadow-sm">
+                <section className="xl:col-span-2 bg-theme-surface rounded-3xl border border-theme-line p-5 sm:p-6 shadow-sm">
                   <div className="flex items-center justify-between gap-3 mb-4">
                     <div>
-                      <h3 className="text-xs font-black uppercase tracking-wider text-gray-500">Cơ cấu gói</h3>
-                      <p className="text-[11px] font-semibold text-gray-400 mt-1">Tỷ trọng doanh thu</p>
+                      <h3 className="text-base font-bold text-theme-ink">Cơ cấu gói hội viên</h3>
+                      <p className="text-xs font-medium text-theme-muted mt-0.5">Tỷ trọng doanh thu</p>
                     </div>
-                    <div className="w-10 h-10 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center">
-                      <CreditCard className="w-5 h-5" />
+                    <div className="w-10 h-10 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center">
+                      <CreditCard className="w-5 h-5" aria-hidden="true" />
                     </div>
                   </div>
-                  <div className="h-72">
+                  <div className="h-64">
                     {planChartData.length === 0 ? (
-                      <div className="h-full rounded-2xl bg-gray-50 dark:bg-gray-900/50 flex items-center justify-center text-xs font-bold text-gray-400">
+                      <div className="h-full rounded-2xl bg-theme-page border border-theme-line flex items-center justify-center text-xs sm:text-sm font-semibold text-theme-muted">
                         Chưa có dữ liệu gói.
                       </div>
                     ) : (
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
-                          <Pie data={planChartData} innerRadius={62} outerRadius={92} paddingAngle={3} dataKey="value" nameKey="name">
+                          <Pie
+                            data={planChartData}
+                            innerRadius={58}
+                            outerRadius={88}
+                            paddingAngle={3}
+                            dataKey="value"
+                            nameKey="name"
+                          >
                             {planChartData.map((entry, index) => (
-                              <Cell key={entry.name} fill={planColors[index % planColors.length]} />
+                              <Cell
+                                key={entry.name}
+                                fill={PLAN_COLORS[index % PLAN_COLORS.length]}
+                              />
                             ))}
                           </Pie>
-                          <Tooltip formatter={(value, name) => [formatMoney(value), name]} contentStyle={{ borderRadius: 16, border: "1px solid #ede9fe", boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)" }} />
+                          <Tooltip
+                            formatter={(value, name) => [formatMoney(value), name]}
+                            contentStyle={{
+                              borderRadius: 16,
+                              border: "1px solid #EADFDA",
+                              backgroundColor: "#FFFFFF",
+                              color: "#2B2024",
+                            }}
+                          />
                         </PieChart>
                       </ResponsiveContainer>
                     )}
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                     {planChartData.slice(0, 4).map((plan, index) => (
-                      <div key={plan.name} className="flex items-center gap-2 text-[11px] font-bold text-gray-500 min-w-0">
-                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: planColors[index % planColors.length] }} />
+                      <div
+                        key={plan.name}
+                        className="flex items-center gap-2 text-xs font-bold text-theme-ink min-w-0"
+                      >
+                        <span
+                          className="w-3 h-3 rounded-full shrink-0"
+                          style={{ backgroundColor: PLAN_COLORS[index % PLAN_COLORS.length] }}
+                        />
                         <span className="truncate">{plan.name}</span>
                       </div>
                     ))}
                   </div>
-                </div>
+                </section>
               </div>
 
-              <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-5 shadow-sm">
+              <section className="bg-theme-surface rounded-3xl border border-theme-line p-5 sm:p-6 shadow-sm">
                 <div className="flex items-center justify-between gap-3 mb-4">
                   <div>
-                    <h3 className="text-xs font-black uppercase tracking-wider text-gray-500">Giao dịch theo gói</h3>
-                    <p className="text-[11px] font-semibold text-gray-400 mt-1">So sánh số lượt mua của từng gói</p>
+                    <h3 className="text-base font-bold text-theme-ink">Số lượt mua theo từng gói</h3>
+                    <p className="text-xs font-medium text-theme-muted mt-0.5">
+                      Đối chiếu số lượng đơn hàng hoàn tất giữa các gói dịch vụ
+                    </p>
                   </div>
-                  <div className="w-10 h-10 rounded-2xl bg-cyan-50 text-cyan-600 flex items-center justify-center">
-                    <Database className="w-5 h-5" />
+                  <div className="w-10 h-10 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center">
+                    <Database className="w-5 h-5" aria-hidden="true" />
                   </div>
                 </div>
                 <div className="h-64">
                   {planChartData.length === 0 ? (
-                    <div className="h-full rounded-2xl bg-gray-50 dark:bg-gray-900/50 flex items-center justify-center text-xs font-bold text-gray-400">
+                    <div className="h-full rounded-2xl bg-theme-page border border-theme-line flex items-center justify-center text-xs sm:text-sm font-semibold text-theme-muted">
                       Chưa có dữ liệu giao dịch.
                     </div>
                   ) : (
                     <ResponsiveContainer width="100%" height="100%">
-                      <RechartsBarChart data={planChartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 700 }} />
-                        <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: 700 }} width={36} />
-                        <Tooltip formatter={(value) => [value, "Lượt mua"]} contentStyle={{ borderRadius: 16, border: "1px solid #cffafe", boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)" }} />
-                        <Bar dataKey="transactionCount" radius={[10, 10, 0, 0]} fill="#06b6d4" barSize={34} />
+                      <RechartsBarChart
+                        data={planChartData}
+                        margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#EADFDA" />
+                        <XAxis
+                          dataKey="name"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 12, fill: "#6B5B60", fontWeight: 600 }}
+                        />
+                        <YAxis
+                          allowDecimals={false}
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 12, fill: "#6B5B60", fontWeight: 600 }}
+                          width={38}
+                        />
+                        <Tooltip
+                          formatter={(value) => [value, "Lượt mua"]}
+                          contentStyle={{
+                            borderRadius: 16,
+                            border: "1px solid #EADFDA",
+                            backgroundColor: "#FFFFFF",
+                            color: "#2B2024",
+                          }}
+                        />
+                        <Bar dataKey="transactionCount" radius={[10, 10, 0, 0]} fill="#4F7F66" barSize={34} />
                       </RechartsBarChart>
                     </ResponsiveContainer>
                   )}
                 </div>
-              </div>
+              </section>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-5 shadow-sm">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-gray-500 mb-3">Doanh thu theo gói</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                <section className="bg-theme-surface rounded-3xl border border-theme-line p-5 sm:p-6 shadow-sm">
+                  <h3 className="text-base font-bold text-theme-ink mb-3">Doanh thu chi tiết theo gói</h3>
                   <div className="space-y-3">
                     {(revenueSummary.byPlan || []).length === 0 ? (
-                      <p className="text-xs text-gray-400 font-semibold">Chưa có giao dịch hoàn tất.</p>
+                      <p className="text-xs sm:text-sm text-theme-muted font-medium">
+                        Chưa có giao dịch hoàn tất.
+                      </p>
                     ) : (
                       revenueSummary.byPlan.map((plan) => (
-                        <div key={`${plan.planCode}-${plan.durationMonths}`} className="flex items-center justify-between gap-3 rounded-2xl bg-gray-50 dark:bg-gray-900/50 p-3">
+                        <div
+                          key={`${plan.planCode}-${plan.durationMonths}`}
+                          className="flex items-center justify-between gap-3 rounded-2xl bg-theme-page border border-theme-line p-3.5"
+                        >
                           <div>
-                            <p className="text-xs font-black text-gray-900 dark:text-white">{plan.planCode}</p>
-                            <p className="text-[10px] text-gray-400 font-semibold">{plan.tier} · {plan.durationMonths} tháng · {plan.transactionCount} giao dịch</p>
+                            <p className="text-sm font-bold text-theme-ink">{plan.planCode}</p>
+                            <p className="text-xs text-theme-muted font-medium">
+                              {plan.tier} • {plan.durationMonths} tháng • {plan.transactionCount} giao dịch
+                            </p>
                           </div>
-                          <span className="text-xs font-black text-emerald-600">{formatMoney(plan.revenue)}</span>
+                          <span className="text-sm font-extrabold text-theme-ink">
+                            {formatMoney(plan.revenue)}
+                          </span>
                         </div>
                       ))
                     )}
                   </div>
-                </div>
+                </section>
 
-                <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 p-5 shadow-sm">
-                  <h3 className="text-xs font-black uppercase tracking-wider text-gray-500 mb-3">Giao dịch mới nhất</h3>
+                <section className="bg-theme-surface rounded-3xl border border-theme-line p-5 sm:p-6 shadow-sm">
+                  <h3 className="text-base font-bold text-theme-ink mb-3">Giao dịch hoàn tất mới nhất</h3>
                   <div className="space-y-3 max-h-80 overflow-y-auto">
                     {(revenueSummary.recentTransactions || []).length === 0 ? (
-                      <p className="text-xs text-gray-400 font-semibold">Chưa có giao dịch hoàn tất.</p>
+                      <p className="text-xs sm:text-sm text-theme-muted font-medium">
+                        Chưa có giao dịch hoàn tất.
+                      </p>
                     ) : (
                       revenueSummary.recentTransactions.map((txn) => (
-                        <div key={txn.id || txn.orderCode} className="rounded-2xl border border-gray-100 dark:border-gray-700 p-3">
+                        <div
+                          key={txn.id || txn.orderCode}
+                          className="rounded-2xl border border-theme-line bg-theme-page/50 p-3.5"
+                        >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="text-xs font-black text-gray-900 dark:text-white truncate">{txn.userName || txn.userEmail || "Người dùng"}</p>
-                              <p className="text-[10px] text-gray-400 font-semibold truncate">{txn.orderCode}</p>
-                              <p className="text-[10px] text-gray-400 font-semibold">{txn.planCode} · {txn.paymentMethod}</p>
+                              <p className="text-sm font-bold text-theme-ink truncate">
+                                {txn.userName || txn.userEmail || "Người dùng"}
+                              </p>
+                              <p className="text-xs text-theme-muted font-medium truncate">
+                                Mã đơn: {txn.orderCode}
+                              </p>
+                              <p className="text-xs text-theme-muted font-medium">
+                                {txn.planCode} • {txn.paymentMethod}
+                              </p>
                             </div>
-                            <span className="text-xs font-black text-emerald-600 shrink-0">{formatMoney(txn.amount)}</span>
+                            <span className="text-sm font-extrabold text-theme-brand shrink-0">
+                              {formatMoney(txn.amount)}
+                            </span>
                           </div>
                         </div>
                       ))
                     )}
                   </div>
-                </div>
+                </section>
               </div>
             </div>
           )}
@@ -451,58 +602,79 @@ export default function AdminDashboardPage() {
           <AdminPaymentsPanel />
           <AdminFeedbackPanel />
 
-          <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
+          {/* Bảng người dùng */}
+          <section className="bg-theme-surface rounded-3xl border border-theme-line overflow-hidden shadow-sm">
+            <div className="p-5 sm:p-6 border-b border-theme-line">
+              <h3 className="text-base font-bold text-theme-ink">Danh sách tài khoản người dùng</h3>
+            </div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="w-full text-left border-collapse text-xs sm:text-sm">
                 <thead>
-                  <tr className="bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700 text-gray-400 font-bold uppercase tracking-wider">
-                    <th className="py-3.5 px-4">Họ và Tên / Email</th>
-                    <th className="py-3.5 px-4">Vai Trò (Roles)</th>
-                    <th className="py-3.5 px-4">Trạng Thái Khoá</th>
-                    <th className="py-3.5 px-4 text-right">Thao Tác</th>
+                  <tr className="bg-theme-page border-b border-theme-line text-theme-muted font-bold">
+                    <th className="py-3.5 px-5">Họ và tên / Email</th>
+                    <th className="py-3.5 px-5">Vai trò</th>
+                    <th className="py-3.5 px-5">Trạng thái</th>
+                    <th className="py-3.5 px-5 text-right">Thao tác</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-700/60 font-medium">
+                <tbody className="divide-y divide-theme-line">
                   {users.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="text-center py-8 text-gray-400">Không tìm thấy người dùng nào.</td>
+                      <td colSpan={4} className="text-center py-8 text-theme-muted font-semibold">
+                        Không tìm thấy người dùng nào.
+                      </td>
                     </tr>
                   ) : (
                     users.map((u) => {
                       const isLocked = u.isLocked || u.lockoutEnabled;
-                      const rolesList = Array.isArray(u.roles) ? u.roles.join(", ") : (u.roles || "Mom");
+                      const rolesList = Array.isArray(u.roles)
+                        ? u.roles.join(", ")
+                        : u.roles || "Mom";
                       return (
-                        <tr key={u.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition-colors">
-                          <td className="py-3.5 px-4">
-                            <div className="font-bold text-gray-900 dark:text-white">{u.fullName || u.email}</div>
-                            <div className="text-[10px] text-gray-400">{u.email}</div>
+                        <tr key={u.id} className="hover:bg-theme-page/50 transition-colors">
+                          <td className="py-3.5 px-5">
+                            <div className="font-bold text-theme-ink">{u.fullName || u.email}</div>
+                            <div className="text-xs text-theme-muted">{u.email}</div>
                           </td>
-                          <td className="py-3.5 px-4">
-                            <span className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-extrabold px-2.5 py-0.5 rounded-full text-[10px]">
+                          <td className="py-3.5 px-5">
+                            <span className="inline-flex bg-theme-brand-soft text-theme-ink border border-theme-brand/20 font-bold px-2.5 py-0.5 rounded-full text-xs">
                               {rolesList}
                             </span>
                           </td>
-                          <td className="py-3.5 px-4">
+                          <td className="py-3.5 px-5">
                             {isLocked ? (
-                              <span className="bg-red-50 text-red-600 font-bold px-2.5 py-0.5 rounded-full text-[10px] inline-flex items-center gap-1">
-                                <Lock className="w-3 h-3" /> Đã khóa
+                              <span className="bg-red-50 border border-red-200 text-red-800 font-bold px-2.5 py-0.5 rounded-full text-xs inline-flex items-center gap-1">
+                                <Lock className="w-3.5 h-3.5" aria-hidden="true" />
+                                <span>Đã khóa</span>
                               </span>
                             ) : (
-                              <span className="bg-emerald-50 text-emerald-600 font-bold px-2.5 py-0.5 rounded-full text-[10px] inline-flex items-center gap-1">
-                                <CheckCircle2 className="w-3 h-3" /> Hoạt động
+                              <span className="bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full text-xs inline-flex items-center gap-1">
+                                <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
+                                <span>Hoạt động</span>
                               </span>
                             )}
                           </td>
-                          <td className="py-3.5 px-4 text-right">
+                          <td className="py-3.5 px-5 text-right">
                             <button
+                              type="button"
                               onClick={() => handleLockToggle(u)}
-                              className={`px-3 py-1.5 rounded-xl font-bold text-[11px] transition-all inline-flex items-center gap-1 ${
+                              className={`min-h-[44px] px-3.5 py-2 rounded-2xl font-bold text-xs transition-colors inline-flex items-center gap-1.5 ${
                                 isLocked
-                                  ? "bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
-                                  : "bg-red-50 text-red-600 hover:bg-red-100"
+                                  ? "bg-emerald-50 border border-emerald-200 text-emerald-800 hover:bg-emerald-100"
+                                  : "bg-red-50 border border-red-200 text-red-800 hover:bg-red-100"
                               }`}
                             >
-                              {isLocked ? <><Unlock className="w-3.5 h-3.5" /> Mở khoá</> : <><Lock className="w-3.5 h-3.5" /> Khóa TK</>}
+                              {isLocked ? (
+                                <>
+                                  <Unlock className="w-3.5 h-3.5" aria-hidden="true" />
+                                  <span>Mở khóa</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Lock className="w-3.5 h-3.5" aria-hidden="true" />
+                                  <span>Khóa tài khoản</span>
+                                </>
+                              )}
                             </button>
                           </td>
                         </tr>
@@ -512,209 +684,298 @@ export default function AdminDashboardPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+          </section>
         </div>
       ) : activeTab === "risk" ? (
-        <div className="space-y-4">
-          <h2 className="text-base font-extrabold text-gray-850 dark:text-white flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-red-500" /> Danh Sách Mẹ Bầu Kích Hoạt Cảnh Báo Nguy Cơ Cao
+        <section className="space-y-4">
+          <h2 className="text-lg font-bold text-theme-ink flex items-center gap-2">
+            <ShieldAlert className="w-5 h-5 text-red-700" aria-hidden="true" />
+            <span>Danh sách mẹ kích hoạt cảnh báo nguy cơ cao</span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {riskUsers.length === 0 ? (
-              <div className="col-span-2 text-center py-12 bg-white dark:bg-gray-800 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-400 font-semibold">Hiện không có mẹ bầu nào kích hoạt cảnh báo nguy cơ cao.</p>
+              <div className="md:col-span-2 text-center py-12 bg-theme-surface rounded-3xl border border-theme-line">
+                <p className="text-sm text-theme-muted font-semibold">
+                  Hiện không có tài khoản nào kích hoạt cảnh báo nguy cơ cao.
+                </p>
               </div>
             ) : (
               riskUsers.map((r) => (
-                <div key={r.id || r.userId} className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-red-100 dark:border-red-900/40 shadow-sm space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] bg-red-100 text-red-700 font-black px-2.5 py-0.5 rounded-full">HIGH SEVERITY</span>
-                    <span className="text-[10px] text-gray-400">{r.updatedAt || "Gần đây"}</span>
+                <article
+                  key={r.id || r.userId}
+                  className="bg-theme-surface rounded-3xl p-5 sm:p-6 border border-red-200 shadow-sm space-y-2.5"
+                >
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="text-xs bg-red-50 border border-red-200 text-red-800 font-bold px-3 py-1 rounded-full">
+                      Nguy cơ cao
+                    </span>
+                    <span className="text-xs text-theme-muted font-medium">
+                      {r.updatedAt || "Gần đây"}
+                    </span>
                   </div>
-                  <h3 className="font-bold text-sm text-gray-900 dark:text-white">{r.fullName || r.email}</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Lý do: {r.alertReason || "Chỉ số đường huyết hoặc triệu chứng bất thường."}</p>
-                </div>
+                  <h3 className="font-bold text-base text-theme-ink">{r.fullName || r.email}</h3>
+                  <p className="text-xs sm:text-sm text-theme-muted font-medium leading-relaxed">
+                    Lý do: {r.alertReason || "Chỉ số đường huyết hoặc triệu chứng bất thường."}
+                  </p>
+                </article>
               ))
             )}
           </div>
-        </div>
+        </section>
       ) : (
-        <div className="space-y-4">
-          <h2 className="text-base font-extrabold text-gray-850 dark:text-white flex items-center gap-2">
-            <FileText className="w-5 h-5 text-emerald-500" /> Cấu Hình Quy Tắc Hệ Thống (Business Rules)
+        <div className="space-y-5">
+          <h2 className="text-lg font-bold text-theme-ink flex items-center gap-2">
+            <FileText className="w-5 h-5 text-theme-brand" aria-hidden="true" />
+            <span>Cấu hình quy tắc vận hành & đồng bộ dữ liệu dinh dưỡng</span>
           </h2>
 
-          {/* USDA Integration Sync UI */}
-          <div className="bg-gradient-to-r from-emerald-900 via-teal-900 to-slate-900 rounded-3xl p-6 text-white shadow-lg space-y-3 relative overflow-hidden">
+          {/* USDA Sync */}
+          <section className="bg-theme-surface rounded-3xl border border-theme-line p-6 shadow-sm space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center gap-2">
-                <Database className="w-5 h-5 text-emerald-400" />
-                <h3 className="font-extrabold text-sm text-emerald-300">Đồng Bộ Dữ Liệu Dinh Dưỡng Quốc Tế (USDA FoodData Central)</h3>
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 text-status-ok flex items-center justify-center">
+                  <Database className="w-5 h-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-theme-ink">
+                    Đồng bộ dữ liệu dinh dưỡng quốc tế (USDA FoodData Central)
+                  </h3>
+                  <p className="text-xs text-theme-muted font-medium">
+                    Tải tự động thông tin Năng lượng (Calo), Đạm, Tinh bột và Chất béo từ Bộ Nông nghiệp Hoa Kỳ.
+                  </p>
+                </div>
               </div>
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-400/30">
+              <span className="font-mono text-xs bg-theme-page text-theme-ink font-bold px-3 py-1 rounded-full border border-theme-line">
                 POST /api/admin/usda/sync
               </span>
             </div>
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Tải tự động thông tin Năng lượng (Calo), Đạm (Protein), Tinh bột (Carbs) và Chất béo (Fat) từ Bộ Nông nghiệp Hoa Kỳ vào DB local.
-            </p>
-            <form onSubmit={handleUsdaSync} className="flex flex-wrap items-center gap-3 pt-2">
-              <div className="flex-1 min-w-[200px]">
+
+            <form onSubmit={handleUsdaSync} className="flex flex-wrap items-end gap-3 pt-1">
+              <div className="flex-1 min-w-[200px] space-y-1.5">
+                <label htmlFor="usda-query" className="block text-xs font-bold text-theme-ink">
+                  Từ khóa thực phẩm (tiếng Anh)
+                </label>
                 <input
+                  id="usda-query"
                   type="text"
                   required
-                  placeholder="Từ khóa (VD: milk, salmon, apple...)"
+                  placeholder="Ví dụ: milk, salmon, spinach..."
                   value={usdaQuery}
                   onChange={(e) => setUsdaQuery(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-2xl bg-white/10 border border-white/20 text-xs font-semibold text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  className="w-full min-h-[48px] px-4 py-2.5 rounded-2xl bg-theme-page/60 border border-theme-line text-sm font-semibold text-theme-ink placeholder:text-theme-muted focus:outline-none focus:ring-2 focus:ring-theme-brand"
                 />
               </div>
-              <div className="w-24">
+              <div className="w-28 space-y-1.5">
+                <label htmlFor="usda-max" className="block text-xs font-bold text-theme-ink">
+                  Số lượng tối đa
+                </label>
                 <input
+                  id="usda-max"
                   type="number"
                   min="1"
                   max="50"
                   value={usdaMaxItems}
                   onChange={(e) => setUsdaMaxItems(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-2xl bg-white/10 border border-white/20 text-xs font-bold text-white text-center focus:outline-none focus:ring-2 focus:ring-emerald-400"
+                  className="w-full min-h-[48px] px-3 py-2.5 rounded-2xl bg-theme-page/60 border border-theme-line text-sm font-bold text-theme-ink text-center focus:outline-none focus:ring-2 focus:ring-theme-brand"
                 />
               </div>
               <button
                 type="submit"
                 disabled={usdaLoading}
-                className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 active:scale-95 text-slate-950 font-black text-xs rounded-2xl shadow-md transition-all flex items-center gap-2 disabled:opacity-50"
+                className="min-h-[48px] px-5 py-2.5 bg-status-ok hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm rounded-2xl transition-colors inline-flex items-center gap-2 disabled:bg-theme-line disabled:text-theme-muted"
               >
-                <RefreshCw className={`w-4 h-4 ${usdaLoading ? "animate-spin" : ""}`} />
-                {usdaLoading ? "Đang đồng bộ..." : "Đồng Bộ Dữ Liệu"}
+                <RefreshCw
+                  className={`w-4 h-4 ${usdaLoading ? "animate-spin motion-reduce:animate-none" : ""}`}
+                  aria-hidden="true"
+                />
+                <span>{usdaLoading ? "Đang đồng bộ..." : "Đồng bộ dữ liệu"}</span>
               </button>
             </form>
-          </div>
+          </section>
 
-          <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 border border-gray-100 dark:border-gray-700 space-y-4">
-            <div className="flex justify-between items-center pb-2 border-b border-gray-100 dark:border-gray-700">
-              <h3 className="font-extrabold text-xs text-gray-500 uppercase tracking-wider">Danh Sách Tham Số Ngưỡng (Threshold Parameters)</h3>
+          {/* Business Rules */}
+          <section className="bg-theme-surface rounded-3xl p-6 border border-theme-line space-y-4 shadow-sm">
+            <div className="flex flex-wrap justify-between items-center gap-3 pb-3 border-b border-theme-line">
+              <div>
+                <h3 className="font-bold text-base text-theme-ink">
+                  Danh sách tham số ngưỡng cảnh báo (Business Rules)
+                </h3>
+                <p className="text-xs text-theme-muted font-medium">
+                  Quản lý điều kiện kích hoạt cảnh báo tự động cho EPDS và sinh hiệu.
+                </p>
+              </div>
               <button
+                type="button"
                 onClick={handleOpenCreateRule}
-                className="px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 font-bold text-xs rounded-xl transition-all flex items-center gap-1.5"
+                className="min-h-[44px] px-4 py-2 bg-theme-brand-soft border border-theme-brand/25 text-theme-ink hover:bg-theme-brand hover:text-theme-surface font-bold text-xs sm:text-sm rounded-2xl transition-colors inline-flex items-center gap-1.5"
               >
-                <Plus className="w-3.5 h-3.5" /> Thêm Quy Tắc
+                <Plus className="w-4 h-4" aria-hidden="true" />
+                <span>Thêm quy tắc mới</span>
               </button>
             </div>
 
             {businessRules.length === 0 ? (
-              <p className="text-xs text-gray-400 font-semibold">Chưa có quy tắc nào được định nghĩa trong hệ thống.</p>
+              <p className="text-sm text-theme-muted font-medium py-4">
+                Chưa có quy tắc nào được định nghĩa trong hệ thống.
+              </p>
             ) : (
-              businessRules.map((rule) => (
-                <div key={rule.id} className="p-4 rounded-2xl border border-gray-100 dark:border-gray-700 flex justify-between items-center gap-4 hover:border-blue-200 transition-all">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-[10px] font-extrabold bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded text-gray-600 dark:text-gray-300">
-                        {rule.code || rule.ruleName || "BR"}
-                      </span>
-                      <h4 className="font-bold text-xs text-gray-900 dark:text-white">{rule.title || rule.name}</h4>
+              <div className="space-y-3">
+                {businessRules.map((rule) => (
+                  <article
+                    key={rule.id}
+                    className="p-4 rounded-2xl border border-theme-line bg-theme-page/50 flex flex-wrap justify-between items-center gap-4 hover:border-theme-brand/40 transition-colors"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-xs font-extrabold bg-theme-surface border border-theme-line px-2.5 py-0.5 rounded-md text-theme-ink">
+                          {rule.code || rule.ruleName || "BR"}
+                        </span>
+                        <h4 className="font-bold text-sm text-theme-ink">
+                          {rule.title || rule.name}
+                        </h4>
+                      </div>
+                      <p className="text-xs text-theme-muted leading-relaxed">
+                        {rule.description}
+                      </p>
                     </div>
-                    <p className="text-[11px] text-gray-400 leading-relaxed">{rule.description}</p>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-xs font-black text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 px-3 py-1.5 rounded-full border border-blue-100 dark:border-blue-800">
-                      Ngưỡng: {rule.operator || ">="} {rule.thresholdValue ?? rule.value ?? 9}
-                    </span>
-                    <button
-                      onClick={() => handleOpenEditRule(rule)}
-                      className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-gray-700 rounded-xl transition-all"
-                      title="Chỉnh sửa tham số quy tắc"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))
+                    <div className="flex items-center gap-2.5 shrink-0">
+                      <span className="text-xs font-bold text-theme-ink bg-theme-brand-soft px-3 py-1.5 rounded-full border border-theme-brand/20">
+                        Ngưỡng: {rule.operator || ">="} {rule.thresholdValue ?? rule.value ?? 9}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEditRule(rule)}
+                        aria-label={`Chỉnh sửa quy tắc ${rule.code || rule.ruleName || ""}`}
+                        className="w-11 h-11 inline-flex items-center justify-center text-theme-ink bg-theme-surface border border-theme-line hover:bg-theme-brand-soft rounded-2xl transition-colors"
+                      >
+                        <Edit className="w-4 h-4" aria-hidden="true" />
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
             )}
-          </div>
+          </section>
         </div>
       )}
 
-      {/* Modal Edit/Create Business Rule */}
+      {/* Modal Edit/Create Rule */}
       {showRuleModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-gray-100 dark:border-gray-700">
-            <h3 className="font-extrabold text-base text-gray-900 dark:text-white flex items-center gap-2">
-              <Settings className="w-5 h-5 text-emerald-500" />
-              {editingRule ? `Điều Chỉnh Quy Tắc ${editingRule.code || editingRule.ruleName || ""}` : "Tạo Quy Tắc Hệ Thống Mới"}
-            </h3>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="admin-rule-modal-title"
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+        >
+          <div className="bg-theme-surface rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl border border-theme-line">
+            <div className="flex items-center justify-between gap-3">
+              <h3 id="admin-rule-modal-title" className="font-bold text-base text-theme-ink flex items-center gap-2">
+                <Settings className="w-5 h-5 text-theme-brand" aria-hidden="true" />
+                <span>
+                  {editingRule
+                    ? `Điều chỉnh quy tắc ${editingRule.code || editingRule.ruleName || ""}`
+                    : "Tạo quy tắc hệ thống mới"}
+                </span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowRuleModal(false)}
+                aria-label="Đóng hộp thoại"
+                className="w-10 h-10 inline-flex items-center justify-center rounded-full text-theme-muted hover:bg-theme-page"
+              >
+                <X className="w-5 h-5" aria-hidden="true" />
+              </button>
+            </div>
             <form onSubmit={handleRuleSubmit} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500">Mã Quy Tắc (Code)</label>
+              <div className="space-y-1.5">
+                <label htmlFor="rule-code" className="text-xs font-bold text-theme-ink block">
+                  Mã quy tắc
+                </label>
                 <input
+                  id="rule-code"
                   type="text"
                   required
-                  placeholder="VD: BR05_EPDS"
+                  placeholder="Ví dụ: BR05_EPDS"
                   value={ruleForm.code}
                   onChange={(e) => setRuleForm({ ...ruleForm, code: e.target.value })}
-                  className="w-full p-3 rounded-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full min-h-[48px] p-3 rounded-2xl border border-theme-line bg-theme-page/60 text-sm font-semibold text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand"
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500">Tên Quy Tắc (Title)</label>
+              <div className="space-y-1.5">
+                <label htmlFor="rule-title" className="text-xs font-bold text-theme-ink block">
+                  Tên quy tắc
+                </label>
                 <input
+                  id="rule-title"
                   type="text"
                   required
-                  placeholder="VD: Ngưỡng cảnh báo trầm cảm EPDS"
+                  placeholder="Ví dụ: Ngưỡng cảnh báo trầm cảm EPDS"
                   value={ruleForm.title}
                   onChange={(e) => setRuleForm({ ...ruleForm, title: e.target.value })}
-                  className="w-full p-3 rounded-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full min-h-[48px] p-3 rounded-2xl border border-theme-line bg-theme-page/60 text-sm font-semibold text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand"
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500">Toán Tử (Operator)</label>
+                <div className="space-y-1.5">
+                  <label htmlFor="rule-op" className="text-xs font-bold text-theme-ink block">
+                    Toán tử
+                  </label>
                   <select
+                    id="rule-op"
                     value={ruleForm.operator}
                     onChange={(e) => setRuleForm({ ...ruleForm, operator: e.target.value })}
-                    className="w-full p-3 rounded-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    className="w-full min-h-[48px] p-3 rounded-2xl border border-theme-line bg-theme-page/60 text-sm font-bold text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand"
                   >
-                    <option value=">=">&gt;= (Lớn hơn hoặc bằng)</option>
+                    <option value=">=">&gt;= (Lớn hơn / bằng)</option>
                     <option value=">">&gt; (Lớn hơn)</option>
-                    <option value="<=">&lt;= (Nhỏ hơn hoặc bằng)</option>
+                    <option value="<=">&lt;= (Nhỏ hơn / bằng)</option>
                     <option value="<">&lt; (Nhỏ hơn)</option>
                     <option value="==">== (Bằng)</option>
                   </select>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-gray-500">Giá Trị Ngưỡng (Threshold)</label>
+                <div className="space-y-1.5">
+                  <label htmlFor="rule-threshold" className="text-xs font-bold text-theme-ink block">
+                    Giá trị ngưỡng
+                  </label>
                   <input
+                    id="rule-threshold"
                     type="number"
                     step="any"
                     required
                     value={ruleForm.thresholdValue}
-                    onChange={(e) => setRuleForm({ ...ruleForm, thresholdValue: parseFloat(e.target.value) })}
-                    className="w-full p-3 rounded-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 text-xs font-extrabold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    onChange={(e) =>
+                      setRuleForm({ ...ruleForm, thresholdValue: parseFloat(e.target.value) })
+                    }
+                    className="w-full min-h-[48px] p-3 rounded-2xl border border-theme-line bg-theme-page/60 text-sm font-extrabold text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand"
                   />
                 </div>
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500">Mô Tả Quy Tắc</label>
+              <div className="space-y-1.5">
+                <label htmlFor="rule-desc" className="text-xs font-bold text-theme-ink block">
+                  Mô tả quy tắc
+                </label>
                 <textarea
-                  rows="2"
+                  id="rule-desc"
+                  rows={2}
                   value={ruleForm.description}
                   onChange={(e) => setRuleForm({ ...ruleForm, description: e.target.value })}
-                  className="w-full p-3 rounded-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full p-3 rounded-2xl border border-theme-line bg-theme-page/60 text-sm font-medium text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand"
                 />
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-1">
                 <button
                   type="button"
                   onClick={() => setShowRuleModal(false)}
-                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-2xl transition-all"
+                  className="flex-1 min-h-[44px] py-2.5 bg-theme-page border border-theme-line hover:bg-theme-brand-soft text-theme-ink font-bold text-xs sm:text-sm rounded-2xl transition-colors"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs rounded-2xl shadow-md transition-all"
+                  className="flex-1 min-h-[44px] py-2.5 bg-theme-brand hover:bg-theme-ink text-theme-surface font-bold text-xs sm:text-sm rounded-2xl transition-colors"
                 >
-                  Lưu Quy Tắc
+                  Lưu quy tắc
                 </button>
               </div>
             </form>
@@ -724,51 +985,79 @@ export default function AdminDashboardPage() {
 
       {/* Modal Create Staff/Expert */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-gray-100 dark:border-gray-700">
-            <h3 className="font-extrabold text-base text-gray-900 dark:text-white flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-blue-600" /> Tạo Tài Khoản Nhân Viên / Chuyên Gia
-            </h3>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="admin-create-user-title"
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+        >
+          <div className="bg-theme-surface rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl border border-theme-line">
+            <div className="flex items-center justify-between gap-3">
+              <h3 id="admin-create-user-title" className="font-bold text-base text-theme-ink flex items-center gap-2">
+                <UserPlus className="w-5 h-5 text-theme-brand" aria-hidden="true" />
+                <span>Tạo tài khoản Nhân viên / Chuyên gia</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(false)}
+                aria-label="Đóng hộp thoại"
+                className="w-10 h-10 inline-flex items-center justify-center rounded-full text-theme-muted hover:bg-theme-page"
+              >
+                <X className="w-5 h-5" aria-hidden="true" />
+              </button>
+            </div>
             <form onSubmit={handleCreateSubmit} className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500">Họ và Tên</label>
+              <div className="space-y-1.5">
+                <label htmlFor="staff-fullname" className="text-xs font-bold text-theme-ink block">
+                  Họ và tên
+                </label>
                 <input
+                  id="staff-fullname"
                   type="text"
                   required
                   placeholder="Ví dụ: Bác sĩ Nguyễn Văn A"
                   value={createForm.fullName}
                   onChange={(e) => setCreateForm({ ...createForm, fullName: e.target.value })}
-                  className="w-full p-3 rounded-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full min-h-[48px] p-3 rounded-2xl border border-theme-line bg-theme-page/60 text-sm font-semibold text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand"
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500">Email Đăng Nhập</label>
+              <div className="space-y-1.5">
+                <label htmlFor="staff-email" className="text-xs font-bold text-theme-ink block">
+                  Email đăng nhập
+                </label>
                 <input
+                  id="staff-email"
                   type="email"
                   required
-                  placeholder="expert@momi.com"
+                  placeholder="expert@momoi.vn"
                   value={createForm.email}
                   onChange={(e) => setCreateForm({ ...createForm, email: e.target.value })}
-                  className="w-full p-3 rounded-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full min-h-[48px] p-3 rounded-2xl border border-theme-line bg-theme-page/60 text-sm font-semibold text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand"
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500">Mật Khẩu Khởi Tạo</label>
+              <div className="space-y-1.5">
+                <label htmlFor="staff-password" className="text-xs font-bold text-theme-ink block">
+                  Mật khẩu khởi tạo
+                </label>
                 <input
+                  id="staff-password"
                   type="password"
                   required
-                  placeholder="Mật khẩu an toàn"
+                  placeholder="Nhập mật khẩu an toàn"
                   value={createForm.password}
                   onChange={(e) => setCreateForm({ ...createForm, password: e.target.value })}
-                  className="w-full p-3 rounded-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full min-h-[48px] p-3 rounded-2xl border border-theme-line bg-theme-page/60 text-sm font-semibold text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand"
                 />
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-500">Loại Vai Trò (Role)</label>
+              <div className="space-y-1.5">
+                <label htmlFor="staff-role" className="text-xs font-bold text-theme-ink block">
+                  Vai trò chuyên môn
+                </label>
                 <select
+                  id="staff-role"
                   value={createForm.role}
                   onChange={(e) => setCreateForm({ ...createForm, role: e.target.value })}
-                  className="w-full p-3 rounded-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full min-h-[48px] p-3 rounded-2xl border border-theme-line bg-theme-page/60 text-sm font-semibold text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand"
                 >
                   <option value="Staff">Care Staff (Nhân viên chăm sóc)</option>
                   <option value="Expert">Medical Expert (Chuyên gia y tế / Dinh dưỡng)</option>
@@ -779,15 +1068,15 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="min-h-[44px] px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold text-theme-ink bg-theme-page border border-theme-line hover:bg-theme-brand-soft"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md"
+                  className="min-h-[44px] px-5 py-2 bg-theme-brand hover:bg-theme-ink text-theme-surface rounded-2xl text-xs sm:text-sm font-bold"
                 >
-                  Tạo Tài Khoản
+                  Tạo tài khoản
                 </button>
               </div>
             </form>

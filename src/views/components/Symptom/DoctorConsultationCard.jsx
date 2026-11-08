@@ -9,30 +9,39 @@ const NURSE_REACTIONS = "/mascots/nurse-reactions.png";
 
 function NurseMascot({ size = 76, className = "" }) {
   return (
-    <div className={`relative flex items-center justify-center rounded-2xl border border-emerald-100 bg-white shadow-sm overflow-hidden ${className}`}>
-      <Mascot directions={NURSE_DIRECTIONS} reactions={NURSE_REACTIONS} size={size} label="nurse" />
+    <div
+      className={`relative flex items-center justify-center overflow-hidden rounded-2xl border border-theme-line bg-theme-surface shadow-sm ${className}`}
+    >
+      <Mascot
+        directions={NURSE_DIRECTIONS}
+        reactions={NURSE_REACTIONS}
+        size={size}
+        label="nurse"
+      />
     </div>
   );
 }
 
 function ContactButtons({ large = false }) {
   const { phone, phoneDisplay } = ADVISOR_DOCTOR;
-  const size = large ? "px-5 py-3 text-base" : "px-4 py-2.5 text-base";
+  const padClass = large ? "px-5 py-3 text-sm sm:text-base" : "px-4 py-2.5 text-sm";
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2.5">
       <a
         href={`tel:${phone}`}
-        className={`inline-flex items-center justify-center gap-2 ${size} bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-full`}
+        className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-status-ok font-bold text-white transition-colors hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-ok focus-visible:ring-offset-2 ${padClass}`}
       >
-        <PhoneCall className="w-5 h-5" /> Gọi {phoneDisplay}
+        <PhoneCall className="h-4 w-4 shrink-0" />
+        <span>Gọi {phoneDisplay}</span>
       </a>
       <a
         href={`https://zalo.me/${phone}`}
         target="_blank"
         rel="noopener noreferrer"
-        className={`inline-flex items-center justify-center gap-2 ${size} bg-blue-500 hover:bg-blue-600 text-white font-bold rounded-full`}
+        className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-sky-700 font-bold text-white transition-colors hover:bg-sky-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-700 focus-visible:ring-offset-2 ${padClass}`}
       >
-        <MessageCircle className="w-5 h-5" /> Nhắn Zalo
+        <MessageCircle className="h-4 w-4 shrink-0" />
+        <span>Nhắn Zalo</span>
       </a>
     </div>
   );
@@ -43,28 +52,32 @@ export default function DoctorConsultationCard({ variant = "full", urgent = fals
   const { displayName, role, phone, phoneDisplay } = ADVISOR_DOCTOR;
 
   const handleCopyPhone = () => {
-    navigator.clipboard.writeText(phone).then(() => {
-      setCopied(true);
-      toast.success(`Đã chép số của ${displayName}: ${phoneDisplay}`);
-      setTimeout(() => setCopied(false), 2500);
-    }).catch(() => {
-      toast.error("Không thể chép số điện thoại!");
-    });
+    navigator.clipboard
+      .writeText(phone)
+      .then(() => {
+        setCopied(true);
+        toast.success(`Đã sao chép số của ${displayName}: ${phoneDisplay}`);
+        setTimeout(() => setCopied(false), 2500);
+      })
+      .catch(() => {
+        toast.error("Không thể sao chép số điện thoại.");
+      });
   };
 
-  // Dải trên đầu trang Kiểm tra triệu chứng
   if (variant === "banner") {
     return (
       <section
         aria-label="Bác sĩ cố vấn"
-        className="bg-white border-2 border-emerald-200 rounded-3xl p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4"
+        className="flex flex-col justify-between gap-4 rounded-3xl border border-theme-line bg-theme-surface p-5 font-display shadow-sm md:flex-row md:items-center"
       >
         <div className="flex items-center gap-4">
-          <NurseMascot size={60} className="w-16 h-16 shrink-0" />
+          <NurseMascot size={60} className="h-16 w-16 shrink-0" />
           <div>
-            <p className="text-sm font-semibold text-emerald-700">{role}</p>
-            <p className="text-xl font-extrabold text-gray-900">{displayName}</p>
-            <p className="text-base text-gray-600 mt-0.5">Cần hỏi thêm, mẹ có thể gọi hoặc nhắn Zalo cho bác sĩ.</p>
+            <p className="text-xs font-bold text-status-ok">{role}</p>
+            <p className="text-lg font-bold text-theme-ink sm:text-xl">{displayName}</p>
+            <p className="mt-0.5 text-sm text-theme-muted">
+              Cần hỏi thêm, mẹ có thể gọi trực tiếp hoặc nhắn Zalo cho bác sĩ.
+            </p>
           </div>
         </div>
         <ContactButtons />
@@ -72,27 +85,29 @@ export default function DoctorConsultationCard({ variant = "full", urgent = fals
     );
   }
 
-  // Thẻ đầy đủ, hiện sau kết quả phân tích
   return (
     <section
       aria-label="Liên hệ bác sĩ cố vấn"
-      className={`rounded-3xl border-2 p-5 sm:p-6 space-y-5 ${
-        urgent ? "bg-red-50 border-red-200" : "bg-emerald-50/60 border-emerald-200"
+      className={`space-y-5 rounded-3xl border p-5 font-display sm:p-6 ${
+        urgent
+          ? "border-red-300 bg-red-50"
+          : "border-theme-line bg-theme-surface shadow-sm"
       }`}
     >
       {urgent && (
-        <p className="text-lg font-bold text-red-800 flex items-center gap-2">
-          <Stethoscope className="w-6 h-6" /> Mẹ nên hỏi ý kiến bác sĩ sớm
+        <p className="flex items-center gap-2 text-base font-bold text-red-800 sm:text-lg">
+          <Stethoscope className="h-5 w-5 shrink-0" />
+          <span>Mẹ nên hỏi ý kiến bác sĩ sớm</span>
         </p>
       )}
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+      <div className="flex flex-col justify-between gap-5 md:flex-row md:items-center">
         <div className="flex items-center gap-4">
-          <NurseMascot size={80} className="w-20 h-20 shrink-0" />
+          <NurseMascot size={76} className="h-20 w-20 shrink-0" />
           <div>
-            <p className="text-sm font-semibold text-emerald-700">{role}</p>
-            <p className="text-2xl font-extrabold text-gray-900">{displayName}</p>
-            <p className="text-base text-gray-700 mt-1">
+            <p className="text-xs font-bold text-status-ok">{role}</p>
+            <p className="text-xl font-bold text-theme-ink sm:text-2xl">{displayName}</p>
+            <p className="mt-1 text-sm text-theme-ink sm:text-base">
               Điện thoại / Zalo: <strong className="tracking-wide">{phoneDisplay}</strong>
             </p>
           </div>
@@ -103,10 +118,14 @@ export default function DoctorConsultationCard({ variant = "full", urgent = fals
           <button
             type="button"
             onClick={handleCopyPhone}
-            className="self-start inline-flex items-center gap-2 px-4 py-2 text-base font-semibold text-gray-700 hover:underline"
+            className="inline-flex min-h-[44px] items-center gap-2 self-start rounded-full px-3 text-sm font-semibold text-theme-ink hover:bg-theme-page hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
           >
-            {copied ? <Check className="w-5 h-5 text-emerald-600" /> : <Copy className="w-5 h-5" />}
-            {copied ? "Đã chép số" : "Chép số điện thoại"}
+            {copied ? (
+              <Check className="h-4 w-4 text-status-ok" />
+            ) : (
+              <Copy className="h-4 w-4 text-theme-muted" />
+            )}
+            <span>{copied ? "Đã sao chép số" : "Sao chép số điện thoại"}</span>
           </button>
         </div>
       </div>

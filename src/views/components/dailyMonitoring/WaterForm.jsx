@@ -1,50 +1,60 @@
+import React from "react";
+import { Droplets, Minus, Plus } from "lucide-react";
+
 export const WaterForm = ({ water, setWater }) => {
+  const cups = Number(water.liters) || 0;
+  const pct = Math.min(100, Math.round(cups * 10));
+
   return (
-    <div className="bg-white dark:bg-gray-800/50 rounded-xl shadow-lg p-6">
-      <div className="flex items-center gap-4 mb-5">
-        <div className="bg-saffron/10 p-2.5 rounded-full">
-          <span className="material-symbols-outlined text-saffron">water_drop</span>
+    <section className="bg-theme-surface rounded-3xl border border-theme-line p-6 shadow-sm space-y-5">
+      <div className="flex items-center gap-3.5">
+        <div className="w-11 h-11 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center shrink-0">
+          <Droplets className="w-5 h-5" aria-hidden="true" />
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Lượng nước uống</h3>
+        <div>
+          <h2 className="text-lg font-bold text-theme-ink">Lượng nước uống</h2>
+          <p className="text-xs text-theme-muted font-medium">Mục tiêu gợi ý khoảng 8–10 cốc mỗi ngày</p>
+        </div>
       </div>
 
-      <div className="flex items-center justify-between gap-6">
-        <div className="flex-1">
-          <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2 block">
-            Hôm nay bạn uống bao nhiêu cốc nước?
-          </label>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1 space-y-3">
+          <p className="text-sm font-semibold text-theme-ink">
+            Hôm nay mẹ đã uống bao nhiêu cốc nước?
+          </p>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => setWater({ liters: Math.max(0, (Number(water.liters) || 0) - 1) })}
-              className="flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors px-3 py-1"
-              aria-label="decrease-water"
+              type="button"
+              onClick={() => setWater({ liters: Math.max(0, cups - 1) })}
+              className="w-11 h-11 flex items-center justify-center rounded-2xl border border-theme-line bg-theme-page text-theme-ink hover:bg-theme-brand-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+              aria-label="Giảm 1 cốc nước"
             >
-              -
+              <Minus className="w-4 h-4" aria-hidden="true" />
             </button>
-            <span className="text-2xl font-bold w-16 text-center text-gray-800 dark:text-white">
-              {water.liters || 0}
+            <span className="text-2xl font-extrabold min-w-[3.5rem] text-center text-theme-ink">
+              {cups}
             </span>
             <button
-              onClick={() => setWater({ liters: (Number(water.liters) || 0) + 1 })}
-              className="flex items-center justify-center rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors px-3 py-1"
-              aria-label="increase-water"
+              type="button"
+              onClick={() => setWater({ liters: cups + 1 })}
+              className="w-11 h-11 flex items-center justify-center rounded-2xl bg-theme-brand text-theme-surface hover:bg-theme-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+              aria-label="Tăng 1 cốc nước"
             >
-              +
+              <Plus className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
         </div>
 
-        <div className="relative w-20 h-24 bg-gray-100 dark:bg-gray-700 rounded-t-lg rounded-b-2xl overflow-hidden flex flex-col items-center justify-center">
-          <div
-            className="absolute bottom-0 left-0 w-full bg-blue-400"
-            style={{ height: `${Math.min(100, Number(water.liters || 0) * 10)}%` }}
-          ></div>
-          <span className="material-symbols-outlined text-white/80 text-3xl z-10">water_drop</span>
-          <span className="text-lg font-bold text-white z-10">
-            {Math.min(100, Math.round((Number(water.liters || 0) * 10)))}%
-          </span>
+        <div className="w-24 rounded-2xl border border-theme-line bg-theme-page p-3 text-center space-y-1.5 shrink-0">
+          <div className="w-full h-14 rounded-md bg-theme-surface border border-theme-line overflow-hidden flex items-end">
+            <div
+              className="w-full bg-theme-brand transition-all duration-300 motion-reduce:transition-none"
+              style={{ height: `${pct}%` }}
+            />
+          </div>
+          <p className="text-xs font-extrabold text-theme-ink">{pct}%</p>
         </div>
       </div>
-    </div>
+    </section>
   );
 };

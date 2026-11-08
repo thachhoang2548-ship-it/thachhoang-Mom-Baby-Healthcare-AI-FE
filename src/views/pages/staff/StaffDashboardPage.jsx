@@ -1,23 +1,36 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import adminService from "../../../models/services/adminService";
 import alertService from "../../../models/services/alertService";
 import expertService from "../../../models/services/expertService";
 import AdminFeedbackPanel from "../admin/AdminFeedbackPanel";
-import { Activity, ShieldAlert, HeartPulse, UserCheck, CheckCircle, MessageSquare, FileText, Send, Utensils, ThumbsUp, ThumbsDown, X, User, MessageSquareHeart } from "lucide-react";
+import {
+  ShieldAlert,
+  HeartPulse,
+  UserCheck,
+  CheckCircle,
+  MessageSquare,
+  FileText,
+  Send,
+  Utensils,
+  ThumbsUp,
+  ThumbsDown,
+  X,
+  User,
+  MessageSquareHeart,
+  AlertTriangle,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function StaffDashboardPage() {
-  const [activeTab, setActiveTab] = useState("risk_monitoring"); // "risk_monitoring" | "weaning_requests" | "feedback"
+  const [activeTab, setActiveTab] = useState("risk_monitoring");
   const [riskUsers, setRiskUsers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Selected Mom for Consultation & Medical Notes Modal (Diagram 3)
   const [selectedMom, setSelectedMom] = useState(null);
   const [medicalNotes, setMedicalNotes] = useState("");
   const [consultationMsg, setConsultationMsg] = useState("");
   const [sendingConsult, setSendingConsult] = useState(false);
 
-  // Pending Weaning Food Requests (Diagram 1)
   const [weaningRequests, setWeaningRequests] = useState([
     {
       id: "REQ_01",
@@ -27,7 +40,7 @@ export default function StaffDashboardPage() {
       ingredients: "Yến mạch, Quả bơ chín, Sữa công thức",
       reactionReported: "Bé hơi đỏ quanh miệng nhẹ sau khi ăn 10 phút",
       requestedAt: "2026-07-20 18:30",
-      status: "Pending"
+      status: "Pending",
     },
     {
       id: "REQ_02",
@@ -37,16 +50,16 @@ export default function StaffDashboardPage() {
       ingredients: "Tôm tươi bóc vỏ, Bí đỏ, Dầu ô liu",
       reactionReported: "Bé tiêu hóa bình thường, không có biểu hiện dị ứng",
       requestedAt: "2026-07-20 19:15",
-      status: "Pending"
-    }
+      status: "Pending",
+    },
   ]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const [riskRes, recipesRes] = await Promise.allSettled([
         adminService.getUsersAtRisk(),
-        expertService.getPendingRecipes()
+        expertService.getPendingRecipes(),
       ]);
 
       if (riskRes.status === "fulfilled" && riskRes.value) {
@@ -58,16 +71,21 @@ export default function StaffDashboardPage() {
       if (recipesRes.status === "fulfilled" && recipesRes.value) {
         const res = recipesRes.value;
         if (res.isSuccess && Array.isArray(res.data) && res.data.length > 0) {
-          const apiRequests = res.data.map(r => ({
+          const apiRequests = res.data.map((r) => ({
             id: r.id,
             momName: "Mẹ bầu / AI Đề xuất",
             babyAge: r.profileStage || "Ăn dặm",
             foodName: r.title,
-            ingredients: typeof r.ingredientsJson === "string" ? r.ingredientsJson : JSON.stringify(r.ingredientsJson),
+            ingredients:
+              typeof r.ingredientsJson === "string"
+                ? r.ingredientsJson
+                : JSON.stringify(r.ingredientsJson),
             reactionReported: r.description || "Công thức ăn dặm mới chờ duyệt",
-            requestedAt: r.generatedAt ? new Date(r.generatedAt).toLocaleString("vi-VN") : "Gần đây",
+            requestedAt: r.generatedAt
+              ? new Date(r.generatedAt).toLocaleString("vi-VN")
+              : "Gần đây",
             status: "Pending",
-            isRealApi: true
+            isRealApi: true,
           }));
           setWeaningRequests(apiRequests);
         }
@@ -77,7 +95,11 @@ export default function StaffDashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleResolve = async (alertId, userName) => {
     try {
@@ -86,18 +108,22 @@ export default function StaffDashboardPage() {
         toast.success(`Đã đánh dấu hoàn tất hỗ trợ cho ${userName}`);
         await loadData();
       } else {
-        toast.error('Không thể cập nhật trạng thái cảnh báo');
+        toast.error("Không thể cập nhật trạng thái cảnh báo");
       }
     } catch (err) {
       console.error(err);
-      toast.error('Lỗi khi xử lý cảnh báo');
+      toast.error("Lỗi khi xử lý cảnh báo");
     }
   };
 
   const handleOpenConsultModal = (mom) => {
     setSelectedMom(mom);
-    setMedicalNotes(`Mẹ bầu ${mom.fullName || mom.email} cần theo dõi chỉ số EPDS và nhịp sinh hoạt.`);
-    setConsultationMsg(`Chào mami ${mom.fullName || "Mẹ bầu"}, đội ngũ nhân viên chăm sóc MomOi đã ghi nhận chỉ số của bạn. Bạn hãy dành thời gian nghỉ ngơi nhiều hơn nhé! 💙`);
+    setMedicalNotes(
+      `Mẹ ${mom.fullName || mom.email} cần theo dõi chỉ số EPDS và nhịp sinh hoạt.`
+    );
+    setConsultationMsg(
+      `Chào mẹ ${mom.fullName || "bạn"}, đội ngũ nhân viên chăm sóc Mom Ơi! đã ghi nhận chỉ số của mẹ. Mẹ hãy dành thêm thời gian nghỉ ngơi và báo lại nếu vẫn thấy mệt nhé.`
+    );
   };
 
   const handleSendConsultation = async (e) => {
@@ -106,14 +132,16 @@ export default function StaffDashboardPage() {
     setSendingConsult(true);
     try {
       const targetUserId = selectedMom.userId || selectedMom.id;
-      let fullContent = `🩺 [TƯ VẤN TỪ CARE STAFF]\n`;
+      let fullContent = `[TƯ VẤN TỪ CARE STAFF]\n`;
       if (medicalNotes.trim()) {
-        fullContent += `📋 Ghi chú y tế: ${medicalNotes.trim()}\n`;
+        fullContent += `Ghi chú y tế: ${medicalNotes.trim()}\n`;
       }
-      fullContent += `💬 Lời khuyên: ${consultationMsg.trim()}`;
+      fullContent += `Lời khuyên: ${consultationMsg.trim()}`;
 
       await alertService.sendConsultationMessage(targetUserId, fullContent);
-      toast.success(`Đã gửi tin nhắn tư vấn và lưu hồ sơ cho ${selectedMom.fullName || selectedMom.email}! 📩`);
+      toast.success(
+        `Đã gửi tin nhắn tư vấn và lưu hồ sơ cho ${selectedMom.fullName || selectedMom.email}!`
+      );
       setSelectedMom(null);
     } catch (err) {
       console.error(err);
@@ -128,8 +156,8 @@ export default function StaffDashboardPage() {
       if (isRealApi) {
         await expertService.reviewRecipe(reqId, true, "Đã được Staff duyệt vào Catalog");
       }
-      setWeaningRequests(prev => prev.filter(r => r.id !== reqId));
-      toast.success(`Đã duyệt món "${foodName}" và thêm vào Thực Phẩm Catalog ăn dặm! 🥣`);
+      setWeaningRequests((prev) => prev.filter((r) => r.id !== reqId));
+      toast.success(`Đã duyệt món "${foodName}" và thêm vào danh mục ăn dặm.`);
     } catch (err) {
       console.error(err);
       toast.error("Không thể duyệt công thức.");
@@ -139,9 +167,13 @@ export default function StaffDashboardPage() {
   const handleRejectWeaningFood = async (reqId, foodName, isRealApi) => {
     try {
       if (isRealApi) {
-        await expertService.reviewRecipe(reqId, false, "Staff từ chối do rủi ro dị ứng/không phù hợp");
+        await expertService.reviewRecipe(
+          reqId,
+          false,
+          "Staff từ chối do rủi ro dị ứng/không phù hợp"
+        );
       }
-      setWeaningRequests(prev => prev.filter(r => r.id !== reqId));
+      setWeaningRequests((prev) => prev.filter((r) => r.id !== reqId));
       toast.error(`Đã từ chối món "${foodName}".`);
     } catch (err) {
       console.error(err);
@@ -149,256 +181,303 @@ export default function StaffDashboardPage() {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12">
-      {/* Header Staff Banner */}
-      <div className="bg-gradient-to-r from-emerald-800 via-teal-800 to-emerald-700 rounded-3xl p-6 text-white shadow-xl flex justify-between items-center relative overflow-hidden">
-        <div className="z-10">
-          <div className="flex items-center gap-2 text-emerald-300 font-extrabold text-xs uppercase tracking-wider mb-1">
-            <HeartPulse className="w-4 h-4" /> Care Staff Support Portal
-          </div>
-          <h1 className="text-2xl font-black">Cổng Giám Sát & Hỗ Trợ Mẹ Bầu 🩺</h1>
-          <p className="text-xs text-emerald-100 mt-1 max-w-xl font-medium leading-relaxed">
-            Theo dõi diễn biến sức khỏe hàng ngày, tiếp nhận các cảnh báo nguy cơ cao từ hệ thống, duyệt thực phẩm ăn dặm và tư vấn trực tiếp cho người mẹ.
-          </p>
+    <div className="font-display space-y-6 max-w-6xl mx-auto pb-12 text-theme-ink">
+      {/* Header */}
+      <header className="bg-theme-surface rounded-3xl border border-theme-line p-6 sm:p-8 shadow-sm space-y-2">
+        <div className="inline-flex items-center gap-2 rounded-full bg-theme-brand-soft text-theme-ink px-3.5 py-1.5 text-xs font-bold border border-theme-brand/20">
+          <HeartPulse className="w-4 h-4 text-theme-brand" aria-hidden="true" />
+          <span>Không gian Điều phối Chăm sóc (Care Staff)</span>
         </div>
-      </div>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-theme-ink tracking-tight">
+          Cổng giám sát & đồng hành cùng mẹ
+        </h1>
+        <p className="text-sm text-theme-muted max-w-2xl font-medium leading-relaxed">
+          Theo dõi các cảnh báo chỉ số sức khỏe, tiếp nhận đề xuất thực đơn ăn dặm và gửi phản hồi chăm sóc kịp thời cho mẹ bầu và mẹ sau sinh.
+        </p>
+      </header>
 
-      {/* Tabs Navigation */}
-      <div className="flex gap-3 border-b border-gray-200 dark:border-gray-700 pb-3">
+      {/* Tabs */}
+      <div className="flex flex-wrap gap-2.5" role="tablist" aria-label="Chức năng nhân viên chăm sóc">
         <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "risk_monitoring"}
           onClick={() => setActiveTab("risk_monitoring")}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-extrabold text-xs transition-all ${
+          className={`min-h-[44px] inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs sm:text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
             activeTab === "risk_monitoring"
-              ? "bg-emerald-600 text-white shadow-md"
-              : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              ? "bg-theme-brand text-theme-surface shadow-sm"
+              : "bg-theme-surface text-theme-ink border border-theme-line hover:bg-theme-brand-soft"
           }`}
         >
-          <ShieldAlert className="w-4 h-4" /> Giám Sát & Tư Vấn Mẹ Bầu ({riskUsers.length})
+          <ShieldAlert className="w-4 h-4" aria-hidden="true" />
+          <span>Giám sát & tư vấn ({riskUsers.length})</span>
         </button>
         <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "weaning_requests"}
           onClick={() => setActiveTab("weaning_requests")}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-extrabold text-xs transition-all ${
+          className={`min-h-[44px] inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs sm:text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
             activeTab === "weaning_requests"
-              ? "bg-emerald-600 text-white shadow-md"
-              : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              ? "bg-theme-brand text-theme-surface shadow-sm"
+              : "bg-theme-surface text-theme-ink border border-theme-line hover:bg-theme-brand-soft"
           }`}
         >
-          <Utensils className="w-4 h-4" /> Duyệt Món Ăn Dặm Mới ({weaningRequests.length})
+          <Utensils className="w-4 h-4" aria-hidden="true" />
+          <span>Duyệt món ăn dặm ({weaningRequests.length})</span>
         </button>
         <button
+          type="button"
+          role="tab"
+          aria-selected={activeTab === "feedback"}
           onClick={() => setActiveTab("feedback")}
-          className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-extrabold text-xs transition-all ${
+          className={`min-h-[44px] inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs sm:text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
             activeTab === "feedback"
-              ? "bg-emerald-600 text-white shadow-md"
-              : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              ? "bg-theme-brand text-theme-surface shadow-sm"
+              : "bg-theme-surface text-theme-ink border border-theme-line hover:bg-theme-brand-soft"
           }`}
         >
-          <MessageSquareHeart className="w-4 h-4" /> Phản hồi người dùng
+          <MessageSquareHeart className="w-4 h-4" aria-hidden="true" />
+          <span>Phản hồi người dùng</span>
         </button>
       </div>
 
-      {/* TAB 1: Risk Monitoring & Consultation */}
+      {/* TAB 1 */}
       {activeTab === "risk_monitoring" && (
-        <div className="space-y-4">
-          <h2 className="text-base font-extrabold text-gray-850 dark:text-white flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-emerald-600" /> Danh Sách Mẹ Bầu Cần Theo Dõi & Tư Vấn Kịp Thời
+        <section className="space-y-4">
+          <h2 className="text-lg font-bold text-theme-ink flex items-center gap-2">
+            <ShieldAlert className="w-5 h-5 text-theme-brand" aria-hidden="true" />
+            <span>Danh sách mẹ cần theo dõi & hỗ trợ kịp thời</span>
           </h2>
 
           {loading ? (
-            <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700">
-              <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-              <p className="text-xs font-bold text-gray-500">Đang tải danh sách cảnh báo...</p>
+            <div className="text-center py-16 bg-theme-surface rounded-3xl border border-theme-line">
+              <p className="text-sm font-semibold text-theme-muted">Đang tải danh sách cảnh báo...</p>
             </div>
           ) : riskUsers.length === 0 ? (
-            <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700">
-              <UserCheck className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-              <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">Hệ thống đang ở trạng thái an toàn</h3>
-              <p className="text-xs text-gray-400 mt-1">Hiện không có chỉ số bất thường nào cần nhân viên hỗ trợ khẩn cấp.</p>
+            <div className="text-center py-16 bg-theme-surface rounded-3xl border border-theme-line space-y-2">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-status-ok border border-emerald-200 flex items-center justify-center mx-auto">
+                <UserCheck className="w-6 h-6" aria-hidden="true" />
+              </div>
+              <h3 className="text-base font-bold text-theme-ink">Hệ thống đang ở trạng thái ổn định</h3>
+              <p className="text-xs sm:text-sm text-theme-muted">
+                Hiện không có cảnh báo bất thường nào cần nhân viên hỗ trợ khẩn cấp.
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {riskUsers.map((r) => (
-                <div key={r.id || r.userId} className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-emerald-100 dark:border-emerald-900/40 shadow-sm space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[10px] bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 font-black px-3 py-1 rounded-full uppercase tracking-wider">
-                      🚨 {r.severity || "HIGH SEVERITY"}
+                <article
+                  key={r.id || r.userId}
+                  className="bg-theme-surface rounded-3xl p-5 sm:p-6 border border-theme-line shadow-sm space-y-4"
+                >
+                  <div className="flex justify-between items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 text-xs bg-red-50 border border-red-200 text-red-800 font-bold px-3 py-1 rounded-full">
+                      <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />
+                      <span>{r.severity || "Ưu tiên cao"}</span>
                     </span>
-                    <span className="text-[10px] text-gray-400 font-semibold">{r.updatedAt || "Gần đây"}</span>
+                    <span className="text-xs text-theme-muted font-medium">
+                      {r.updatedAt || "Gần đây"}
+                    </span>
                   </div>
 
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-extrabold text-sm text-gray-900 dark:text-white flex items-center gap-1.5">
-                        <User className="w-4 h-4 text-emerald-600" /> {r.fullName || r.email}
-                      </h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mt-0.5">Email: {r.email}</p>
-                    </div>
+                  <div>
+                    <h3 className="font-bold text-base text-theme-ink flex items-center gap-2">
+                      <User className="w-4 h-4 text-theme-brand" aria-hidden="true" />
+                      <span>{r.fullName || r.email}</span>
+                    </h3>
+                    <p className="text-xs text-theme-muted font-medium mt-0.5">Email: {r.email}</p>
                   </div>
 
-                  <div className="p-3.5 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-2xl border border-emerald-100 dark:border-emerald-900/30 space-y-1">
-                    <span className="text-[10px] font-extrabold text-emerald-800 dark:text-emerald-300 block uppercase tracking-wider">Lý do cảnh báo nguy cơ:</span>
-                    <p className="text-xs text-emerald-900 dark:text-emerald-200 font-bold leading-relaxed">{r.alertReason || "Cảnh báo chỉ số sức khỏe hàng ngày bất thường."}</p>
+                  <div className="p-3.5 bg-status-warn-bg rounded-2xl border border-status-warn-line/40 space-y-1">
+                    <span className="text-xs font-bold text-status-warn-text block">
+                      Lý do cảnh báo nguy cơ:
+                    </span>
+                    <p className="text-xs sm:text-sm text-status-warn-text font-semibold leading-relaxed">
+                      {r.alertReason || "Cảnh báo chỉ số sức khỏe hàng ngày bất thường."}
+                    </p>
                   </div>
 
-                  <div className="flex gap-2 pt-1">
+                  <div className="flex flex-wrap gap-2.5 pt-1">
                     <button
+                      type="button"
                       onClick={() => handleOpenConsultModal(r)}
-                      className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-2xl shadow-sm transition-all flex items-center justify-center gap-1.5"
+                      className="flex-1 min-h-[44px] py-2.5 px-4 bg-theme-brand hover:bg-theme-ink text-theme-surface font-bold text-xs sm:text-sm rounded-2xl transition-colors inline-flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
                     >
-                      <MessageSquare className="w-4 h-4" /> Xem Hồ Sơ & Tư Vấn
+                      <MessageSquare className="w-4 h-4" aria-hidden="true" />
+                      <span>Xem hồ sơ & tư vấn</span>
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleResolve(r.alertId || r.id, r.fullName || r.email)}
-                      className="px-3.5 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-bold text-xs rounded-2xl transition-all flex items-center gap-1.5"
-                      title="Đánh dấu đã hoàn tất hỗ trợ"
+                      className="min-h-[44px] px-4 py-2.5 bg-theme-page hover:bg-emerald-50 border border-theme-line text-theme-ink font-bold text-xs sm:text-sm rounded-2xl transition-colors inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
                     >
-                      <CheckCircle className="w-4 h-4 text-emerald-500" /> Đã Xử Lý
+                      <CheckCircle className="w-4 h-4 text-status-ok" aria-hidden="true" />
+                      <span>Đã xử lý</span>
                     </button>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           )}
-        </div>
+        </section>
       )}
 
-      {/* TAB 2: Weaning Food Approval Requests */}
+      {/* TAB 2 */}
       {activeTab === "weaning_requests" && (
-        <div className="space-y-4">
-          <h2 className="text-base font-extrabold text-gray-850 dark:text-white flex items-center gap-2">
-            <Utensils className="w-5 h-5 text-emerald-600" /> Phê Duyệt Yêu Cầu Tạo Thực Phẩm Ăn Dặm Mới Từ Mẹ Bầu
+        <section className="space-y-4">
+          <h2 className="text-lg font-bold text-theme-ink flex items-center gap-2">
+            <Utensils className="w-5 h-5 text-theme-brand" aria-hidden="true" />
+            <span>Phê duyệt đề xuất món ăn dặm mới</span>
           </h2>
 
           {weaningRequests.length === 0 ? (
-            <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700">
-              <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-              <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">Không có yêu cầu chờ duyệt</h3>
-              <p className="text-xs text-gray-400 mt-1">Tất cả đề xuất món ăn dặm mới từ các mẹ đã được xử lý hoàn tất.</p>
+            <div className="text-center py-16 bg-theme-surface rounded-3xl border border-theme-line space-y-2">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-status-ok border border-emerald-200 flex items-center justify-center mx-auto">
+                <CheckCircle className="w-6 h-6" aria-hidden="true" />
+              </div>
+              <h3 className="text-base font-bold text-theme-ink">Không có yêu cầu chờ duyệt</h3>
+              <p className="text-xs sm:text-sm text-theme-muted">
+                Tất cả đề xuất món ăn dặm mới đã được xử lý hoàn tất.
+              </p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3.5">
               {weaningRequests.map((req) => (
-                <div key={req.id} className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                  <div className="space-y-1.5 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 px-2.5 py-0.5 rounded-full">
+                <article
+                  key={req.id}
+                  className="bg-theme-surface rounded-3xl p-5 sm:p-6 border border-theme-line shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4"
+                >
+                  <div className="space-y-2 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-bold bg-theme-brand-soft text-theme-ink border border-theme-brand/20 px-3 py-0.5 rounded-full">
                         {req.babyAge}
                       </span>
-                      <h4 className="font-extrabold text-sm text-gray-900 dark:text-white">{req.foodName}</h4>
+                      <h3 className="font-bold text-base text-theme-ink">{req.foodName}</h3>
                     </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-300 font-medium">
-                      <span className="font-bold text-gray-400">Thành phần:</span> {req.ingredients}
+                    <p className="text-xs sm:text-sm text-theme-muted font-medium">
+                      <span className="font-bold text-theme-ink">Thành phần:</span> {req.ingredients}
                     </p>
-                    <p className="text-xs text-amber-600 dark:text-amber-400 font-semibold bg-amber-50 dark:bg-amber-900/20 p-2 rounded-xl border border-amber-100 dark:border-amber-900/30">
-                      ⚠️ Phản ứng ghi nhận từ bé: {req.reactionReported}
+                    <p className="text-xs text-status-warn-text font-semibold bg-status-warn-bg p-3 rounded-2xl border border-status-warn-line/40">
+                      Ghi nhận phản ứng: {req.reactionReported}
                     </p>
-                    <p className="text-[10px] text-gray-400 font-medium">Đề xuất bởi: Mẹ {req.momName} • {req.requestedAt}</p>
+                    <p className="text-xs text-theme-muted font-medium">
+                      Đề xuất bởi: {req.momName} • {req.requestedAt}
+                    </p>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0 w-full md:w-auto">
+                  <div className="flex flex-wrap items-center gap-2.5 shrink-0 w-full md:w-auto">
                     <button
+                      type="button"
                       onClick={() => handleApproveWeaningFood(req.id, req.foodName, req.isRealApi)}
-                      className="flex-1 md:flex-initial px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs rounded-2xl transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                      className="flex-1 md:flex-initial min-h-[44px] px-4 py-2.5 bg-status-ok hover:bg-emerald-800 text-white font-bold text-xs sm:text-sm rounded-2xl transition-colors inline-flex items-center justify-center gap-1.5"
                     >
-                      <ThumbsUp className="w-3.5 h-3.5" /> Chấp Nhận (Thêm Catalog)
+                      <ThumbsUp className="w-4 h-4" aria-hidden="true" />
+                      <span>Chấp nhận</span>
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleRejectWeaningFood(req.id, req.foodName, req.isRealApi)}
-                      className="flex-1 md:flex-initial px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-extrabold text-xs rounded-2xl transition-all flex items-center justify-center gap-1.5"
+                      className="flex-1 md:flex-initial min-h-[44px] px-4 py-2.5 bg-red-50 hover:bg-red-100 border border-red-200 text-red-800 font-bold text-xs sm:text-sm rounded-2xl transition-colors inline-flex items-center justify-center gap-1.5"
                     >
-                      <ThumbsDown className="w-3.5 h-3.5" /> Từ Chối
+                      <ThumbsDown className="w-4 h-4" aria-hidden="true" />
+                      <span>Từ chối</span>
                     </button>
                   </div>
-                </div>
+                </article>
               ))}
             </div>
           )}
-        </div>
+        </section>
       )}
 
-      {activeTab === "feedback" && (
-        <AdminFeedbackPanel />
-      )}
+      {activeTab === "feedback" && <AdminFeedbackPanel />}
 
-      {/* MODAL: Mom Detailed Profile & Consultation (Diagram 3) */}
+      {/* Modal tư vấn */}
       {selectedMom && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl border border-gray-100 dark:border-gray-800">
-            <div className="flex justify-between items-center border-b border-gray-100 dark:border-gray-800 pb-3">
-              <h3 className="font-extrabold text-base text-gray-900 dark:text-white flex items-center gap-2">
-                <FileText className="w-5 h-5 text-emerald-500" />
-                Hồ Sơ Sức Khỏe & Tư Vấn Y Tế
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="staff-consult-title"
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+        >
+          <div className="bg-theme-surface rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-xl border border-theme-line">
+            <div className="flex justify-between items-center border-b border-theme-line pb-3">
+              <h3 id="staff-consult-title" className="font-bold text-base text-theme-ink flex items-center gap-2">
+                <FileText className="w-5 h-5 text-theme-brand" aria-hidden="true" />
+                <span>Hồ sơ sức khỏe & tư vấn chăm sóc</span>
               </h3>
               <button
+                type="button"
                 onClick={() => setSelectedMom(null)}
-                className="p-1.5 text-gray-400 hover:text-gray-600 rounded-full"
+                aria-label="Đóng hộp thoại"
+                className="w-10 h-10 inline-flex items-center justify-center text-theme-muted hover:bg-theme-page rounded-full"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5" aria-hidden="true" />
               </button>
             </div>
 
-            {/* Mom Basic Summary */}
-            <div className="bg-emerald-50/60 dark:bg-emerald-950/30 p-4 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 space-y-1.5">
-              <div className="flex justify-between items-center">
-                <h4 className="font-black text-sm text-gray-900 dark:text-white">{selectedMom.fullName || selectedMom.email}</h4>
-                <span className="text-[10px] bg-emerald-600 text-white font-extrabold px-2.5 py-0.5 rounded-full">
-                  STAGE: POSTPARTUM
+            <div className="bg-theme-page p-4 rounded-2xl border border-theme-line space-y-1.5">
+              <div className="flex flex-wrap justify-between items-center gap-2">
+                <h4 className="font-extrabold text-sm text-theme-ink">
+                  {selectedMom.fullName || selectedMom.email}
+                </h4>
+                <span className="text-xs bg-theme-brand-soft text-theme-ink border border-theme-brand/20 font-bold px-2.5 py-0.5 rounded-full">
+                  Theo dõi sau sinh
                 </span>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Email: {selectedMom.email}</p>
-              <p className="text-xs text-emerald-800 dark:text-emerald-300 font-bold">⚠️ Lý do cảnh báo: {selectedMom.alertReason}</p>
+              <p className="text-xs text-theme-muted font-medium">Email: {selectedMom.email}</p>
+              <p className="text-xs text-status-warn-text font-bold">
+                Lý do cảnh báo: {selectedMom.alertReason}
+              </p>
             </div>
 
             <form onSubmit={handleSendConsultation} className="space-y-4">
-              {/* Write Medical Notes (Diagram 3) */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-600 dark:text-gray-300 block">
-                  1. Ghi chú y tế & Kế hoạch theo dõi (Medical Notes)
+              <div className="space-y-1.5">
+                <label htmlFor="staff-medical-notes" className="text-xs font-bold text-theme-ink block">
+                  1. Ghi chú y tế & kế hoạch theo dõi
                 </label>
                 <textarea
-                  rows="2"
+                  id="staff-medical-notes"
+                  rows={2}
                   value={medicalNotes}
                   onChange={(e) => setMedicalNotes(e.target.value)}
-                  placeholder="Ghi lại các đánh giá y tế chuyên khoa..."
-                  className="w-full p-3 rounded-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="Ghi lại các đánh giá chăm sóc..."
+                  className="w-full p-3 rounded-2xl border border-theme-line bg-theme-page/60 text-sm font-medium text-theme-ink placeholder:text-theme-muted focus:outline-none focus:ring-2 focus:ring-theme-brand"
                 />
               </div>
 
-              {/* Compose Consultation Message (Diagram 3) */}
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-600 dark:text-gray-300 block">
-                  2. Tin nhắn tư vấn trực tiếp cho Mẹ Bầu (Consultation Message)
+              <div className="space-y-1.5">
+                <label htmlFor="staff-consult-msg" className="text-xs font-bold text-theme-ink block">
+                  2. Tin nhắn tư vấn trực tiếp cho mẹ
                 </label>
                 <textarea
-                  rows="3"
+                  id="staff-consult-msg"
+                  rows={3}
                   required
                   value={consultationMsg}
                   onChange={(e) => setConsultationMsg(e.target.value)}
-                  placeholder="Soạn lời khuyên tâm lý hoặc chế độ sinh hoạt cho mami..."
-                  className="w-full p-3 rounded-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-800 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  placeholder="Soạn lời khuyên tâm lý hoặc chế độ sinh hoạt cho mẹ..."
+                  className="w-full p-3 rounded-2xl border border-theme-line bg-theme-page/60 text-sm font-medium text-theme-ink placeholder:text-theme-muted focus:outline-none focus:ring-2 focus:ring-theme-brand"
                 />
               </div>
 
-              <div className="flex gap-3 pt-2">
+              <div className="flex gap-3 pt-1">
                 <button
                   type="button"
                   onClick={() => setSelectedMom(null)}
-                  className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold text-xs rounded-2xl transition-all"
+                  className="flex-1 min-h-[44px] py-2.5 bg-theme-page border border-theme-line hover:bg-theme-brand-soft text-theme-ink font-bold text-xs sm:text-sm rounded-2xl transition-colors"
                 >
                   Đóng
                 </button>
                 <button
                   type="submit"
                   disabled={sendingConsult}
-                  className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="flex-1 min-h-[44px] py-2.5 bg-theme-brand hover:bg-theme-ink text-theme-surface font-bold text-xs sm:text-sm rounded-2xl transition-colors inline-flex items-center justify-center gap-2 disabled:bg-theme-line disabled:text-theme-muted"
                 >
-                  <Send className="w-4 h-4" />
-                  {sendingConsult ? "Đang gửi..." : "Gửi Lời Khuyên & Lưu Hồ Sơ"}
+                  <Send className="w-4 h-4" aria-hidden="true" />
+                  <span>{sendingConsult ? "Đang gửi..." : "Gửi lời khuyên & lưu hồ sơ"}</span>
                 </button>
               </div>
             </form>
@@ -408,4 +487,3 @@ export default function StaffDashboardPage() {
     </div>
   );
 }
-

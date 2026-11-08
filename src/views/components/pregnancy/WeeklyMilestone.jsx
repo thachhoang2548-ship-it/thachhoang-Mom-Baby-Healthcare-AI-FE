@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import pregnancyService from '../../../models/services/pregnancyService';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Sprout, Lightbulb } from 'lucide-react';
 
 export default function WeeklyMilestone({ week }) {
   const [milestone, setMilestone] = useState(null);
@@ -25,54 +25,63 @@ export default function WeeklyMilestone({ week }) {
 
   if (loading) {
     return (
-      <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-pink-100/50 dark:border-gray-700 animate-pulse">
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-full mb-2.5"></div>
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-5/6 mb-2.5"></div>
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
+      <div className="space-y-3 rounded-3xl border border-theme-line bg-theme-surface p-6 shadow-sm">
+        <div className="h-5 w-1/3 rounded-md bg-theme-page" />
+        <div className="grid grid-cols-1 gap-4 pt-2 md:grid-cols-2">
+          <div className="h-28 rounded-2xl bg-theme-page" />
+          <div className="h-28 rounded-2xl bg-theme-page" />
+        </div>
       </div>
     );
   }
 
   if (!milestone) {
     return (
-      <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-pink-100/50 dark:border-gray-700 text-center text-xs text-gray-500 italic">
-        Không tìm thấy dữ liệu phát triển cho tuần này. Vui lòng thử lại sau.
+      <div className="rounded-3xl border border-theme-line bg-theme-surface p-6 text-center text-sm font-medium text-theme-muted shadow-sm">
+        Chưa tìm thấy dữ liệu phát triển cho tuần thai này. Mẹ hãy kiểm tra lại ngày kinh cuối trong Hồ sơ của mẹ nhé.
       </div>
     );
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-pink-100/50 dark:border-gray-700 shadow-sm space-y-4">
-      <div className="flex items-center justify-between border-b border-pink-50 dark:border-gray-700 pb-3">
-        <h3 className="text-sm font-extrabold text-gray-800 dark:text-white flex items-center gap-1.5">
-          <Sparkles className="w-4 h-4 text-momPink" />
-          {week ? `Mốc phát triển tuần ${week}` : 'Mốc phát triển tuần này'}
-        </h3>
-        <span className="text-xs bg-momPink-light text-momPink-dark px-3 py-1 rounded-full font-bold border border-momPink/20">
-          Kích thước: {milestone.babySize}
-        </span>
+    <section className="space-y-5 rounded-3xl border border-theme-line bg-theme-surface p-6 font-display shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-theme-line pb-4">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-theme-brand-soft text-theme-brand">
+            <Sparkles className="h-5 w-5" />
+          </span>
+          <h2 className="text-lg font-bold text-theme-ink sm:text-xl">
+            {week ? `Cột mốc phát triển tuần ${week}` : 'Cột mốc phát triển tuần này'}
+          </h2>
+        </div>
+        {milestone.babySize && (
+          <span className="rounded-full border border-theme-brand/25 bg-theme-brand-soft px-3.5 py-1 text-xs font-bold text-theme-ink">
+            Kích thước bé: {milestone.babySize}
+          </span>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div className="bg-pink-50/20 dark:bg-gray-850 p-4 rounded-xl border border-pink-100/20">
-          <h4 className="text-xs font-bold text-momPurple-dark dark:text-momPurple uppercase tracking-wider mb-2 flex items-center gap-1">
-            🌱 Phát triển của bé
-          </h4>
-          <p className="text-xs text-gray-650 dark:text-gray-300 leading-relaxed font-semibold">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="rounded-2xl border border-theme-line bg-theme-page/60 p-4 sm:p-5">
+          <h3 className="mb-2 flex items-center gap-2 text-sm font-bold text-theme-ink">
+            <Sprout className="h-4 w-4 shrink-0 text-status-ok" />
+            <span>Sự phát triển của bé</span>
+          </h3>
+          <p className="text-sm leading-relaxed text-theme-ink/90">
             {milestone.development}
           </p>
         </div>
 
-        <div className="bg-green-50/20 dark:bg-gray-850 p-4 rounded-xl border border-green-100/20">
-          <h4 className="text-xs font-bold text-momGreen-dark dark:text-momGreen uppercase tracking-wider mb-2 flex items-center gap-1">
-            💡 Lời khuyên cho mami
-          </h4>
-          <p className="text-xs text-gray-655 dark:text-gray-300 leading-relaxed font-semibold">
+        <div className="rounded-2xl border border-theme-line bg-theme-sidebar/55 p-4 sm:p-5">
+          <h3 className="mb-2 flex items-center gap-2 text-sm font-bold text-theme-ink">
+            <Lightbulb className="h-4 w-4 shrink-0 text-status-warn-text" />
+            <span>Lời khuyên dành cho mẹ</span>
+          </h3>
+          <p className="text-sm leading-relaxed text-theme-ink/90">
             {milestone.momTips}
           </p>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

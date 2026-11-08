@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfileController } from '../../../controllers/profileController';
 import pregnancyService from '../../../models/services/pregnancyService';
 import TierGate from '../../components/layout/TierGate';
 import ScientificEvidenceFooter from '../../components/common/ScientificEvidenceFooter';
-import { ArrowLeft, Utensils, Award, Smile, CheckCircle, Info } from 'lucide-react';
+import { ArrowLeft, Utensils, Sun, Coffee, Moon, Soup } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function MealPlanPage() {
@@ -14,11 +14,7 @@ export default function MealPlanPage() {
   const [loading, setLoading] = useState(false);
   const [activeDay, setActiveDay] = useState(0);
 
-  useEffect(() => {
-    loadMealPlan();
-  }, [momProfile]);
-
-  const loadMealPlan = async () => {
+  const loadMealPlan = useCallback(async () => {
     setLoading(true);
     try {
       // Không có tuần trong hồ sơ thì để server tự tính từ ngày kinh cuối
@@ -36,152 +32,191 @@ export default function MealPlanPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [momProfile?.pregnancyWeek]);
+
+  useEffect(() => {
+    loadMealPlan();
+  }, [loadMealPlan]);
+
+  const currentPlan = mealPlan[activeDay];
+  const nutrients = currentPlan?.dailyNutrients;
 
   return (
-    <div className="space-y-6">
-      
-      {/* Back button */}
+    <div className="space-y-6 pb-8 font-display text-theme-ink">
       <button
+        type="button"
         onClick={() => navigate('/pregnancy')}
-        className="flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-gray-800 transition"
+        className="inline-flex min-h-[44px] items-center gap-2 rounded-full px-3 text-sm font-semibold text-theme-muted transition-colors hover:bg-theme-surface hover:text-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
       >
-        <ArrowLeft className="w-4 h-4" /> Quay lại nhật ký thai kỳ
+        <ArrowLeft className="h-4 w-4" />
+        <span>Quay lại nhật ký thai kỳ</span>
       </button>
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-pink-50 pb-4">
-        <div>
-          <h2 className="text-xl font-extrabold text-gray-800 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-            <Utensils className="w-5 h-5 text-momPink" />
-            Thực Đơn Dinh Dưỡng 7 Ngày
-          </h2>
-          <p className="text-xs text-gray-500 font-semibold mt-0.5">
-            Thực đơn mẹ bầu chuẩn Việt Nam giàu Folate, Sắt và Canxi theo tuần thai
-          </p>
-        </div>
+      <div className="border-b border-theme-line pb-5">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-theme-brand-soft px-3.5 py-1 text-xs font-semibold text-theme-ink">
+          <Utensils className="h-3.5 w-3.5 text-theme-brand" />
+          Dinh dưỡng thai kỳ
+        </span>
+        <h1 className="mt-2 text-2xl font-bold text-theme-ink sm:text-3xl">
+          Thực đơn dinh dưỡng 7 ngày
+        </h1>
+        <p className="mt-1 text-sm text-theme-muted">
+          Thực đơn món Việt gần gũi, giàu Folate, Sắt và Canxi theo tuần thai của mẹ.
+        </p>
       </div>
 
       <TierGate requiredTier="MomHienDai">
         <div className="space-y-6">
-          
           {loading ? (
-            <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl border border-pink-100/50 dark:border-gray-700 animate-pulse flex flex-col gap-4">
-              <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/4"></div>
-              <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+            <div className="space-y-4 rounded-3xl border border-theme-line bg-theme-surface p-6 shadow-sm sm:p-8">
+              <div className="h-6 w-1/3 rounded-md bg-theme-page" />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="h-28 rounded-2xl bg-theme-page" />
+                <div className="h-28 rounded-2xl bg-theme-page" />
+                <div className="h-28 rounded-2xl bg-theme-page" />
+                <div className="h-28 rounded-2xl bg-theme-page" />
+              </div>
             </div>
-          ) : mealPlan.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              
+          ) : mealPlan.length > 0 && currentPlan ? (
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
               {/* Day selection tabs */}
-              <div className="lg:col-span-1 flex flex-row lg:flex-col overflow-x-auto gap-2 pb-2 lg:pb-0">
-                {mealPlan.map((plan, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setActiveDay(idx)}
-                    className={`px-4 py-3 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-300 ${
-                      activeDay === idx
-                        ? 'bg-momPink text-white shadow-md'
-                        : 'bg-white hover:bg-pink-50/50 text-gray-500 border border-pink-100/50'
-                    }`}
-                  >
-                    {plan.day || `Ngày ${idx + 1}`}
-                  </button>
-                ))}
+              <div
+                className="flex flex-row gap-2 overflow-x-auto pb-1 lg:col-span-3 lg:flex-col lg:pb-0"
+                role="tablist"
+                aria-label="Chọn ngày trong tuần"
+              >
+                {mealPlan.map((plan, idx) => {
+                  const selected = activeDay === idx;
+                  return (
+                    <button
+                      key={idx}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      onClick={() => setActiveDay(idx)}
+                      className={`min-h-[46px] shrink-0 rounded-2xl border px-4 py-2.5 text-left text-sm font-bold whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+                        selected
+                          ? 'border-theme-brand bg-theme-brand text-theme-surface shadow-sm'
+                          : 'border-theme-line bg-theme-surface text-theme-ink hover:border-theme-brand/40 hover:bg-theme-brand-soft'
+                      }`}
+                    >
+                      {plan.day || `Ngày ${idx + 1}`}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Day detailed menus */}
-              <div className="lg:col-span-3 bg-white dark:bg-gray-800 p-6 rounded-2xl border border-pink-100/50 dark:border-gray-700 shadow-sm space-y-6">
-                <div>
-                  <h3 className="text-sm font-extrabold text-gray-800 dark:text-white flex items-center gap-1">
-                    🍴 Chi tiết thực đơn {mealPlan[activeDay].day}
-                  </h3>
-                  <p className="text-[10px] text-gray-400 font-semibold mt-0.5">
-                    Thực phẩm tuyển chọn, nấu chín kỹ để bảo vệ bé yêu
+              <div className="space-y-6 rounded-3xl border border-theme-line bg-theme-surface p-6 shadow-sm sm:p-8 lg:col-span-9">
+                <div className="border-b border-theme-line pb-4">
+                  <h2 className="text-xl font-bold text-theme-ink">
+                    Chi tiết thực đơn {currentPlan.day || `Ngày ${activeDay + 1}`}
+                  </h2>
+                  <p className="mt-1 text-xs font-medium text-theme-muted sm:text-sm">
+                    Thực phẩm tươi sạch, chế biến chín kỹ để đảm bảo an toàn cho mẹ và thai nhi.
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  
-                  {/* Sáng */}
-                  <div className="p-4 bg-pink-50/20 rounded-xl border border-pink-100/35">
-                    <span className="text-[9px] bg-pink-100 text-momPink-dark px-2 py-0.5 rounded font-extrabold uppercase">Bữa Sáng</span>
-                    <p className="text-xs font-bold text-gray-800 dark:text-gray-200 mt-2">
-                      {mealPlan[activeDay].breakfast}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="rounded-2xl border border-theme-line bg-theme-page/60 p-4 sm:p-5">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-theme-brand-soft px-3 py-1 text-xs font-bold text-theme-ink">
+                      <Sun className="h-3.5 w-3.5 text-theme-brand" />
+                      Bữa sáng
+                    </span>
+                    <p className="mt-3 text-sm font-semibold leading-relaxed text-theme-ink sm:text-base">
+                      {currentPlan.breakfast}
                     </p>
                   </div>
 
-                  {/* Trưa */}
-                  <div className="p-4 bg-purple-50/20 rounded-xl border border-purple-100/35">
-                    <span className="text-[9px] bg-purple-100 text-momPurple-dark px-2 py-0.5 rounded font-extrabold uppercase">Bữa Trưa</span>
-                    <p className="text-xs font-bold text-gray-800 dark:text-gray-200 mt-2">
-                      {mealPlan[activeDay].lunch}
+                  <div className="rounded-2xl border border-theme-line bg-theme-page/60 p-4 sm:p-5">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-status-ok/15 px-3 py-1 text-xs font-bold text-status-ok">
+                      <Soup className="h-3.5 w-3.5" />
+                      Bữa trưa
+                    </span>
+                    <p className="mt-3 text-sm font-semibold leading-relaxed text-theme-ink sm:text-base">
+                      {currentPlan.lunch}
                     </p>
                   </div>
 
-                  {/* Chiều */}
-                  <div className="p-4 bg-amber-50/20 rounded-xl border border-amber-100/35">
-                    <span className="text-[9px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded font-extrabold uppercase">Bữa Xế</span>
-                    <p className="text-xs font-bold text-gray-800 dark:text-gray-200 mt-2">
-                      {mealPlan[activeDay].snack}
+                  <div className="rounded-2xl border border-theme-line bg-theme-page/60 p-4 sm:p-5">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-status-warn-bg px-3 py-1 text-xs font-bold text-status-warn-text">
+                      <Coffee className="h-3.5 w-3.5" />
+                      Bữa phụ chiều
+                    </span>
+                    <p className="mt-3 text-sm font-semibold leading-relaxed text-theme-ink sm:text-base">
+                      {currentPlan.snack}
                     </p>
                   </div>
 
-                  {/* Tối */}
-                  <div className="p-4 bg-green-50/20 rounded-xl border border-green-100/35">
-                    <span className="text-[9px] bg-green-100 text-momGreen-dark px-2 py-0.5 rounded font-extrabold uppercase">Bữa Tối</span>
-                    <p className="text-xs font-bold text-gray-800 dark:text-gray-200 mt-2">
-                      {mealPlan[activeDay].dinner}
+                  <div className="rounded-2xl border border-theme-line bg-theme-page/60 p-4 sm:p-5">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-theme-sidebar px-3 py-1 text-xs font-bold text-theme-ink border border-theme-line">
+                      <Moon className="h-3.5 w-3.5 text-theme-brand" />
+                      Bữa tối
+                    </span>
+                    <p className="mt-3 text-sm font-semibold leading-relaxed text-theme-ink sm:text-base">
+                      {currentPlan.dinner}
                     </p>
                   </div>
-
                 </div>
 
                 {/* Nutrients indicators */}
-                {mealPlan[activeDay].dailyNutrients && (
-                  <div className="pt-4 border-t border-pink-50 dark:border-gray-700">
-                    <span className="text-[10px] text-gray-400 font-extrabold uppercase tracking-wider block mb-2">Chất dinh dưỡng tổng quan trong ngày:</span>
-                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5 text-center">
-                      <div className="bg-gray-50 dark:bg-gray-850 p-2.5 rounded-xl border border-gray-100 dark:border-gray-750">
-                        <span className="text-[9px] text-gray-450 block font-bold">Năng lượng</span>
-                        <span className="text-xs font-extrabold text-momPink-dark">{mealPlan[activeDay].dailyNutrients.calories || mealPlan[activeDay].dailyNutrients.Calories} Kcal</span>
+                {nutrients && (
+                  <div className="border-t border-theme-line pt-5">
+                    <h3 className="mb-3 text-xs font-bold text-theme-muted sm:text-sm">
+                      Tổng quan dinh dưỡng ước tính trong ngày
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+                      <div className="rounded-2xl border border-theme-line bg-theme-page/50 p-3 text-center">
+                        <span className="block text-xs font-medium text-theme-muted">Năng lượng</span>
+                        <span className="mt-1 block text-sm font-bold text-theme-ink">
+                          {nutrients.calories || nutrients.Calories} kcal
+                        </span>
                       </div>
-                      <div className="bg-gray-50 dark:bg-gray-850 p-2.5 rounded-xl border border-gray-100 dark:border-gray-750">
-                        <span className="text-[9px] text-gray-450 block font-bold">Chất đạm (Pro)</span>
-                        <span className="text-xs font-extrabold text-momPurple-dark">{mealPlan[activeDay].dailyNutrients.protein || mealPlan[activeDay].dailyNutrients.Protein}</span>
+                      <div className="rounded-2xl border border-theme-line bg-theme-page/50 p-3 text-center">
+                        <span className="block text-xs font-medium text-theme-muted">Chất đạm</span>
+                        <span className="mt-1 block text-sm font-bold text-theme-ink">
+                          {nutrients.protein || nutrients.Protein}
+                        </span>
                       </div>
-                      <div className="bg-gray-50 dark:bg-gray-850 p-2.5 rounded-xl border border-gray-100 dark:border-gray-750">
-                        <span className="text-[9px] text-gray-450 block font-bold">Chất xơ / Tinh bột</span>
-                        <span className="text-xs font-extrabold text-momGreen-dark">{mealPlan[activeDay].dailyNutrients.carbs || mealPlan[activeDay].dailyNutrients.Carbs}</span>
+                      <div className="rounded-2xl border border-theme-line bg-theme-page/50 p-3 text-center">
+                        <span className="block text-xs font-medium text-theme-muted">Tinh bột &amp; xơ</span>
+                        <span className="mt-1 block text-sm font-bold text-theme-ink">
+                          {nutrients.carbs || nutrients.Carbs}
+                        </span>
                       </div>
-                      <div className="bg-gray-50 dark:bg-gray-850 p-2.5 rounded-xl border border-gray-100 dark:border-gray-750">
-                        <span className="text-[9px] text-gray-450 block font-bold">Chất béo (Fat)</span>
-                        <span className="text-xs font-extrabold text-momAmber-dark">{mealPlan[activeDay].dailyNutrients.fat || mealPlan[activeDay].dailyNutrients.Fat}</span>
+                      <div className="rounded-2xl border border-theme-line bg-theme-page/50 p-3 text-center">
+                        <span className="block text-xs font-medium text-theme-muted">Chất béo</span>
+                        <span className="mt-1 block text-sm font-bold text-theme-ink">
+                          {nutrients.fat || nutrients.Fat}
+                        </span>
                       </div>
-                      <div className="bg-gray-50 dark:bg-gray-850 p-2.5 rounded-xl border border-gray-100 dark:border-gray-750">
-                        <span className="text-[9px] text-gray-450 block font-bold">Sắt (Iron)</span>
-                        <span className="text-xs font-extrabold text-red-500">{mealPlan[activeDay].dailyNutrients.iron || mealPlan[activeDay].dailyNutrients.Iron || '15mg'}</span>
+                      <div className="col-span-2 rounded-2xl border border-theme-brand/25 bg-theme-brand-soft/60 p-3 text-center sm:col-span-1">
+                        <span className="block text-xs font-medium text-theme-ink">Sắt (Iron)</span>
+                        <span className="mt-1 block text-sm font-bold text-theme-brand">
+                          {nutrients.iron || nutrients.Iron || '15mg'}
+                        </span>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
-
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-center bg-white rounded-2xl border border-pink-100">
-              <span className="text-3xl mb-2">🍽️</span>
-              <p className="text-xs text-gray-500 font-semibold">
-                Không thể lấy dữ liệu thực đơn thai kỳ lúc này. Vui lòng quay lại sau!
+            <div className="flex flex-col items-center justify-center rounded-3xl border border-theme-line bg-theme-surface px-6 py-14 text-center shadow-sm">
+              <Utensils className="mb-3 h-8 w-8 text-theme-muted" />
+              <p className="text-sm font-semibold text-theme-ink">
+                Chưa tải được dữ liệu thực đơn thai kỳ lúc này
+              </p>
+              <p className="mt-1 text-xs text-theme-muted">
+                Mẹ hãy kiểm tra lại tuần thai trong Hồ sơ của mẹ hoặc thử lại sau ít phút.
               </p>
             </div>
           )}
-
         </div>
       </TierGate>
 
-      {/* BẢO CHỨNG KHOA HỌC THỰC ĐƠN THAI KỲ (WHO & USDA) */}
+      {/* Bảo chứng khoa học thực đơn thai kỳ (WHO & USDA) */}
       <ScientificEvidenceFooter variant="menu-addon" />
-
     </div>
   );
 }

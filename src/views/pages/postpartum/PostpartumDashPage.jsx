@@ -4,6 +4,7 @@ import { useProfileController as useActualProfileController } from '../../../con
 import postpartumService from '../../../models/services/postpartumService';
 import dailyMonitoringService from '../../../models/services/dailyMonitoringService';
 import TierGate from '../../components/layout/TierGate';
+import sleepingNewbornPhoto from '../../../assets/editorial/newborn-sleeping-soft.jpg';
 import {
   Activity,
   AlertTriangle,
@@ -168,8 +169,8 @@ export default function PostpartumDashPage() {
   // 1. Trạng thái Đang tải dữ liệu (Loading skeleton sạch sẽ)
   if (loading) {
     return (
-      <div className="font-display rounded-3xl bg-theme-page p-4 sm:p-6 border border-theme-line space-y-6">
-        <div className="rounded-2xl border border-theme-line bg-theme-surface p-8 text-center space-y-3">
+      <div className="font-display space-y-6 pb-8">
+        <div className="rounded-3xl border border-theme-line bg-theme-surface p-8 text-center space-y-3">
           <Loader2 className="w-7 h-7 mx-auto text-theme-ink animate-spin motion-reduce:animate-none" aria-hidden="true" />
           <p className="text-sm font-bold text-theme-ink">Đang tải hành trình phục hồi của mẹ...</p>
         </div>
@@ -180,7 +181,7 @@ export default function PostpartumDashPage() {
   // 2. Trạng thái Thiết lập thông tin hậu sản (Setup Mode)
   if (setupMode) {
     return (
-      <div className="font-display rounded-3xl bg-theme-page p-4 sm:p-6 border border-theme-line">
+      <div className="font-display pb-8">
         <div className="max-w-md mx-auto space-y-6 py-4">
           <div className="text-center space-y-2">
             <div className="w-12 h-12 rounded-2xl bg-theme-brand-soft text-theme-brand border border-theme-line flex items-center justify-center mx-auto">
@@ -260,39 +261,49 @@ export default function PostpartumDashPage() {
 
   // 3. Trạng thái Dashboard chính
   return (
-    <div className="font-display rounded-3xl bg-theme-page p-4 sm:p-6 border border-theme-line space-y-6">
+    <div className="font-display space-y-6 pb-8 text-theme-ink">
       {/* 3.1. Hero Banner: Hành trình phục hồi của mẹ là trung tâm */}
-      <section className="bg-theme-surface p-5 sm:p-6 rounded-2xl border border-theme-line shadow-sm space-y-4">
-        <div className="flex flex-col gap-4">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-theme-brand-soft text-theme-brand text-xs font-bold">
-              <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Hồi phục hậu sản</span>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-theme-ink">
-              Ngày hậu sản thứ {daysPostpartum}
-            </h1>
-            <p className="text-xs sm:text-sm text-theme-muted font-medium leading-relaxed max-w-2xl">
-              Đồng hành hồi phục thể chất, tinh thần và nhịp chăm sóc bé sau sinh.
-            </p>
-          </div>
-
-          {/* Ba chỉ số trạng thái phục hồi */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 w-full">
-            <div className="rounded-2xl border border-theme-line bg-theme-page p-3.5 space-y-1">
-              <span className="text-xs font-semibold text-theme-muted block">Giai đoạn</span>
-              <p className="text-xs sm:text-sm font-bold text-theme-ink leading-snug">{currentPhase}</p>
-            </div>
-            <div className="rounded-2xl border border-theme-line bg-theme-page p-3.5 space-y-1">
-              <span className="text-xs font-semibold text-theme-muted block">Phục hồi</span>
-              <p className="text-xs sm:text-sm font-bold text-theme-ink leading-snug">{recoveryPhase}</p>
-            </div>
-            <div className="rounded-2xl border border-theme-line bg-theme-page p-3.5 space-y-1 col-span-2 sm:col-span-1">
-              <span className="text-xs font-semibold text-theme-muted block">EPDS tâm lý</span>
-              <p className="text-xs sm:text-sm font-bold text-theme-ink leading-snug">
-                {latestEpdsScore === null ? 'Chưa có điểm' : `${latestEpdsScore}/30`}
+      <section className="overflow-hidden rounded-3xl border border-theme-line bg-theme-surface shadow-sm">
+        <div className="grid grid-cols-1 lg:grid-cols-12">
+          <div className="flex flex-col justify-between gap-5 p-5 sm:p-7 lg:col-span-8">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-theme-brand-soft px-3 py-1 text-xs font-bold text-theme-ink">
+                <Sparkles className="h-3.5 w-3.5 text-theme-brand" aria-hidden="true" />
+                <span>Hồi phục hậu sản</span>
+              </div>
+              <h1 className="text-2xl font-bold text-theme-ink sm:text-3xl">
+                Ngày hậu sản thứ {daysPostpartum}
+              </h1>
+              <p className="max-w-2xl text-xs font-medium leading-relaxed text-theme-muted sm:text-sm">
+                Đồng hành hồi phục thể chất, tinh thần và nhịp chăm sóc bé sau sinh.
               </p>
             </div>
+
+            {/* Ba chỉ số trạng thái phục hồi */}
+            <div className="grid w-full grid-cols-2 gap-2.5 sm:grid-cols-3">
+              <div className="space-y-1 rounded-2xl border border-theme-line bg-theme-page p-3.5">
+                <span className="block text-xs font-semibold text-theme-muted">Giai đoạn</span>
+                <p className="text-xs font-bold leading-snug text-theme-ink sm:text-sm">{currentPhase}</p>
+              </div>
+              <div className="space-y-1 rounded-2xl border border-theme-line bg-theme-page p-3.5">
+                <span className="block text-xs font-semibold text-theme-muted">Phục hồi</span>
+                <p className="text-xs font-bold leading-snug text-theme-ink sm:text-sm">{recoveryPhase}</p>
+              </div>
+              <div className="col-span-2 space-y-1 rounded-2xl border border-theme-line bg-theme-page p-3.5 sm:col-span-1">
+                <span className="block text-xs font-semibold text-theme-muted">EPDS tâm lý</span>
+                <p className="text-xs font-bold leading-snug text-theme-ink sm:text-sm">
+                  {latestEpdsScore === null ? 'Chưa có điểm' : `${latestEpdsScore}/30`}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-theme-line bg-theme-page p-2.5 lg:col-span-4 lg:border-l lg:border-t-0">
+            <img
+              src={sleepingNewbornPhoto}
+              alt="Em bé sơ sinh ngủ bình yên trong chăn mềm"
+              className="h-44 w-full rounded-2xl object-cover sm:h-52 lg:h-full lg:min-h-[190px]"
+            />
           </div>
         </div>
       </section>

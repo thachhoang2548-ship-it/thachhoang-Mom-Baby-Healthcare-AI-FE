@@ -1,5 +1,64 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+
+const MONTH_NAMES_VI = [
+  'Tháng 1',
+  'Tháng 2',
+  'Tháng 3',
+  'Tháng 4',
+  'Tháng 5',
+  'Tháng 6',
+  'Tháng 7',
+  'Tháng 8',
+  'Tháng 9',
+  'Tháng 10',
+  'Tháng 11',
+  'Tháng 12',
+];
+
+const WEEK_DAYS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
+
+function classifyDate(date, calendarData, profile) {
+  const dStr = date.toDateString();
+  const todayStr = new Date().toDateString();
+
+  const isToday = dStr === todayStr;
+  let isPeriod = false;
+  let isFertile = false;
+  let isOvulation = false;
+
+  if (calendarData?.ovulationDay) {
+    const ovDate = new Date(calendarData.ovulationDay);
+    if (dStr === ovDate.toDateString()) {
+      isOvulation = true;
+    }
+  }
+
+  if (calendarData?.fertileWindowDays) {
+    isFertile = calendarData.fertileWindowDays.some(
+      (d) => new Date(d).toDateString() === dStr
+    );
+  }
+
+  if (profile?.lastPeriodDate) {
+    const cycleLength = profile.avgCycleLength || 28;
+    const lastPeriod = new Date(profile.lastPeriodDate);
+
+    const diffTime = date.getTime() - lastPeriod.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    let cycleDayIndex = diffDays % cycleLength;
+    if (cycleDayIndex < 0) {
+      cycleDayIndex += cycleLength;
+    }
+
+    if (cycleDayIndex >= 0 && cycleDayIndex < 5) {
+      isPeriod = true;
+    }
+  }
+
+  return { isToday, isPeriod, isFertile, isOvulation };
+}
 
 export default function CycleCalendar({
   profile,
@@ -9,36 +68,27 @@ export default function CycleCalendar({
   selectedMonth,
   onMonthChange,
 }) {
-  const [days, setDays] = useState([]);
   const [year, month] = selectedMonth.split('-').map(Number);
 
-  useEffect(() => {
-    generateMonthDays();
-  }, [selectedMonth, calendarData, profile]);
-
-  const generateMonthDays = () => {
+  const days = useMemo(() => {
     const firstDay = new Date(year, month - 1, 1);
     let startDayOfWeek = firstDay.getDay();
-    // Adjust to Monday start: 0 = Mon, 6 = Sun
     startDayOfWeek = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1;
 
     const totalDays = new Date(year, month, 0).getDate();
     const daysArray = [];
 
-    // Previous month filler days
     const prevMonthTotalDays = new Date(year, month - 1, 0).getDate();
     for (let i = startDayOfWeek - 1; i >= 0; i--) {
       const date = new Date(year, month - 2, prevMonthTotalDays - i);
       daysArray.push({ date, isCurrentMonth: false });
     }
 
-    // Current month days
     for (let d = 1; d <= totalDays; d++) {
       const date = new Date(year, month - 1, d);
       daysArray.push({ date, isCurrentMonth: true });
     }
 
-    // Next month filler days
     const gridLength = daysArray.length > 35 ? 42 : 35;
     const nextMonthDaysNeeded = gridLength - daysArray.length;
     for (let d = 1; d <= nextMonthDaysNeeded; d++) {
@@ -46,63 +96,11 @@ export default function CycleCalendar({
       daysArray.push({ date, isCurrentMonth: false });
     }
 
-    const mapped = daysArray.map((cell) => {
-      const classification = classifyDate(cell.date);
-      return {
-        ...cell,
-        ...classification,
-      };
-    });
-
-    setDays(mapped);
-  };
-
-  const classifyDate = (date) => {
-    const dStr = date.toDateString();
-    const todayStr = new Date().toDateString();
-
-    const isToday = dStr === todayStr;
-    let isPeriod = false;
-    let isFertile = false;
-    let isOvulation = false;
-
-    // 1. Ovulation check
-    if (calendarData?.ovulationDay) {
-      const ovDate = new Date(calendarData.ovulationDay);
-      if (date.toDateString() === ovDate.toDateString()) {
-        isOvulation = true;
-      }
-    }
-
-    // 2. Fertile window check
-    if (calendarData?.fertileWindowDays) {
-      isFertile = calendarData.fertileWindowDays.some(
-        (d) => new Date(d).toDateString() === dStr
-      );
-    }
-
-    // 3. Menstrual cycle projection logic based on lastPeriodDate
-    if (profile?.lastPeriodDate) {
-      const cycleLength = profile.avgCycleLength || 28;
-      const lastPeriod = new Date(profile.lastPeriodDate);
-
-      const diffTime = date.getTime() - lastPeriod.getTime();
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-      // Calculate the cycle day index relative to cycleLength
-      let cycleDayIndex = diffDays % cycleLength;
-      if (cycleDayIndex < 0) {
-        cycleDayIndex += cycleLength;
-      }
-
-      // First 5 days are considered menstrual period (🩸)
-      if (cycleDayIndex >= 0 && cycleDayIndex < 5) {
-        isPeriod = true;
-      }
-    }
-
-    return { isToday, isPeriod, isFertile, isOvulation };
-  };
+    return daysArray.map((cell) => ({
+      ...cell,
+      ...classifyDate(cell.date, calendarData, profile),
+    }));
+  }, [year, month, calendarData, profile]);
 
   const changeMonth = (direction) => {
     let nextMonth = month + direction;
@@ -120,98 +118,75 @@ export default function CycleCalendar({
     onMonthChange(nextMonthStr);
   };
 
-  const getMonthNameVi = () => {
-    const names = [
-      'Tháng 1',
-      'Tháng 2',
-      'Tháng 3',
-      'Tháng 4',
-      'Tháng 5',
-      'Tháng 6',
-      'Tháng 7',
-      'Tháng 8',
-      'Tháng 9',
-      'Tháng 10',
-      'Tháng 11',
-      'Tháng 12',
-    ];
-    return `${names[month - 1]} năm ${year}`;
-  };
-
-  const weekDays = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-
   return (
-    <div className="bg-white/60 dark:bg-gray-850/40 backdrop-blur-md p-5 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.02)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] border border-white/80 dark:border-gray-700/50">
+    <div className="rounded-3xl border border-theme-line bg-theme-surface p-5 font-display shadow-sm sm:p-6">
       {/* Header Month Switcher */}
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-bold text-gray-800 dark:text-white uppercase tracking-wider">
-          {getMonthNameVi()}
-        </h3>
-        <div className="flex items-center gap-1 bg-pink-50/50 dark:bg-gray-700/50 p-1 rounded-xl">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-bold text-theme-ink sm:text-xl">
+          {MONTH_NAMES_VI[month - 1]} năm {year}
+        </h2>
+        <div className="flex items-center gap-1.5">
           <button
+            type="button"
             onClick={() => changeMonth(-1)}
-            className="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded-lg text-gray-500 dark:text-gray-300 transition-all"
+            aria-label="Tháng trước"
+            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-theme-line bg-theme-page text-theme-ink transition-colors hover:border-theme-brand/40 hover:bg-theme-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="h-4 w-4" />
           </button>
           <button
+            type="button"
             onClick={() => changeMonth(1)}
-            className="p-1.5 hover:bg-white dark:hover:bg-gray-600 rounded-lg text-gray-500 dark:text-gray-300 transition-all"
+            aria-label="Tháng sau"
+            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-theme-line bg-theme-page text-theme-ink transition-colors hover:border-theme-brand/40 hover:bg-theme-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
       </div>
 
       {/* Week Labels */}
-      <div className="grid grid-cols-7 gap-1 text-center mb-1">
-        {weekDays.map((day) => (
-          <span
-            key={day}
-            className="text-[10px] font-bold text-gray-400 uppercase tracking-wider py-1"
-          >
+      <div className="mb-2 grid grid-cols-7 gap-1.5 text-center">
+        {WEEK_DAYS.map((day) => (
+          <span key={day} className="py-1 text-xs font-bold text-theme-muted">
             {day}
           </span>
         ))}
       </div>
 
       {/* Days Grid */}
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-1.5">
         {days.map((cell, idx) => {
-          let cellClass = 'bg-transparent text-gray-700 dark:text-gray-300';
+          let cellClass = 'border border-transparent bg-theme-page/40 text-theme-ink hover:border-theme-line hover:bg-theme-page';
 
           if (!cell.isCurrentMonth) {
-            cellClass = 'text-gray-300 dark:text-gray-600 opacity-40';
-          } else if (cell.isPeriod) {
-            cellClass = 'bg-momPink-light/80 text-momPink-dark font-extrabold shadow-sm';
+            cellClass = 'border border-transparent bg-transparent text-theme-muted/50';
           } else if (cell.isOvulation) {
-            cellClass =
-              'bg-gradient-to-tr from-momAmber to-yellow-400 text-white font-extrabold shadow-md';
+            cellClass = 'border-2 border-status-warn-line bg-status-warn-bg text-status-warn-text font-bold';
+          } else if (cell.isPeriod) {
+            cellClass = 'border border-theme-brand/35 bg-theme-brand-soft text-theme-ink font-bold';
           } else if (cell.isFertile) {
-            cellClass = 'bg-momGreen-light/80 text-momGreen-dark font-extrabold shadow-sm';
+            cellClass = 'border border-status-ok/35 bg-status-ok/15 text-theme-ink font-bold';
           }
 
-          let borderClass = 'border border-transparent';
-          if (cell.isToday) {
-            borderClass = 'border-2 border-momPurple shadow-sm ring-1 ring-momPurple/30';
-          }
+          const todayRing = cell.isToday ? 'ring-2 ring-theme-ink ring-offset-1' : '';
 
           return (
             <button
               key={idx}
               type="button"
               onClick={() => onDateClick?.(cell)}
-              className={`h-11 rounded-xl text-xs font-semibold flex flex-col items-center justify-center relative transition-all duration-300 ${cellClass} ${borderClass} hover:scale-105 active:scale-95`}
+              className={`relative flex min-h-[46px] flex-col items-center justify-center rounded-2xl text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand sm:min-h-[50px] sm:text-sm ${cellClass} ${todayRing}`}
             >
               <span>{cell.date.getDate()}</span>
-              {cell.isPeriod && (
-                <span className="absolute bottom-1 w-1 h-1 bg-momPink rounded-full animate-pulse"></span>
+              {cell.isCurrentMonth && cell.isOvulation && (
+                <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-status-warn-text" aria-hidden="true" />
               )}
-              {cell.isOvulation && (
-                <span className="absolute bottom-1 w-1.5 h-1.5 bg-white rounded-full animate-ping"></span>
+              {cell.isCurrentMonth && cell.isPeriod && !cell.isOvulation && (
+                <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-theme-brand" aria-hidden="true" />
               )}
-              {cell.isFertile && !cell.isOvulation && (
-                <span className="absolute bottom-1 w-1.5 h-1.5 bg-momGreen rounded-full"></span>
+              {cell.isCurrentMonth && cell.isFertile && !cell.isOvulation && !cell.isPeriod && (
+                <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-status-ok" aria-hidden="true" />
               )}
             </button>
           );
@@ -219,18 +194,18 @@ export default function CycleCalendar({
       </div>
 
       {/* Legend */}
-      <div className="mt-5 pt-4 border-t border-pink-50 dark:border-gray-700/50 grid grid-cols-3 gap-2 text-[10px] font-bold text-gray-500 dark:text-gray-400">
-        <div className="flex items-center gap-1.5">
-          <span className="w-3.5 h-3.5 bg-momPink-light rounded-lg border border-pink-200 shrink-0"></span>
-          <span>Kỳ kinh (🩸)</span>
+      <div className="mt-5 grid grid-cols-1 gap-2.5 border-t border-theme-line pt-4 text-xs font-semibold text-theme-ink sm:grid-cols-3">
+        <div className="flex items-center gap-2">
+          <span className="h-4 w-4 shrink-0 rounded-md border border-theme-brand/35 bg-theme-brand-soft" />
+          <span>Kỳ hành kinh</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-3.5 h-3.5 bg-momGreen-light rounded-lg border border-momGreen-200 shrink-0"></span>
-          <span>Thụ thai (💚)</span>
+        <div className="flex items-center gap-2">
+          <span className="h-4 w-4 shrink-0 rounded-md border border-status-ok/35 bg-status-ok/15" />
+          <span>Cửa sổ thụ thai</span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-3.5 h-3.5 bg-gradient-to-tr from-momAmber to-yellow-400 rounded-lg shrink-0"></span>
-          <span>Rụng trứng (🥚)</span>
+        <div className="flex items-center gap-2">
+          <span className="h-4 w-4 shrink-0 rounded-md border-2 border-status-warn-line bg-status-warn-bg" />
+          <span>Ngày rụng trứng</span>
         </div>
       </div>
 
@@ -238,10 +213,10 @@ export default function CycleCalendar({
       <button
         type="button"
         onClick={onUpdatePeriod}
-        className="mt-5 w-full py-2.5 border border-dashed border-momPink/70 text-momPink hover:bg-momPink-light/30 hover:border-momPink text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 transition-all duration-300"
+        className="mt-5 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full border border-theme-line bg-theme-page px-4 py-2.5 text-sm font-bold text-theme-ink transition-colors hover:border-theme-brand/40 hover:bg-theme-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
       >
-        <RefreshCw className="w-3.5 h-3.5" />
-        Ghi nhận kỳ kinh mới
+        <RefreshCw className="h-4 w-4 text-theme-brand" />
+        <span>Cập nhật ngày đầu kỳ kinh</span>
       </button>
     </div>
   );

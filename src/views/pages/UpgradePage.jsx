@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuthController } from '../../controllers/authController';
 import { getTierNameVi } from '../../utils/tierHelpers';
 import {
@@ -13,7 +13,7 @@ import {
   HeartHandshake,
   Clock,
   ChevronRight,
-  PartyPopper,
+  ReceiptText,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -30,20 +30,18 @@ export default function UpgradePage() {
 
   useEffect(() => {
     if (isPaymentSuccess) {
-      toast.success(`🎉 Chúc mừng bạn đã sở hữu gói ${getTierNameVi(tier)}!`, {
+      toast.success(`Chúc mừng mẹ đã kích hoạt gói ${getTierNameVi(tier)}!`, {
         duration: 5000,
-        icon: '👑',
       });
     }
   }, [isPaymentSuccess, tier]);
 
   const handleTierSelect = async (targetTier) => {
     if (tier === targetTier) {
-      toast('Mami hiện đang sử dụng gói này rồi nhé! 🌸', { icon: 'ℹ️' });
+      toast('Mẹ hiện đang sử dụng gói dịch vụ này rồi nhé.');
       return;
     }
 
-    // Nếu chọn gói trả phí, chuyển hướng sang trang thanh toán VietQR tài khoản thật
     if (targetTier === 'MomHienDai' || targetTier === 'SuperMomVip') {
       navigate(`/payment?tier=${targetTier}`, {
         state: { targetTier },
@@ -51,7 +49,6 @@ export default function UpgradePage() {
       return;
     }
 
-    // Nếu chuyển về gói miễn phí
     setUpgradingTier(targetTier);
     try {
       const res = await upgradeTier(targetTier);
@@ -75,13 +72,13 @@ export default function UpgradePage() {
       id: 'Free',
       name: 'Mẹ Bầu Cơ Bản',
       subtitle: 'Trải nghiệm chăm sóc nền tảng',
-      price: 'Miễn Phí',
+      price: 'Miễn phí',
       period: 'trọn đời',
       icon: HeartHandshake,
       badge: null,
-      color: 'border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-850/80',
-      accentColor: 'text-gray-500 dark:text-gray-400',
-      buttonClass: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200',
+      cardClass: 'border-theme-line bg-theme-surface',
+      iconBoxClass: 'bg-theme-page text-theme-ink border border-theme-line',
+      buttonClass: 'bg-theme-page border border-theme-line text-theme-ink hover:bg-theme-brand-soft',
       features: [
         'Lịch rụng trứng tiêu chuẩn & dự đoán chu kỳ',
         'Theo dõi chỉ số cân nặng & chiều cao BMI',
@@ -92,21 +89,21 @@ export default function UpgradePage() {
     },
     {
       id: 'MomHienDai',
-      name: 'Mẹ Hiện Đại ✨',
-      subtitle: 'Lựa chọn thông thái & tối ưu cho mẹ',
+      name: 'Mẹ Hiện Đại',
+      subtitle: 'Lựa chọn tối ưu cho thai kỳ & ăn dặm',
       price: '99.000đ',
       period: '/ tháng',
-      sixMonthPrice: '499.000đ / 6 tháng',
+      sixMonthPrice: 'Tiết kiệm: 499.000đ / 6 tháng',
       icon: Zap,
-      badge: 'Phổ biến nhất 🔥',
-      badgeColor: 'bg-gradient-to-r from-momPink to-pink-600 text-white shadow-md shadow-pink-500/20',
-      color: 'border-momPink/60 ring-2 ring-momPink/30 bg-gradient-to-b from-pink-50/50 via-white to-white dark:from-pink-950/20 dark:via-gray-850/90 dark:to-gray-850',
-      accentColor: 'text-momPink-dark dark:text-pink-400',
-      buttonClass: 'bg-gradient-to-r from-momPink to-momPurple text-white hover:opacity-95 shadow-md shadow-pink-500/25',
+      badge: 'Phổ biến nhất',
+      badgeClass: 'bg-theme-brand text-theme-surface',
+      cardClass: 'border-2 border-theme-brand bg-theme-surface shadow-md',
+      iconBoxClass: 'bg-theme-brand-soft text-theme-brand border border-theme-brand/20',
+      buttonClass: 'bg-theme-brand text-theme-surface hover:bg-theme-ink shadow-sm',
       features: [
         'Toàn bộ tính năng của gói Mẹ Bầu Cơ Bản',
         'Mở khóa Phác đồ IVF Timeline thông minh (BR01)',
-        'Gợi ý thực đơn dinh dưỡng 7 ngày chuyên sâu (AI Meal)',
+        'Gợi ý thực đơn dinh dưỡng 7 ngày chuyên sâu & thực đơn bé',
         'Kế hoạch bài tập thể chất an toàn theo từng tam cá nguyệt',
         'Đánh giá nguy cơ trầm cảm sau sinh chuẩn y khoa EPDS',
         'Báo cáo phân tích chỉ số sức khỏe trực quan',
@@ -114,177 +111,187 @@ export default function UpgradePage() {
     },
     {
       id: 'SuperMomVip',
-      name: 'Super Mom VIP 💎',
+      name: 'Super Mom VIP',
       subtitle: 'Đặc quyền chăm sóc toàn diện 24/7',
       price: '199.000đ',
       period: '/ tháng',
-      sixMonthPrice: '999.000đ / 6 tháng',
+      sixMonthPrice: 'Tiết kiệm: 999.000đ / 6 tháng',
       icon: Crown,
-      badge: 'Đặc quyền VIP 👑',
-      badgeColor: 'bg-gradient-to-r from-momPurple to-purple-800 text-white shadow-md shadow-purple-500/20',
-      color: 'border-purple-300 dark:border-purple-800/60 ring-2 ring-purple-400/20 bg-gradient-to-b from-purple-50/40 via-white to-white dark:from-purple-950/20 dark:via-gray-850/90 dark:to-gray-850',
-      accentColor: 'text-momPurple-dark dark:text-purple-400',
-      buttonClass: 'bg-gradient-to-r from-momPurple via-pink-600 to-momPink text-white hover:opacity-95 shadow-md shadow-purple-500/25',
+      badge: 'Đặc quyền cao cấp',
+      badgeClass: 'bg-theme-ink text-theme-surface',
+      cardClass: 'border border-theme-ink/25 bg-theme-surface shadow-sm',
+      iconBoxClass: 'bg-theme-ink text-theme-surface',
+      buttonClass: 'bg-theme-ink text-theme-surface hover:bg-theme-brand shadow-sm',
       features: [
         'Toàn bộ đặc quyền của gói Mẹ Hiện Đại',
         'Phân tích nhật ký cảm xúc & giọng nói AI sau sinh',
         'Ưu tiên kết nối trực tiếp Bác sĩ Sản phụ khoa chuyên môn',
         'Đội ngũ Care Staff đồng hành & phản hồi 24/7',
-        'Hệ thống cảnh báo rủi ro khẩn cấp real-time',
+        'Hệ thống cảnh báo rủi ro khẩn cấp thời gian thực',
         'Bảo chứng hồ sơ y tế bảo mật theo chuẩn Bộ Y Tế',
       ],
     },
   ];
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto pb-12">
-      {/* Top navigation */}
-      <button
-        onClick={() => navigate(-1)}
-        className="inline-flex items-center gap-2 text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-momPink transition-colors group"
-      >
-        <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-        <span>Quay lại</span>
-      </button>
+    <div className="font-display space-y-6 max-w-6xl mx-auto pb-12 text-theme-ink">
+      {/* Điều hướng quay lại */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => navigate(-1)}
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-2xl px-3.5 py-2 text-xs sm:text-sm font-bold text-theme-muted hover:text-theme-ink hover:bg-theme-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+        >
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+          <span>Quay lại</span>
+        </button>
 
-      {/* Hero Header */}
-      <div className="text-center max-w-3xl mx-auto space-y-3">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold bg-gradient-to-r from-pink-100 to-purple-100 dark:from-pink-950/40 dark:to-purple-950/40 text-momPink-dark dark:text-pink-300 border border-pink-200/50 dark:border-pink-800/40 shadow-sm">
-          <Sparkles className="w-3.5 h-3.5 text-momPink animate-pulse" />
-          <span>GÓI HỘI VIÊN & ĐẶC QUYỀN MAMI</span>
-        </div>
-        <h1 className="text-2xl sm:text-4xl font-black text-gray-900 dark:text-white tracking-tight leading-snug">
-          Đồng Hành Toàn Diện Cùng{' '}
-          <span className="bg-gradient-to-r from-momPink via-momPurple to-pink-500 bg-clip-text text-transparent">
-            Mẹ và Bé Yêu
-          </span>
-        </h1>
-        <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium leading-relaxed max-w-2xl mx-auto">
-          Chọn gói chăm sóc phù hợp để kích hoạt những trợ lý AI thông minh, phác đồ y khoa chuẩn hóa và đặc quyền kết nối chuyên gia y tế hàng đầu.
-        </p>
+        <Link
+          to="/subscription-history"
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-2xl border border-theme-line bg-theme-surface px-4 py-2 text-xs sm:text-sm font-bold text-theme-ink hover:bg-theme-brand-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+        >
+          <ReceiptText className="w-4 h-4 text-theme-brand" aria-hidden="true" />
+          <span>Lịch sử gói & hóa đơn</span>
+        </Link>
       </div>
 
-      {/* Success Notification Banner (Hiển thị khi vừa thanh toán thành công) */}
+      {/* Tiêu đề trang */}
+      <header className="bg-theme-surface rounded-3xl border border-theme-line p-6 sm:p-10 text-center space-y-3 shadow-sm">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-theme-brand-soft text-theme-ink border border-theme-brand/20">
+          <Sparkles className="w-4 h-4 text-theme-brand" aria-hidden="true" />
+          <span>Gói hội viên & đặc quyền chăm sóc</span>
+        </div>
+        <h1 className="text-2xl sm:text-4xl font-extrabold text-theme-ink tracking-tight leading-snug max-w-2xl mx-auto">
+          Đồng hành trọn vẹn cùng mẹ và bé yêu qua từng cột mốc
+        </h1>
+        <p className="text-sm sm:text-base text-theme-muted font-medium leading-relaxed max-w-2xl mx-auto">
+          Chọn gói chăm sóc phù hợp để mở khóa thực đơn dinh dưỡng chuyên sâu, nhật ký phục hồi sau sinh và kết nối đội ngũ y tế đồng hành.
+        </p>
+      </header>
+
+      {/* Banner thanh toán thành công */}
       {isPaymentSuccess && (
-        <div className="bg-gradient-to-r from-emerald-500/15 via-pink-500/10 to-purple-500/15 border-2 border-emerald-400 dark:border-emerald-600 rounded-3xl p-5 px-6 shadow-lg animate-in fade-in zoom-in-95 duration-500 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-400 to-teal-500 text-white flex items-center justify-center text-2xl shadow-md shrink-0">
-              🎉
+        <section className="bg-emerald-50 border-2 border-emerald-300 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-status-ok text-white flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-6 h-6" aria-hidden="true" />
             </div>
-            <div>
-              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                Thanh toán thành công & Gói đã kích hoạt
-              </span>
-              <h3 className="text-base font-black text-gray-900 dark:text-white">
-                Chào mừng bạn đến với gói dịch vụ {getTierNameVi(tier)}!
-              </h3>
-              <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-                Tài khoản của bạn đã được mở khóa toàn bộ đặc quyền cao cấp và trợ lý AI thông minh.
+            <div className="space-y-0.5">
+              <p className="text-xs font-bold text-emerald-800">
+                Thanh toán thành công & gói đã kích hoạt
+              </p>
+              <h2 className="text-base sm:text-lg font-extrabold text-emerald-950">
+                Chào mừng mẹ đến với gói {getTierNameVi(tier)}!
+              </h2>
+              <p className="text-xs sm:text-sm text-emerald-900 font-medium">
+                Tài khoản đã mở khóa đầy đủ các công cụ theo dõi chuyên sâu cho mẹ và bé.
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={() => navigate('/dashboard')}
-            className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold text-xs hover:opacity-95 transition-opacity shadow-md shrink-0 cursor-pointer"
+            className="min-h-[44px] px-5 py-2.5 rounded-2xl bg-status-ok text-white font-bold text-xs sm:text-sm hover:bg-emerald-800 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
           >
-            Về trang Tổng quan 🚀
+            Về trang Tổng quan
           </button>
-        </div>
+        </section>
       )}
 
-      {/* Current Tier Alert Banner */}
-      <div className="bg-white/80 dark:bg-gray-850/80 backdrop-blur-xl border border-pink-100 dark:border-gray-800 rounded-2xl p-4 px-6 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-momPink/15 dark:bg-momPink/25 text-momPink-dark dark:text-pink-300 flex items-center justify-center font-bold text-lg">
-            👑
+      {/* Trạng thái gói hiện tại */}
+      <div className="bg-theme-surface border border-theme-line rounded-2xl p-4 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center shrink-0">
+            <Crown className="w-5 h-5" aria-hidden="true" />
           </div>
           <div>
-            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-              Tài khoản của bạn hiện tại
-            </span>
-            <p className="text-sm font-black text-gray-800 dark:text-white">
-              Gói dịch vụ: <span className="text-momPink-dark dark:text-pink-400">{getTierNameVi(tier)}</span>
+            <p className="text-xs text-theme-muted font-semibold">
+              Gói dịch vụ hiện tại của mẹ
+            </p>
+            <p className="text-sm sm:text-base font-extrabold text-theme-ink">
+              {getTierNameVi(tier)}
             </p>
           </div>
         </div>
-        <div className="text-xs text-gray-400 font-semibold flex items-center gap-1.5">
-          <Clock className="w-3.5 h-3.5 text-emerald-500" />
-          <span>Trạng thái: Hoạt động bình thường</span>
+        <div className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-full px-3.5 py-1.5 inline-flex items-center gap-1.5 self-start sm:self-auto">
+          <Clock className="w-3.5 h-3.5 text-status-ok" aria-hidden="true" />
+          <span>Trạng thái: Đang hoạt động</span>
         </div>
       </div>
 
-      {/* Pricing Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 items-stretch">
+      {/* Bảng 3 gói dịch vụ */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2 items-stretch">
         {tiers.map((t) => {
           const Icon = t.icon;
           const isCurrentTier = tier === t.id;
           const isProcessing = upgradingTier === t.id;
 
           return (
-            <div
+            <article
               key={t.id}
-              className={`rounded-3xl p-6 sm:p-7 border backdrop-blur-md shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between relative ${t.color}`}
+              className={`rounded-3xl p-6 sm:p-7 flex flex-col justify-between relative transition-colors ${t.cardClass}`}
             >
-              {/* Top Tag Badge */}
               {t.badge && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${t.badgeColor}`}>
+                <div className="mb-4">
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${t.badgeClass}`}>
                     {t.badge}
                   </span>
                 </div>
               )}
 
               <div>
-                {/* Header info */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5">
-                    <div className={`p-2.5 rounded-2xl bg-white dark:bg-gray-800 shadow-sm ${t.accentColor}`}>
-                      <Icon className="w-5 h-5" />
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${t.iconBoxClass}`}>
+                      <Icon className="w-5 h-5" aria-hidden="true" />
                     </div>
                     <div>
-                      <h3 className="text-base font-extrabold text-gray-850 dark:text-white">
+                      <h2 className="text-lg font-extrabold text-theme-ink">
                         {t.name}
-                      </h3>
-                      <p className="text-[10px] text-gray-400 font-medium">
+                      </h2>
+                      <p className="text-xs text-theme-muted font-medium">
                         {t.subtitle}
                       </p>
                     </div>
                   </div>
 
                   {isCurrentTier && (
-                    <span className="text-[10px] bg-emerald-100 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 px-2.5 py-0.5 rounded-full font-bold shrink-0">
+                    <span className="text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 px-2.5 py-1 rounded-full font-bold shrink-0">
                       Đang dùng
                     </span>
                   )}
                 </div>
 
-                {/* Price Display */}
-                <div className="mt-5 pb-5 border-b border-gray-150 dark:border-gray-800/80">
+                {/* Giá */}
+                <div className="mt-6 pb-5 border-b border-theme-line">
                   <div className="flex items-baseline gap-1.5">
-                    <span className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white tracking-tight">
+                    <span className="text-2xl sm:text-3xl font-extrabold text-theme-ink tracking-tight">
                       {t.price}
                     </span>
-                    <span className="text-xs text-gray-400 font-bold">
+                    <span className="text-xs text-theme-muted font-bold">
                       {t.period}
                     </span>
                   </div>
-                  {t.sixMonthPrice && (
-                    <p className="mt-2 text-xs font-bold text-momPink-dark dark:text-pink-300">
+                  {t.sixMonthPrice ? (
+                    <p className="mt-2 text-xs font-bold text-theme-brand">
                       {t.sixMonthPrice}
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-xs font-medium text-theme-muted">
+                      Không giới hạn thời gian sử dụng
                     </p>
                   )}
                 </div>
 
-                {/* Features List */}
+                {/* Quyền lợi */}
                 <div className="mt-5 space-y-3">
-                  <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
-                    Đặc quyền bao gồm:
+                  <p className="text-xs font-bold text-theme-ink">
+                    Quyền lợi bao gồm:
                   </p>
                   <ul className="space-y-2.5">
-                    {t.features.map((feature, i) => (
-                      <li key={i} className="flex items-start gap-2.5 text-xs text-gray-650 dark:text-gray-300 font-medium leading-relaxed">
-                        <CheckCircle2 className="w-4 h-4 text-momPink shrink-0 mt-0.5" />
+                    {t.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-2.5 text-xs sm:text-sm text-theme-ink font-medium leading-relaxed">
+                        <CheckCircle2 className="w-4 h-4 text-theme-brand shrink-0 mt-0.5" aria-hidden="true" />
                         <span>{feature}</span>
                       </li>
                     ))}
@@ -292,67 +299,70 @@ export default function UpgradePage() {
                 </div>
               </div>
 
-              {/* Action Button */}
+              {/* Nút chọn gói */}
               <div className="mt-8 pt-4">
                 <button
                   type="button"
                   onClick={() => handleTierSelect(t.id)}
                   disabled={isCurrentTier || isProcessing || upgradingTier !== null}
-                  className={`w-full py-3.5 px-4 rounded-2xl text-xs font-black transition-all duration-200 flex items-center justify-center gap-2 ${
+                  className={`w-full min-h-[48px] py-3 px-4 rounded-2xl text-sm font-bold transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2 ${
                     isCurrentTier
-                      ? 'bg-gray-150 dark:bg-gray-800 text-gray-400 cursor-not-allowed border border-gray-200 dark:border-gray-700'
-                      : `${t.buttonClass} active:scale-95 cursor-pointer hover:shadow-lg`
+                      ? 'bg-theme-page text-theme-muted cursor-not-allowed border border-theme-line'
+                      : `${t.buttonClass} disabled:bg-theme-line disabled:text-theme-muted`
                   }`}
                 >
                   {isProcessing ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Đang kích hoạt gói...</span>
-                    </>
+                    <span>Đang chuyển đổi gói...</span>
                   ) : isCurrentTier ? (
-                    <span>Gói Hiện Tại Của Bạn</span>
+                    <span>Gói hiện tại của mẹ</span>
                   ) : (
                     <>
-                      <span>{t.id === 'Free' ? 'Chuyển Về Gói Cơ Bản' : 'Nâng Cấp Gói Ngay'}</span>
-                      <ChevronRight className="w-4 h-4" />
+                      <span>{t.id === 'Free' ? 'Chuyển về gói Cơ bản' : 'Chọn nâng cấp gói này'}</span>
+                      <ChevronRight className="w-4 h-4" aria-hidden="true" />
                     </>
                   )}
                 </button>
               </div>
-            </div>
+            </article>
           );
         })}
       </div>
 
-      {/* Trust & Commitment Badges */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6">
-        <div className="bg-white/60 dark:bg-gray-850/50 backdrop-blur-sm p-4 rounded-2xl border border-white/60 dark:border-gray-800 flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/30 text-blue-500">
-            <ShieldCheck className="w-5 h-5" />
+      {/* Cam kết bảo mật & chuyên môn */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+        <div className="bg-theme-surface p-5 rounded-2xl border border-theme-line flex items-start gap-3.5">
+          <div className="w-10 h-10 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-5 h-5" aria-hidden="true" />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-gray-800 dark:text-white">Bảo mật thông tin tối đa</h4>
-            <p className="text-[10px] text-gray-400">Tuân thủ Nghị định 13/2023/NĐ-CP về dữ liệu</p>
+            <h3 className="text-sm font-bold text-theme-ink">Bảo mật dữ liệu y tế</h3>
+            <p className="text-xs text-theme-muted font-medium mt-0.5 leading-relaxed">
+              Tuân thủ Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân của mẹ và bé.
+            </p>
           </div>
         </div>
 
-        <div className="bg-white/60 dark:bg-gray-850/50 backdrop-blur-sm p-4 rounded-2xl border border-white/60 dark:border-gray-800 flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-pink-50 dark:bg-pink-950/30 text-momPink">
-            <Sparkles className="w-5 h-5" />
+        <div className="bg-theme-surface p-5 rounded-2xl border border-theme-line flex items-start gap-3.5">
+          <div className="w-10 h-10 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center shrink-0">
+            <Sparkles className="w-5 h-5" aria-hidden="true" />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-gray-800 dark:text-white">Kích hoạt tức thì</h4>
-            <p className="text-[10px] text-gray-400">Hệ thống mở khóa toàn bộ đặc quyền ngay lập tức</p>
+            <h3 className="text-sm font-bold text-theme-ink">Kích hoạt tự động VietQR</h3>
+            <p className="text-xs text-theme-muted font-medium mt-0.5 leading-relaxed">
+              Mở khóa toàn bộ tính năng ngay sau khi hệ thống xác nhận giao dịch chuyển khoản.
+            </p>
           </div>
         </div>
 
-        <div className="bg-white/60 dark:bg-gray-850/50 backdrop-blur-sm p-4 rounded-2xl border border-white/60 dark:border-gray-800 flex items-center gap-3">
-          <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/30 text-momPurple">
-            <Award className="w-5 h-5" />
+        <div className="bg-theme-surface p-5 rounded-2xl border border-theme-line flex items-start gap-3.5">
+          <div className="w-10 h-10 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center shrink-0">
+            <Award className="w-5 h-5" aria-hidden="true" />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-gray-800 dark:text-white">Cố vấn chuyên môn y tế</h4>
-            <p className="text-[10px] text-gray-400">Được kiểm duyệt bởi bác sĩ & chuyên gia sản khoa</p>
+            <h3 className="text-sm font-bold text-theme-ink">Nguồn tham chiếu chuẩn y khoa</h3>
+            <p className="text-xs text-theme-muted font-medium mt-0.5 leading-relaxed">
+              Nội dung tham chiếu khuyến nghị của WHO, Bộ Y tế và cố vấn chuyên khoa.
+            </p>
           </div>
         </div>
       </div>

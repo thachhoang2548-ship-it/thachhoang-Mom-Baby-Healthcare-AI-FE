@@ -176,7 +176,7 @@ export default function EpdsPage() {
 
   return (
     <TierGate requiredTier="MomHienDai">
-      <div className="font-display rounded-3xl bg-theme-page p-4 sm:p-6 border border-theme-line min-h-[85vh] flex flex-col justify-between space-y-6">
+      <div className="font-display min-h-[75vh] flex flex-col justify-between space-y-6 pb-8 text-theme-ink">
         {/* Nút quay lại đầu trang */}
         <div className="flex items-center justify-between">
           <button

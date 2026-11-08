@@ -1,46 +1,66 @@
+import React from "react";
+import { Check, Utensils, X } from "lucide-react";
+
+const MEALS = [
+  { key: "breakfast", label: "Bữa sáng" },
+  { key: "lunch", label: "Bữa trưa" },
+  { key: "dinner", label: "Bữa tối" },
+];
+
 export const MealForm = ({ meals, setMeals }) => {
   return (
-    <div className="bg-white dark:bg-gray-800/50 rounded-xl shadow-lg p-6">
-      <div className="flex items-center gap-4 mb-5">
-        <div className="bg-saffron/10 p-2.5 rounded-full">
-          <span className="material-symbols-outlined text-saffron">restaurant</span>
+    <section className="bg-theme-surface rounded-3xl border border-theme-line p-6 shadow-sm space-y-5">
+      <div className="flex items-center gap-3.5">
+        <div className="w-11 h-11 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center shrink-0">
+          <Utensils className="w-5 h-5" aria-hidden="true" />
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Nhật ký ăn uống</h3>
+        <div>
+          <h2 className="text-lg font-bold text-theme-ink">Nhật ký bữa ăn</h2>
+          <p className="text-xs text-theme-muted font-medium">Theo dõi nhịp ăn uống đều đặn trong ngày</p>
+        </div>
       </div>
 
-      <div className="space-y-4">
-        {[
-          { key: "breakfast", label: "Bữa sáng" },
-          { key: "lunch", label: "Bữa trưa" },
-          { key: "dinner", label: "Bữa tối" },
-        ].map((meal) => (
-          <div key={meal.key} className="flex justify-between items-center">
-            <p className="font-medium text-gray-700 dark:text-gray-300">{meal.label}</p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setMeals({ ...meals, [meal.key]: true })}
-                className={`px-4 py-1.5 text-sm font-semibold rounded-full ${
-                  meals[meal.key]
-                    ? "bg-emerald-500 text-white"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
-                }`}
-              >
-                Đã ăn
-              </button>
-              <button
-                onClick={() => setMeals({ ...meals, [meal.key]: false })}
-                className={`px-4 py-1.5 text-sm font-semibold rounded-full ${
-                  !meals[meal.key]
-                    ? "bg-rose-500 text-white"
-                    : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
-                }`}
-              >
-                Bỏ qua
-              </button>
+      <div className="space-y-3">
+        {MEALS.map((meal) => {
+          const hadMeal = Boolean(meals[meal.key]);
+          return (
+            <div
+              key={meal.key}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-theme-line bg-theme-page/60 px-4 py-3"
+            >
+              <p className="text-sm font-bold text-theme-ink">{meal.label}</p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setMeals({ ...meals, [meal.key]: true })}
+                  aria-pressed={hadMeal}
+                  className={`inline-flex min-h-[44px] items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-bold rounded-2xl border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+                    hadMeal
+                      ? "bg-status-ok text-white border-status-ok"
+                      : "bg-theme-surface text-theme-ink border-theme-line hover:bg-theme-brand-soft"
+                  }`}
+                >
+                  <Check className="w-4 h-4" aria-hidden="true" />
+                  <span>Đã ăn</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMeals({ ...meals, [meal.key]: false })}
+                  aria-pressed={!hadMeal}
+                  className={`inline-flex min-h-[44px] items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-bold rounded-2xl border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+                    !hadMeal
+                      ? "bg-status-warn-bg text-status-warn-text border-status-warn-line"
+                      : "bg-theme-surface text-theme-ink border-theme-line hover:bg-theme-brand-soft"
+                  }`}
+                >
+                  <X className="w-4 h-4" aria-hidden="true" />
+                  <span>Chưa ăn</span>
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
-    </div>
+    </section>
   );
 };

@@ -18,14 +18,12 @@ export default function ImageDropzone({ value, onChange, onRemove }) {
   const validateAndProcessFile = (file) => {
     if (!file) return;
 
-    // Type validation
     const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp"];
     if (!allowedTypes.includes(file.type)) {
       toast.error("Chỉ chấp nhận các định dạng PNG, JPG, JPEG hoặc WEBP.");
       return;
     }
 
-    // Size validation (10MB)
     const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       toast.error("Kích thước tệp vượt quá 10MB. Vui lòng tải lên ảnh nhẹ hơn.");
@@ -62,7 +60,7 @@ export default function ImageDropzone({ value, onChange, onRemove }) {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full font-display">
       <input
         type="file"
         ref={fileInputRef}
@@ -72,43 +70,45 @@ export default function ImageDropzone({ value, onChange, onRemove }) {
       />
 
       {!value ? (
-        <div
+        <button
+          type="button"
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={triggerFileSelect}
-          className={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all duration-200 flex flex-col items-center justify-center min-h-[160px] ${
+          className={`flex min-h-[152px] w-full cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed p-6 text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
             isDragOver
-              ? "border-amber-400 bg-amber-50"
-              : "border-gray-300 hover:border-amber-400 bg-white"
+              ? "border-theme-brand bg-theme-brand-soft/60"
+              : "border-theme-line bg-theme-page/50 hover:border-theme-brand/50 hover:bg-theme-surface"
           }`}
         >
-          <Upload className={`w-8 h-8 mb-2 transition-colors ${isDragOver ? "text-amber-500" : "text-gray-400"}`} />
-          <p className="text-sm font-bold text-gray-700">
-            <span className="text-amber-500">Tải lên tệp</span> hoặc kéo và thả
+          <span className="mb-2.5 flex h-11 w-11 items-center justify-center rounded-2xl bg-theme-surface border border-theme-line text-theme-brand">
+            <Upload className="h-5 w-5" />
+          </span>
+          <p className="text-sm font-bold text-theme-ink">
+            <span className="text-theme-brand underline">Chọn ảnh từ thiết bị</span> hoặc kéo thả vào đây
           </p>
-          <p className="text-xs text-gray-400 mt-1.5 font-medium">
-            PNG, JPG, WEBP tối đa 10MB
+          <p className="mt-1 text-xs font-medium text-theme-muted">
+            Hỗ trợ PNG, JPG, WEBP · Tối đa 10MB
           </p>
-        </div>
+        </button>
       ) : (
-        /* Image Preview Box */
-        <div className="bg-gray-50 border border-gray-200/50 rounded-2xl p-4 flex items-center justify-between gap-4 animate-in fade-in duration-200">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-14 h-14 bg-white border border-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative">
+        <div className="flex items-center justify-between gap-4 rounded-2xl border border-theme-line bg-theme-page/60 p-4">
+          <div className="flex items-center gap-3.5 overflow-hidden">
+            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-theme-line bg-theme-surface">
               <img
                 src={value.previewUrl}
-                alt="Symptom preview"
-                className="w-full h-full object-cover"
+                alt="Ảnh triệu chứng đã chọn"
+                className="h-full w-full object-cover"
               />
             </div>
             <div className="overflow-hidden">
-              <p className="text-xs font-bold text-gray-800 truncate max-w-[180px] sm:max-w-xs flex items-center gap-1.5">
-                <FileImage className="w-3.5 h-3.5 text-amber-500" />
-                {value.file.name}
+              <p className="flex max-w-[200px] items-center gap-1.5 truncate text-sm font-bold text-theme-ink sm:max-w-xs">
+                <FileImage className="h-4 w-4 shrink-0 text-theme-brand" />
+                <span className="truncate">{value.file.name}</span>
               </p>
-              <p className="text-[10px] font-semibold text-gray-400 mt-1">
-                Kích thước: {formatFileSize(value.file.size)}
+              <p className="mt-0.5 text-xs font-medium text-theme-muted">
+                Dung lượng: {formatFileSize(value.file.size)}
               </p>
             </div>
           </div>
@@ -119,10 +119,10 @@ export default function ImageDropzone({ value, onChange, onRemove }) {
               e.stopPropagation();
               onRemove();
             }}
-            className="p-1.5 rounded-full hover:bg-gray-200 text-gray-400 hover:text-gray-600 transition-all flex-shrink-0"
-            title="Xóa hình ảnh"
+            aria-label="Xóa hình ảnh"
+            className="inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full border border-theme-line bg-theme-surface text-theme-ink hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
           >
-            <X className="w-4 h-4" />
+            <X className="h-4 w-4" />
           </button>
         </div>
       )}

@@ -1,39 +1,62 @@
 import React, { useEffect, useState } from 'react';
 import momOiLogo from '../../assets/Logo/mom-oi-submark-cropped.png';
 
+const SPLASH_SESSION_KEY = 'momoi_splash_seen';
+
 const SplashScreen = ({ onFinish }) => {
   const [fade, setFade] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setFade(true), 2500);
-    const finishTimer = setTimeout(() => onFinish(), 3000);
+    try {
+      window.sessionStorage.setItem(SPLASH_SESSION_KEY, '1');
+    } catch {
+      // Ignore storage restrictions in private browsing
+    }
+
+    const prefersReducedMotion =
+      typeof window !== 'undefined' &&
+      window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion) {
+      const quickTimer = setTimeout(() => onFinish(), 320);
+      return () => clearTimeout(quickTimer);
+    }
+
+    const fadeTimer = setTimeout(() => setFade(true), 550);
+    const finishTimer = setTimeout(() => onFinish(), 780);
 
     return () => {
-      clearTimeout(timer);
+      clearTimeout(fadeTimer);
       clearTimeout(finishTimer);
     };
   }, [onFinish]);
 
   return (
-    <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-background-light dark:bg-background-dark transition-opacity duration-500 ${fade ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-      <div className="relative flex flex-col items-center">
-        <div className="absolute left-1/2 top-1/2 h-32 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-2xl animate-pulse" />
+    <div
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-theme-page px-6 font-display text-theme-ink transition-opacity duration-200 ${
+        fade ? 'pointer-events-none opacity-0' : 'opacity-100'
+      }`}
+      role="status"
+      aria-live="polite"
+    >
+      <div className="flex max-w-sm flex-col items-center rounded-3xl border border-theme-line bg-theme-surface px-8 py-9 text-center shadow-sm">
+        <div className="mb-5 rounded-full border border-theme-line bg-theme-page p-2">
+          <img
+            src={momOiLogo}
+            alt="Mom Ơi!"
+            className="h-20 w-20 rounded-full object-cover sm:h-24 sm:w-24"
+          />
+        </div>
 
-        <img
-          src={momOiLogo}
-          alt="Mom Ơi!"
-          className="relative z-10 mb-6 h-24 w-24 rounded-full object-cover shadow-xl shadow-primary/15 animate-float sm:h-32 sm:w-32"
-        />
-
-        <h1 className="relative z-10 font-brand text-5xl font-extrabold leading-none tracking-normal text-gray-900 animate-fade-in-up dark:text-white sm:text-6xl">
-          Mom <span className="text-primary">Ơi!</span>
+        <h1 className="font-brand text-4xl font-extrabold leading-none tracking-normal text-theme-ink sm:text-5xl">
+          Mom <span className="text-theme-brand">Ơi!</span>
         </h1>
-        <p className="relative z-10 mt-2 max-w-xs text-center text-sm font-medium text-gray-500 dark:text-gray-400">
-          Sức khỏe dinh dưỡng & tinh thần cho Mẹ và Bé
+        <p className="mt-2.5 text-sm font-medium leading-relaxed text-theme-muted">
+          Sức khỏe dinh dưỡng &amp; tinh thần cho Mẹ và Bé
         </p>
 
-        <div className="relative z-10 mt-8 h-1 w-48 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-800">
-          <div className="h-full rounded-full bg-primary animate-loading-bar" />
+        <div className="mt-6 h-1.5 w-36 overflow-hidden rounded-full bg-theme-brand-soft" aria-hidden="true">
+          <div className="h-full w-2/3 rounded-full bg-theme-brand transition-all duration-500" />
         </div>
       </div>
     </div>

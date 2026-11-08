@@ -1,74 +1,117 @@
 import React from "react";
+import { CheckCircle2, Clock, Pencil, Trash2, XCircle } from "lucide-react";
+import toast from "react-hot-toast";
 import medicationService from "../../../models/services/medicationService";
 
-const statusClasses = {
-  taken: "bg-success",
-  skipped: "bg-warning",
-  pending: "bg-primary animate-pulse",
-  future: "bg-gray-300 dark:bg-white/30",
+const STATUS_META = {
+  taken: {
+    dot: "bg-status-ok",
+    badge: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    label: "Đã uống",
+  },
+  skipped: {
+    dot: "bg-status-warn-line",
+    badge: "bg-status-warn-bg text-status-warn-text border-status-warn-line/40",
+    label: "Đã bỏ qua",
+  },
+  pending: {
+    dot: "bg-theme-brand",
+    badge: "bg-theme-brand-soft text-theme-ink border-theme-brand/25",
+    label: "Chờ uống",
+  },
+  future: {
+    dot: "bg-theme-muted",
+    badge: "bg-theme-page text-theme-ink border-theme-line",
+    label: "Chưa tới giờ",
+  },
 };
 
 const MedicationItem = ({ med, onUpdate, onDelete }) => {
+  const statusKey = med.status || "future";
+  const meta = STATUS_META[statusKey] || STATUS_META.future;
+
   const handleStatus = async (status) => {
     try {
       await medicationService.updateAdherence(med._id, { date: new Date(), status });
       onUpdate(med._id, status);
     } catch (err) {
       console.error("Error updating adherence:", err);
+      toast.error("Chưa cập nhật được trạng thái uống thuốc.");
     }
   };
 
   return (
-    <div className="rounded-xl border border-transparent dark:border-transparent bg-white dark:bg-background-dark p-4 shadow-sm hover:border-[#e6e3db] dark:hover:border-primary/20 transition-all">
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-4 flex-1">
-          <div
-            className={`w-3 h-3 rounded-full flex-shrink-0 ${statusClasses[med.status || "future"]}`}
-            data-alt={`${med.status || "future"} dot indicating medication status`}
-          ></div>
-          <div>
-            <p className="font-bold text-[#181611] dark:text-white">{med.medName}</p>
-            <p className="text-sm text-[#8a8060] dark:text-white/70">
-              {med.dosage}, {med.times.map((t) => t.slice(0, 5)).join(", ")}
+    <article className="rounded-2xl border border-theme-line bg-theme-page/50 p-4 sm:p-5 transition-colors hover:border-theme-brand/40">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-3.5 min-w-0 flex-1">
+          <span
+            className={`w-3 h-3 rounded-full shrink-0 mt-2 ${meta.dot}`}
+            aria-hidden="true"
+          />
+          <div className="min-w-0 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-base font-bold text-theme-ink">{med.medName}</h3>
+              <span
+                className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-bold ${meta.badge}`}
+              >
+                {meta.label}
+              </span>
+            </div>
+            <p className="text-sm text-theme-muted font-medium flex flex-wrap items-center gap-2">
+              <span>Liều: {med.dosage}</span>
+              <span>•</span>
+              <span className="inline-flex items-center gap-1 text-theme-ink font-semibold">
+                <Clock className="w-3.5 h-3.5 text-theme-brand" aria-hidden="true" />
+                {(med.times || []).map((t) => t.slice(0, 5)).join(", ")}
+              </span>
             </p>
+            {med.notes && (
+              <p className="text-xs text-theme-muted font-medium pt-0.5">{med.notes}</p>
+            )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex flex-wrap items-center gap-2">
           <button
+            type="button"
+            disabled={med.status === "taken"}
             onClick={() => handleStatus("taken")}
-            className={`flex items-center justify-center rounded-lg h-10 px-4 text-sm font-bold ${
-              med.status === "taken" ? "bg-success/10 text-success opacity-50 cursor-not-allowed" : "bg-success/10 text-success hover:bg-success/20"
-            }`}
+            className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs sm:text-sm font-bold bg-status-ok text-white hover:bg-emerald-800 disabled:bg-theme-line disabled:text-theme-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
           >
-            <span className="material-symbols-outlined text-xl mr-1">check_circle</span>
-            Đã uống
+            <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
+            <span>Đã uống</span>
           </button>
+
           <button
+            type="button"
+            disabled={med.status === "skipped"}
             onClick={() => handleStatus("skipped")}
-            className={`flex items-center justify-center rounded-lg h-10 px-4 text-sm font-bold ${
-              med.status === "skipped" ? "bg-warning/10 text-warning opacity-50 cursor-not-allowed" : "bg-warning/10 text-warning hover:bg-warning/20"
-            }`}
+            className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs sm:text-sm font-bold bg-status-warn-bg border border-status-warn-line/50 text-status-warn-text hover:bg-amber-100 disabled:bg-theme-line disabled:text-theme-muted disabled:border-theme-line transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
           >
-            <span className="material-symbols-outlined text-xl mr-1">cancel</span>
-            Bỏ qua
+            <XCircle className="w-4 h-4" aria-hidden="true" />
+            <span>Bỏ qua</span>
           </button>
-        </div>
-        <div className="flex items-center gap-1">
+
           <button
-            onClick={() => alert("Tính năng chỉnh sửa sắp được cập nhật")}
-            className="flex items-center justify-center rounded-full h-9 w-9 text-[#8a8060] dark:text-white/70 hover:bg-[#f5f3f0] dark:hover:bg-primary/20"
+            type="button"
+            onClick={() => toast("Tính năng chỉnh sửa lịch thuốc sẽ sớm được cập nhật.")}
+            aria-label={`Chỉnh sửa ${med.medName}`}
+            className="w-11 h-11 inline-flex items-center justify-center rounded-2xl border border-theme-line bg-theme-surface text-theme-ink hover:bg-theme-brand-soft transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
           >
-            <span className="material-symbols-outlined text-xl">edit</span>
+            <Pencil className="w-4 h-4" aria-hidden="true" />
           </button>
+
           <button
+            type="button"
             onClick={() => onDelete(med._id)}
-            className="flex items-center justify-center rounded-full h-9 w-9 text-danger hover:bg-danger/10"
+            aria-label={`Xóa ${med.medName}`}
+            className="w-11 h-11 inline-flex items-center justify-center rounded-2xl border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
           >
-            <span className="material-symbols-outlined text-xl">delete</span>
+            <Trash2 className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
       </div>
-    </div>
+    </article>
   );
 };
 
