@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useProfileController } from '../../../controllers/profileController';
-import { Heart, Calendar, Sparkles, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Heart, Calendar, Baby, ArrowRight, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
+import momOiLogo from '../../../assets/Logo/mom-oi-submark-cropped.png';
 
 export default function JourneySetupPage() {
   const navigate = useNavigate();
@@ -35,7 +36,7 @@ export default function JourneySetupPage() {
           return;
         }
         await setupPregnancyJourney(lmpDate);
-        toast.success('Thiết lập hành trình thai kỳ thành công! 🤰');
+        toast.success('Thiết lập hành trình thai kỳ thành công!');
         navigate('/pregnancy');
       } else if (selectedStage === 'PrePregnancy') {
         if (!lmpDate) {
@@ -48,7 +49,7 @@ export default function JourneySetupPage() {
           lastPeriodDate: lmpDate,
           avgCycleLength: Number(cycleLength),
         });
-        toast.success('Thiết lập mục tiêu chuẩn bị mang thai thành công! 🌸');
+        toast.success('Thiết lập mục tiêu chuẩn bị mang thai thành công!');
         navigate('/fertility');
       } else if (selectedStage === 'Postpartum') {
         if (!deliveryDate) {
@@ -60,7 +61,7 @@ export default function JourneySetupPage() {
           stage: 2,
           deliveryDate: deliveryDate,
         });
-        toast.success('Chúc mừng mami và bé yêu! 👶');
+        toast.success('Thiết lập hồ sơ sau sinh thành công!');
         navigate('/baby-nutrition');
       }
     } catch (err) {
@@ -71,131 +72,133 @@ export default function JourneySetupPage() {
     }
   };
 
+  const stages = [
+    {
+      key: 'PrePregnancy',
+      title: 'Chuẩn bị mang thai',
+      desc: 'Theo dõi lịch rụng trứng và cửa sổ thụ thai tự nhiên',
+      icon: Calendar,
+      tone: 'bg-theme-brand-soft text-theme-brand',
+    },
+    {
+      key: 'Pregnant',
+      title: 'Đang mang thai',
+      desc: 'Theo dõi bé phát triển theo tuần, dinh dưỡng và vận động',
+      icon: Heart,
+      tone: 'bg-status-warn-bg text-status-warn-text',
+    },
+    {
+      key: 'Postpartum',
+      title: 'Sau sinh & nuôi con',
+      desc: 'Hồi phục sức khỏe mẹ, sàng lọc EPDS và ăn dặm cho bé',
+      icon: Baby,
+      tone: 'bg-status-ok/15 text-status-ok',
+    },
+  ];
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-pink-100 via-pink-50 to-purple-100 p-4 font-sans">
-      <div className="w-full max-w-xl bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-3xl shadow-xl p-8 border border-white/50">
-        
-        {/* Progress Bar */}
-        <div className="w-full bg-pink-100 dark:bg-gray-700 h-1.5 rounded-full mb-6 overflow-hidden">
+    <div className="flex min-h-screen items-center justify-center bg-theme-page p-4 font-display text-theme-ink sm:p-6">
+      <div className="w-full max-w-2xl rounded-3xl border border-theme-line bg-theme-surface p-6 shadow-sm sm:p-10">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5">
+            <img
+              src={momOiLogo}
+              alt="Mom Ơi!"
+              className="h-10 w-10 rounded-full border border-theme-line object-cover"
+            />
+            <span className="font-brand text-2xl font-extrabold leading-none text-theme-brand">
+              Mom Ơi!
+            </span>
+          </div>
+          <span className="text-xs font-bold text-theme-muted">Bước {step} / 2</span>
+        </div>
+
+        <div className="mb-8 h-2 w-full overflow-hidden rounded-full bg-theme-page border border-theme-line">
           <div
-            className="bg-gradient-to-r from-momPink to-momPurple h-full transition-all duration-500"
+            className="h-full rounded-full bg-theme-brand transition-all duration-300"
             style={{ width: step === 1 ? '50%' : '100%' }}
-          ></div>
+          />
         </div>
 
         {step === 1 ? (
           <div>
-            <div className="text-center mb-8">
-              <h2 className="text-xl font-extrabold bg-gradient-to-r from-momPink-dark to-momPurple-dark bg-clip-text text-transparent uppercase tracking-wide">
-                Hành trình của Mami
-              </h2>
-              <p className="text-xs text-gray-505 dark:text-gray-400 font-bold mt-1">
-                Lựa chọn cột mốc hiện tại để nhận các gợi ý sức khỏe tối ưu
+            <div className="mb-7">
+              <h1 className="text-2xl font-bold text-theme-ink sm:text-3xl">
+                Mẹ đang ở cột mốc nào?
+              </h1>
+              <p className="mt-1.5 text-sm text-theme-muted sm:text-base">
+                Chọn giai đoạn hiện tại để Mom Ơi! sắp xếp công cụ theo dõi phù hợp nhất.
               </p>
             </div>
 
-            {/* Stage selection cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              
-              {/* Pre-Pregnancy Card */}
-              <button
-                type="button"
-                onClick={() => handleStageSelect('PrePregnancy')}
-                className="group p-5 bg-white border border-pink-100 hover:border-momPink rounded-2xl text-center shadow-sm hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 flex flex-col items-center gap-3"
-              >
-                <div className="w-12 h-12 rounded-2xl bg-pink-50 text-momPink flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                  🌸
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-gray-800">Chuẩn Bị</h3>
-                  <p className="text-[10px] text-gray-400 mt-1 font-semibold leading-relaxed">
-                    Theo dõi lịch rụng trứng và tính ngày thụ thai thụ động
-                  </p>
-                </div>
-              </button>
-
-              {/* Pregnant Card */}
-              <button
-                type="button"
-                onClick={() => handleStageSelect('Pregnant')}
-                className="group p-5 bg-white border border-pink-100 hover:border-momPink rounded-2xl text-center shadow-sm hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 flex flex-col items-center gap-3"
-              >
-                <div className="w-12 h-12 rounded-2xl bg-purple-50 text-momPurple flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                  🤰
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-gray-800">Đang Mang Thai</h3>
-                  <p className="text-[10px] text-gray-400 mt-1 font-semibold leading-relaxed">
-                    Theo dõi bé phát triển theo tuần, dinh dưỡng, vận động
-                  </p>
-                </div>
-              </button>
-
-              {/* Postpartum Card */}
-              <button
-                type="button"
-                onClick={() => handleStageSelect('Postpartum')}
-                className="group p-5 bg-white border border-pink-100 hover:border-momPink rounded-2xl text-center shadow-sm hover:shadow-lg hover:scale-105 active:scale-95 transition-all duration-300 flex flex-col items-center gap-3"
-              >
-                <div className="w-12 h-12 rounded-2xl bg-green-50 text-momGreen flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                  👶
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-gray-800">Sau Sinh</h3>
-                  <p className="text-[10px] text-gray-400 mt-1 font-semibold leading-relaxed">
-                    Chăm sóc mẹ sau sinh, trầm cảm EPDS, theo dõi chỉ số bé
-                  </p>
-                </div>
-              </button>
-
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              {stages.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    onClick={() => handleStageSelect(item.key)}
+                    className="flex flex-col items-start gap-3 rounded-2xl border border-theme-line bg-theme-page/50 p-5 text-left transition-colors hover:border-theme-brand hover:bg-theme-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+                  >
+                    <span className={`flex h-12 w-12 items-center justify-center rounded-2xl ${item.tone}`}>
+                      <Icon className="h-6 w-6" />
+                    </span>
+                    <div>
+                      <h2 className="text-base font-bold text-theme-ink">{item.title}</h2>
+                      <p className="mt-1 text-xs leading-relaxed text-theme-muted">{item.desc}</p>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-5">
-            
-            {/* Back Arrow */}
             <button
               type="button"
               onClick={handleBack}
-              className="flex items-center gap-1 text-[11px] font-bold text-gray-400 hover:text-gray-600 transition"
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-full px-3 text-sm font-semibold text-theme-muted hover:bg-theme-page hover:text-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
             >
-              <ArrowLeft className="w-4 h-4" /> Quay lại
+              <ArrowLeft className="h-4 w-4" />
+              <span>Chọn lại giai đoạn</span>
             </button>
 
-            <div className="text-center mb-4">
-              <h3 className="text-base font-extrabold text-gray-800">
-                {selectedStage === 'PrePregnancy' && '🌸 Thông tin Chuẩn Bị Mang Thai'}
-                {selectedStage === 'Pregnant' && '🤰 Thông tin Thai Kỳ'}
-                {selectedStage === 'Postpartum' && '👶 Thông tin Sau Sinh'}
-              </h3>
-              <p className="text-xs text-gray-500 font-semibold mt-1">
-                Các chỉ số này giúp AI tính toán lịch trình chăm sóc chính xác nhất
+            <div>
+              <h2 className="text-xl font-bold text-theme-ink sm:text-2xl">
+                {selectedStage === 'PrePregnancy' && 'Thông tin chuẩn bị mang thai'}
+                {selectedStage === 'Pregnant' && 'Thông tin thai kỳ của mẹ'}
+                {selectedStage === 'Postpartum' && 'Thông tin sau sinh của mẹ và bé'}
+              </h2>
+              <p className="mt-1 text-sm text-theme-muted">
+                Các mốc ngày này giúp hệ thống tính toán lịch chăm sóc chính xác hơn.
               </p>
             </div>
 
-            {/* Sub-Forms depending on selected stage */}
             {selectedStage === 'PrePregnancy' && (
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">
+                  <label htmlFor="setup-lmp-pre" className="mb-1.5 block text-sm font-semibold text-theme-ink">
                     Ngày đầu kỳ kinh gần nhất
                   </label>
                   <input
+                    id="setup-lmp-pre"
                     type="date"
                     required
                     value={lmpDate}
                     onChange={(e) => setLmpDate(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-pink-100 focus:outline-none focus:ring-2 focus:ring-momPink/30 focus:border-momPink text-xs font-semibold"
+                    className="min-h-[48px] w-full rounded-2xl border border-theme-line bg-theme-page/50 px-4 text-sm font-semibold text-theme-ink focus:border-theme-brand focus:bg-theme-surface focus:outline-none focus:ring-2 focus:ring-theme-brand/25"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">
+                  <label htmlFor="setup-cycle" className="mb-1.5 block text-sm font-semibold text-theme-ink">
                     Chu kỳ kinh trung bình (ngày)
                   </label>
                   <select
+                    id="setup-cycle"
                     value={cycleLength}
                     onChange={(e) => setCycleLength(Number(e.target.value))}
-                    className="w-full px-4 py-2.5 rounded-xl border border-pink-100 focus:outline-none focus:ring-2 focus:ring-momPink/30 focus:border-momPink text-xs font-semibold"
+                    className="min-h-[48px] w-full rounded-2xl border border-theme-line bg-theme-page/50 px-4 text-sm font-semibold text-theme-ink focus:border-theme-brand focus:bg-theme-surface focus:outline-none focus:ring-2 focus:ring-theme-brand/25"
                   >
                     {[...Array(23)].map((_, i) => (
                       <option key={i} value={20 + i}>
@@ -208,54 +211,51 @@ export default function JourneySetupPage() {
             )}
 
             {selectedStage === 'Pregnant' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">
-                    Ngày đầu kỳ kinh cuối cùng (LMP)
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={lmpDate}
-                    onChange={(e) => setLmpDate(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-pink-100 focus:outline-none focus:ring-2 focus:ring-momPink/30 focus:border-momPink text-xs font-semibold"
-                  />
-                </div>
+              <div>
+                <label htmlFor="setup-lmp-preg" className="mb-1.5 block text-sm font-semibold text-theme-ink">
+                  Ngày đầu kỳ kinh cuối cùng (LMP)
+                </label>
+                <input
+                  id="setup-lmp-preg"
+                  type="date"
+                  required
+                  value={lmpDate}
+                  onChange={(e) => setLmpDate(e.target.value)}
+                  className="min-h-[48px] w-full rounded-2xl border border-theme-line bg-theme-page/50 px-4 text-sm font-semibold text-theme-ink focus:border-theme-brand focus:bg-theme-surface focus:outline-none focus:ring-2 focus:ring-theme-brand/25"
+                />
               </div>
             )}
 
             {selectedStage === 'Postpartum' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="text-xs font-bold text-gray-700 block mb-1">
-                    Ngày sinh bé yêu
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={deliveryDate}
-                    onChange={(e) => setDeliveryDate(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl border border-pink-100 focus:outline-none focus:ring-2 focus:ring-momPink/30 focus:border-momPink text-xs font-semibold"
-                  />
-                </div>
+              <div>
+                <label htmlFor="setup-delivery" className="mb-1.5 block text-sm font-semibold text-theme-ink">
+                  Ngày sinh bé
+                </label>
+                <input
+                  id="setup-delivery"
+                  type="date"
+                  required
+                  value={deliveryDate}
+                  onChange={(e) => setDeliveryDate(e.target.value)}
+                  className="min-h-[48px] w-full rounded-2xl border border-theme-line bg-theme-page/50 px-4 text-sm font-semibold text-theme-ink focus:border-theme-brand focus:bg-theme-surface focus:outline-none focus:ring-2 focus:ring-theme-brand/25"
+                />
               </div>
             )}
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-3 bg-gradient-to-r from-momPink to-momPurple text-white text-xs font-bold rounded-xl shadow-lg hover:shadow-momPink/25 transform active:scale-95 transition-all duration-300 flex items-center justify-center gap-1.5"
+              className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-theme-brand px-6 py-3 text-sm font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-theme-line disabled:text-theme-muted"
             >
               {loading ? (
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
               ) : (
                 <>
-                  Bắt đầu ngay <ArrowRight className="w-4 h-4" />
+                  <span>Hoàn tất thiết lập</span>
+                  <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </button>
-
           </form>
         )}
       </div>

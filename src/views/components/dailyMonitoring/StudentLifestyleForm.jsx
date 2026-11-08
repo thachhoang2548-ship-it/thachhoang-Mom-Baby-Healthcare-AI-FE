@@ -1,4 +1,11 @@
 import React from "react";
+import { BookOpen } from "lucide-react";
+
+const STRESS_ITEMS = [
+  { level: "Low", label: "Thấp", activeClass: "bg-emerald-50 border-emerald-400 text-emerald-900" },
+  { level: "Moderate", label: "Vừa phải", activeClass: "bg-status-warn-bg border-status-warn-line text-status-warn-text" },
+  { level: "High", label: "Cao", activeClass: "bg-red-50 border-red-400 text-red-900" },
+];
 
 export const StudentLifestyleForm = ({ lifestyle, setLifestyle }) => {
   const handleChange = (field, value) => {
@@ -9,168 +16,100 @@ export const StudentLifestyleForm = ({ lifestyle, setLifestyle }) => {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800/50 rounded-xl shadow-lg p-6 md:col-span-2">
-      <div className="flex items-center gap-4 mb-5 border-b border-gray-100 dark:border-gray-700/50 pb-4">
-        <div className="bg-primary/10 p-2.5 rounded-full">
-          <span className="material-symbols-outlined text-primary">school</span>
+    <section className="bg-theme-surface rounded-3xl border border-theme-line p-6 shadow-sm md:col-span-2 space-y-6">
+      <div className="flex items-center gap-3.5 pb-4 border-b border-theme-line">
+        <div className="w-11 h-11 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center shrink-0">
+          <BookOpen className="w-5 h-5" aria-hidden="true" />
         </div>
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Nhật ký sức khỏe & Lối sống
-          </h3>
-          <p className="text-xs text-gray-500">
-            Giúp hệ thống phân tích sự cân bằng giữa học tập, sức khỏe và điểm số.
+          <h2 className="text-lg font-bold text-theme-ink">Nhật ký sinh hoạt & cân bằng thời gian</h2>
+          <p className="text-xs text-theme-muted font-medium">
+            Giúp hệ thống phân tích sự cân bằng giữa công việc, học tập và thời gian nghỉ ngơi.
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* GPA Input */}
         <div>
           <div className="flex w-full items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              Điểm GPA hiện tại của bạn là bao nhiêu?
+            <label htmlFor="lifestyle-gpa" className="text-sm font-semibold text-theme-ink">
+              Điểm GPA hiện tại
             </label>
-            <p className="text-sm font-semibold text-primary">{lifestyle.gpa}</p>
+            <span className="text-xs font-extrabold text-theme-ink bg-theme-brand-soft px-2.5 py-0.5 rounded-full">
+              {lifestyle.gpa}
+            </span>
           </div>
           <input
+            id="lifestyle-gpa"
             type="range"
             min="2.0"
             max="4.0"
             step="0.05"
             value={lifestyle.gpa}
             onChange={(e) => handleChange("gpa", Number(e.target.value))}
-            className="w-full h-1 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer range-lg accent-primary"
+            className="w-full h-2 bg-theme-line rounded-full appearance-none cursor-pointer accent-theme-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
           />
-          <div className="flex justify-between text-[10px] text-gray-400 mt-1">
-            <span>2.0 (Trung bình)</span>
-            <span>3.0 (Khá/Giỏi)</span>
-            <span>4.0 (Xuất sắc)</span>
+          <div className="flex justify-between text-xs text-theme-muted font-medium mt-1">
+            <span>2.0</span>
+            <span>3.0</span>
+            <span>4.0</span>
           </div>
         </div>
 
-        {/* Stress Level Selection */}
         <div>
-          <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-2 block">
-            Mức độ Stress hiện tại:
-          </label>
+          <span className="text-sm font-semibold text-theme-ink mb-2 block">
+            Mức độ căng thẳng hiện tại
+          </span>
           <div className="grid grid-cols-3 gap-2">
-            {[
-              { level: "Low", label: "Thấp 🟢", bg: "bg-green-50 dark:bg-green-950/20 border-green-500 text-green-700 dark:text-green-400" },
-              { level: "Moderate", label: "Vừa 🟡", bg: "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-500 text-yellow-700 dark:text-yellow-400" },
-              { level: "High", label: "Cao 🔴", bg: "bg-red-50 dark:bg-red-950/20 border-red-500 text-red-700 dark:text-red-400" },
-            ].map((item) => (
-              <button
-                key={item.level}
-                type="button"
-                onClick={() => handleChange("stressLevel", item.level)}
-                className={`py-2 px-3 text-xs sm:text-sm font-semibold rounded-lg border text-center transition-all ${
-                  lifestyle.stressLevel === item.level
-                    ? `${item.bg} ring-2 ring-offset-2 ring-primary dark:ring-offset-gray-900 scale-[1.02]`
-                    : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100"
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
+            {STRESS_ITEMS.map((item) => {
+              const selected = lifestyle.stressLevel === item.level;
+              return (
+                <button
+                  key={item.level}
+                  type="button"
+                  onClick={() => handleChange("stressLevel", item.level)}
+                  className={`min-h-[44px] py-2 px-3 text-xs sm:text-sm font-bold rounded-2xl border text-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+                    selected
+                      ? `${item.activeClass} ring-2 ring-theme-brand/30`
+                      : "bg-theme-page border-theme-line text-theme-ink hover:bg-theme-brand-soft"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Study Hours Slider */}
-        <div>
-          <div className="flex w-full items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              Giờ tự học trong ngày:
-            </label>
-            <p className="text-sm font-semibold text-primary">{lifestyle.studyHours} giờ</p>
+        {[
+          { id: "studyHours", label: "Giờ tự học / làm việc trong ngày", max: 16, val: lifestyle.studyHours },
+          { id: "sleepHours", label: "Giờ ngủ thực tế", max: 16, val: lifestyle.sleepHours },
+          { id: "socialHours", label: "Giờ giao tiếp xã hội & giải trí", max: 12, val: lifestyle.socialHours },
+          { id: "physicalActivityHours", label: "Giờ vận động thể chất", max: 6, val: lifestyle.physicalActivityHours },
+          { id: "extracurricularHours", label: "Giờ hoạt động ngoại khóa", max: 8, val: lifestyle.extracurricularHours, full: true },
+        ].map((slider) => (
+          <div key={slider.id} className={slider.full ? "md:col-span-2" : ""}>
+            <div className="flex w-full items-center justify-between mb-2">
+              <label htmlFor={`lifestyle-${slider.id}`} className="text-sm font-semibold text-theme-ink">
+                {slider.label}
+              </label>
+              <span className="text-xs font-extrabold text-theme-ink bg-theme-brand-soft px-2.5 py-0.5 rounded-full">
+                {slider.val} giờ
+              </span>
+            </div>
+            <input
+              id={`lifestyle-${slider.id}`}
+              type="range"
+              min="0"
+              max={slider.max}
+              step="0.5"
+              value={slider.val}
+              onChange={(e) => handleChange(slider.id, Number(e.target.value))}
+              className="w-full h-2 bg-theme-line rounded-full appearance-none cursor-pointer accent-theme-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+            />
           </div>
-          <input
-            type="range"
-            min="0"
-            max="16"
-            step="0.5"
-            value={lifestyle.studyHours}
-            onChange={(e) => handleChange("studyHours", Number(e.target.value))}
-            className="w-full h-1 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer range-lg accent-primary"
-          />
-        </div>
-
-        {/* Sleep Hours Slider */}
-        <div>
-          <div className="flex w-full items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              Giờ ngủ thực tế (BR01/BR06/BR07/BR10/BR12):
-            </label>
-            <p className="text-sm font-semibold text-primary">{lifestyle.sleepHours} giờ</p>
-          </div>
-          <input
-            type="range"
-            min="0"
-            max="16"
-            step="0.5"
-            value={lifestyle.sleepHours}
-            onChange={(e) => handleChange("sleepHours", Number(e.target.value))}
-            className="w-full h-1 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer range-lg accent-primary"
-          />
-        </div>
-
-        {/* Social Hours Slider */}
-        <div>
-          <div className="flex w-full items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              Giờ giao tiếp xã hội & Giải trí:
-            </label>
-            <p className="text-sm font-semibold text-primary">{lifestyle.socialHours} giờ</p>
-          </div>
-          <input
-            type="range"
-            min="0"
-            max="12"
-            step="0.5"
-            value={lifestyle.socialHours}
-            onChange={(e) => handleChange("socialHours", Number(e.target.value))}
-            className="w-full h-1 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer range-lg accent-primary"
-          />
-        </div>
-
-        {/* Physical Activity Hours Slider */}
-        <div>
-          <div className="flex w-full items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              Giờ vận động thể chất:
-            </label>
-            <p className="text-sm font-semibold text-primary">{lifestyle.physicalActivityHours} giờ</p>
-          </div>
-          <input
-            type="range"
-            min="0"
-            max="6"
-            step="0.5"
-            value={lifestyle.physicalActivityHours}
-            onChange={(e) => handleChange("physicalActivityHours", Number(e.target.value))}
-            className="w-full h-1 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer range-lg accent-primary"
-          />
-        </div>
-
-        {/* Extracurricular Hours Slider */}
-        <div className="md:col-span-2">
-          <div className="flex w-full items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              Giờ tham gia hoạt động ngoại khóa:
-            </label>
-            <p className="text-sm font-semibold text-primary">{lifestyle.extracurricularHours} giờ</p>
-          </div>
-          <input
-            type="range"
-            min="0"
-            max="8"
-            step="0.5"
-            value={lifestyle.extracurricularHours}
-            onChange={(e) => handleChange("extracurricularHours", Number(e.target.value))}
-            className="w-full h-1 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer range-lg accent-primary"
-          />
-        </div>
+        ))}
       </div>
-    </div>
+    </section>
   );
 };

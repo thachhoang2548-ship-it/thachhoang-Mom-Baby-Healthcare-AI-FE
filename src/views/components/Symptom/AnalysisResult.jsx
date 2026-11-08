@@ -1,6 +1,15 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import { AlertTriangle, CheckCircle2, Leaf, Stethoscope, Info, ArrowRight, ShieldAlert, Phone } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Leaf,
+  Stethoscope,
+  Info,
+  ShieldAlert,
+  Phone,
+  Sprout,
+  AlertOctagon,
+} from "lucide-react";
 import DoctorConsultationCard from "./DoctorConsultationCard";
 import { ADVISOR_DOCTOR, EMERGENCY_NUMBER } from "../../../config/advisor";
 
@@ -20,35 +29,36 @@ export default function AnalysisResult({ analysis }) {
     dietarySuggestions = [],
     shouldSeeDoctor,
     specialistType,
-    disclaimer
+    disclaimer,
   } = result;
 
-  // Backend trả enum tiếng Anh (Low/Medium/High/Critical) — đổi sang nhãn tiếng Việt để hiển thị.
   const URGENCY_LABELS = {
     Low: "Thấp",
     Medium: "Trung bình",
     High: "Cao",
-    Critical: "Khẩn cấp"
+    Critical: "Khẩn cấp",
   };
   const urgencyText = URGENCY_LABELS[urgencyLevel] || urgencyLevel;
 
-  // 1. Color coding for Urgency level banner
-  let urgencyStyles = "bg-green-50 border-green-200 text-green-800";
-  let urgencyIcon = "✅";
+  // Trang y tế giữ tĩnh và rõ (không dùng animate-pulse)
+  let urgencyStyles = "border-status-ok/40 bg-status-ok/10 text-theme-ink";
+  let UrgencyIcon = CheckCircle2;
+  let iconColor = "text-status-ok";
 
   if (urgencyText === "Khẩn cấp") {
-    urgencyStyles = "bg-red-100 border-red-300 text-red-900 animate-pulse";
-    urgencyIcon = "🚨";
+    urgencyStyles = "border-red-400 bg-red-50 text-red-950";
+    UrgencyIcon = AlertOctagon;
+    iconColor = "text-red-700";
   } else if (urgencyText === "Cao") {
-    urgencyStyles = "bg-orange-50 border-orange-200 text-orange-900";
-    urgencyIcon = "⚠️";
+    urgencyStyles = "border-red-300 bg-red-50/75 text-red-900";
+    UrgencyIcon = AlertTriangle;
+    iconColor = "text-red-700";
   } else if (urgencyText === "Trung bình") {
-    urgencyStyles = "bg-yellow-50 border-yellow-200 text-yellow-900";
-    urgencyIcon = "ℹ️";
+    urgencyStyles = "border-status-warn-line bg-status-warn-bg text-status-warn-text";
+    UrgencyIcon = Info;
+    iconColor = "text-status-warn-text";
   }
 
-  // Khi AI không trả được phân tích, mọi mục chi tiết đều rỗng -> báo rõ cho người dùng
-  // thay vì chỉ hiện mỗi banner mức độ khẩn cấp.
   const hasAiDetails =
     Boolean(urgencyReason) ||
     possibleConditions.length > 0 ||
@@ -56,62 +66,62 @@ export default function AnalysisResult({ analysis }) {
     dietarySuggestions.length > 0 ||
     Boolean(lifestyleConnection);
 
-  // 2. Color coding for probability tags
   const getProbabilityBadge = (prob) => {
     switch (prob) {
       case "Có thể":
-        return "bg-orange-100 text-orange-800 border-orange-200/50";
+        return "border-status-warn-line bg-status-warn-bg text-status-warn-text";
       case "Cần kiểm tra":
-        return "bg-yellow-100 text-yellow-800 border-yellow-200/50";
+        return "border-theme-brand/30 bg-theme-brand-soft text-theme-ink";
       case "Ít khả năng":
       default:
-        return "bg-gray-100 text-gray-600 border-gray-200/50";
+        return "border-theme-line bg-theme-page text-theme-muted";
     }
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
-      
-      {/* Section A: Urgency Banner */}
-      <div className={`p-5 rounded-3xl border ${urgencyStyles} flex items-start gap-3.5 shadow-sm`}>
-        <span className="text-2xl select-none leading-none mt-0.5">{urgencyIcon}</span>
+    <div className="space-y-5 font-display text-theme-ink">
+      {/* Section A: Urgency Banner (Static, high-contrast) */}
+      <div className={`flex items-start gap-3.5 rounded-3xl border p-5 sm:p-6 ${urgencyStyles}`}>
+        <UrgencyIcon className={`mt-0.5 h-6 w-6 shrink-0 ${iconColor}`} />
         <div>
-          <h3 className="font-extrabold text-sm uppercase tracking-wider">Mức độ khẩn cấp: {urgencyText}</h3>
-          <p className="text-xs font-semibold leading-relaxed mt-1 opacity-90">{urgencyReason}</p>
+          <h3 className="text-base font-bold sm:text-lg">
+            Mức độ cần lưu ý: {urgencyText}
+          </h3>
+          {urgencyReason && (
+            <p className="mt-1 text-sm leading-relaxed">{urgencyReason}</p>
+          )}
         </div>
       </div>
 
-      {/* Uploaded Symptom Image Preview if available */}
+      {/* Uploaded Symptom Image Preview */}
       {(doc.imageUrl || (doc.images && doc.images.length > 0)) && (
-        <div className="bg-white border border-gray-100 rounded-3xl p-4 shadow-sm flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl overflow-hidden border border-gray-200/60 bg-gray-50 flex-shrink-0 shadow-inner">
+        <div className="flex items-center gap-4 rounded-3xl border border-theme-line bg-theme-surface p-4 shadow-sm">
+          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-theme-line bg-theme-page">
             <img
               src={doc.imageUrl || doc.images[0]}
               alt="Hình ảnh triệu chứng"
-              className="w-full h-full object-cover"
+              className="h-full w-full object-cover"
             />
           </div>
           <div className="overflow-hidden">
-            <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200/60">
+            <span className="inline-block rounded-full bg-theme-brand-soft px-3 py-0.5 text-xs font-bold text-theme-ink">
               Hình ảnh triệu chứng đã phân tích
             </span>
-            <p className="text-xs text-gray-700 font-semibold mt-1 truncate">
+            <p className="mt-1 truncate text-sm font-medium text-theme-muted">
               {doc.textDescription || "Ảnh chụp triệu chứng"}
             </p>
           </div>
         </div>
       )}
 
-      {/* Thông báo khi AI chưa phân tích được (bản ghi cũ hoặc AI lỗi) */}
+      {/* Fallback when AI has no detail */}
       {!hasAiDetails && (
-        <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 flex items-start gap-3.5 shadow-sm">
-          <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" />
+        <div className="flex items-start gap-3.5 rounded-3xl border border-status-warn-line bg-status-warn-bg p-5 text-status-warn-text">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
           <div>
-            <h4 className="font-bold text-sm text-amber-900">Chưa có phân tích chi tiết từ AI</h4>
-            <p className="text-xs text-amber-800 font-semibold mt-1 leading-relaxed">
-              Bản ghi này chưa có dữ liệu phân tích (có thể được tạo trước khi AI hoạt động, hoặc AI
-              tạm thời không phản hồi). Vui lòng gửi lại mô tả triệu chứng để nhận lời khuyên và các
-              biện pháp chăm sóc.
+            <h4 className="text-sm font-bold sm:text-base">Chưa có phân tích chi tiết từ AI</h4>
+            <p className="mt-1 text-sm leading-relaxed text-theme-ink">
+              Bản ghi này chưa có dữ liệu phân tích chi tiết. Mẹ vui lòng gửi lại mô tả triệu chứng để nhận hướng dẫn chăm sóc tham khảo.
             </p>
           </div>
         </div>
@@ -119,22 +129,22 @@ export default function AnalysisResult({ analysis }) {
 
       {/* Section F: See Doctor Referral */}
       {shouldSeeDoctor && (
-        <div className="bg-red-50/70 border-2 border-red-200/90 rounded-3xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 shadow-sm">
+        <div className="flex flex-col justify-between gap-4 rounded-3xl border border-red-300 bg-red-50 p-5 sm:flex-row sm:items-center sm:p-6">
           <div className="flex items-start gap-3.5">
-            <Stethoscope className="w-6 h-6 text-red-500 mt-0.5 flex-shrink-0" />
+            <Stethoscope className="mt-0.5 h-6 w-6 shrink-0 text-red-700" />
             <div>
-              <h4 className="font-bold text-sm text-red-900">Khuyến nghị gặp chuyên gia y tế</h4>
-              <p className="text-xs text-red-800 font-semibold mt-1">
-                Bạn nên sắp xếp lịch khám hoặc tư vấn trực tiếp với bác sĩ chuyên khoa:{" "}
-                <span className="underline font-bold text-red-950">{specialistType || "Đa khoa / Sản - Nhi"}</span>
+              <h4 className="text-base font-bold text-red-900">Khuyến nghị gặp chuyên gia y tế</h4>
+              <p className="mt-1 text-sm leading-relaxed text-red-900">
+                Mẹ nên sắp xếp lịch khám hoặc trao đổi trực tiếp với bác sĩ chuyên khoa:{" "}
+                <strong className="underline">{specialistType || "Sản - Nhi / Đa khoa"}</strong>
               </p>
             </div>
           </div>
           <a
             href={`tel:${ADVISOR_DOCTOR.phone}`}
-            className="inline-flex items-center justify-center gap-2 px-5 py-3 bg-red-600 hover:bg-red-700 text-white text-base font-bold rounded-full shadow-sm flex-shrink-0"
+            className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 self-start rounded-full bg-red-700 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-2 sm:self-center"
           >
-            <Phone className="w-5 h-5" />
+            <Phone className="h-4 w-4" />
             <span>Gọi {ADVISOR_DOCTOR.displayName}</span>
           </a>
         </div>
@@ -142,103 +152,102 @@ export default function AnalysisResult({ analysis }) {
 
       {/* Section B: Possible Conditions */}
       {possibleConditions.length > 0 && (
-        <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm space-y-4">
-          <h4 className="font-black text-sm text-gray-900 uppercase tracking-wide flex items-center gap-1.5">
-            <Info className="w-4 h-4 text-amber-500" />
-            Tình trạng có thể xảy ra
+        <section className="space-y-4 rounded-3xl border border-theme-line bg-theme-surface p-6 shadow-sm">
+          <h4 className="flex items-center gap-2 text-base font-bold text-theme-ink sm:text-lg">
+            <Info className="h-5 w-5 text-theme-brand" />
+            <span>Tình trạng có thể liên quan</span>
           </h4>
           <div className="space-y-3">
             {possibleConditions.map((cond, idx) => (
-              <div key={idx} className="p-4 rounded-2xl bg-gray-50 border border-gray-100/50 space-y-2">
-                <div className="flex justify-between items-start gap-3">
-                  <h5 className="font-bold text-sm text-gray-900 leading-tight">{cond.name}</h5>
-                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border ${getProbabilityBadge(cond.probability)}`}>
+              <div
+                key={idx}
+                className="space-y-1.5 rounded-2xl border border-theme-line bg-theme-page/60 p-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <h5 className="text-sm font-bold text-theme-ink sm:text-base">{cond.name}</h5>
+                  <span
+                    className={`rounded-full border px-3 py-0.5 text-xs font-bold ${getProbabilityBadge(
+                      cond.probability
+                    )}`}
+                  >
                     {cond.probability}
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 leading-relaxed font-medium">
-                  {cond.description}
-                </p>
+                <p className="text-sm leading-relaxed text-theme-muted">{cond.description}</p>
               </div>
             ))}
           </div>
-        </div>
+        </section>
       )}
 
       {/* Section C: Lifestyle Connection */}
       {lifestyleConnection && (
-        <div className="bg-blue-50/50 border border-blue-100 rounded-3xl p-6 shadow-sm space-y-2">
-          <h4 className="font-black text-sm text-blue-900 uppercase tracking-wide flex items-center gap-2">
-            🌱 Liên hệ với lối sống của bạn
+        <section className="space-y-2 rounded-3xl border border-theme-line bg-theme-sidebar/65 p-6">
+          <h4 className="flex items-center gap-2 text-base font-bold text-theme-ink">
+            <Sprout className="h-5 w-5 text-status-ok" />
+            <span>Liên hệ với sinh hoạt hằng ngày</span>
           </h4>
-          <p className="text-xs text-blue-800 font-semibold leading-relaxed">
-            {lifestyleConnection}
-          </p>
-        </div>
+          <p className="text-sm leading-relaxed text-theme-ink/90">{lifestyleConnection}</p>
+        </section>
       )}
 
       {/* Grid for recommendations and dietary suggestions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        
-        {/* Section D: Recommendations */}
-        {recommendations.length > 0 && (
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm space-y-3">
-            <h4 className="font-black text-sm text-gray-900 uppercase tracking-wide flex items-center gap-1.5 border-b border-gray-50 pb-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-              Khuyến nghị chăm sóc
-            </h4>
-            <ul className="space-y-2">
-              {recommendations.map((rec, idx) => (
-                <li key={idx} className="flex gap-2 text-xs text-gray-600 font-semibold leading-relaxed">
-                  <span className="text-emerald-500 font-bold select-none">•</span>
-                  <span>{rec}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Section E: Dietary Suggestions */}
-        {dietarySuggestions.length > 0 && (
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm space-y-3 flex flex-col justify-between">
-            <div className="space-y-3">
-              <h4 className="font-black text-sm text-gray-900 uppercase tracking-wide flex items-center gap-1.5 border-b border-gray-50 pb-2">
-                <Leaf className="w-4 h-4 text-amber-500" />
-                Gợi ý chế độ ăn uống
+      {(recommendations.length > 0 || dietarySuggestions.length > 0) && (
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          {recommendations.length > 0 && (
+            <section className="space-y-3 rounded-3xl border border-theme-line bg-theme-surface p-6 shadow-sm">
+              <h4 className="flex items-center gap-2 border-b border-theme-line pb-3 text-base font-bold text-theme-ink">
+                <CheckCircle2 className="h-5 w-5 text-status-ok" />
+                <span>Hướng dẫn theo dõi &amp; chăm sóc</span>
               </h4>
-              <ul className="space-y-2">
+              <ul className="space-y-2.5">
+                {recommendations.map((rec, idx) => (
+                  <li key={idx} className="flex items-start gap-2.5 text-sm leading-relaxed text-theme-ink/90">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-status-ok" />
+                    <span>{rec}</span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {dietarySuggestions.length > 0 && (
+            <section className="space-y-3 rounded-3xl border border-theme-line bg-theme-surface p-6 shadow-sm">
+              <h4 className="flex items-center gap-2 border-b border-theme-line pb-3 text-base font-bold text-theme-ink">
+                <Leaf className="h-5 w-5 text-theme-brand" />
+                <span>Gợi ý ăn uống hỗ trợ</span>
+              </h4>
+              <ul className="space-y-2.5">
                 {dietarySuggestions.map((diet, idx) => (
-                  <li key={idx} className="flex gap-2 text-xs text-gray-600 font-semibold leading-relaxed">
-                    <span className="text-amber-500 font-bold select-none">•</span>
+                  <li key={idx} className="flex items-start gap-2.5 text-sm leading-relaxed text-theme-ink/90">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-theme-brand" />
                     <span>{diet}</span>
                   </li>
                 ))}
               </ul>
-            </div>
-          </div>
-        )}
+            </section>
+          )}
+        </div>
+      )}
 
-      </div>
-
-      {/* Section: Doctor Consultation & Verification Card */}
+      {/* Doctor Consultation Card */}
       <DoctorConsultationCard
         variant="full"
         urgent={shouldSeeDoctor || urgencyText === "Khẩn cấp" || urgencyText === "Cao"}
       />
 
       {/* Section G: Disclaimer riêng cho kết quả AI */}
-      <div className="bg-gray-100 rounded-2xl p-5 border border-gray-200">
-        <div className="flex gap-3 items-start">
-          <ShieldAlert className="w-6 h-6 text-gray-600 flex-shrink-0 mt-0.5" />
-          <p className="text-base text-gray-700 leading-relaxed">
-            <strong className="text-gray-900">Kết quả này do AI gợi ý, không phải chẩn đoán của bác sĩ. </strong>
+      <div className="rounded-3xl border border-theme-line bg-theme-sidebar/70 p-5 sm:p-6">
+        <div className="flex items-start gap-3.5">
+          <ShieldAlert className="mt-0.5 h-6 w-6 shrink-0 text-status-warn-text" />
+          <p className="text-sm leading-relaxed text-theme-ink sm:text-base">
+            <strong>Kết quả này do AI gợi ý, không phải chẩn đoán của bác sĩ. </strong>
             {disclaimer && <span>{disclaimer} </span>}
             Hãy hỏi <strong>{ADVISOR_DOCTOR.displayName} ({ADVISOR_DOCTOR.phoneDisplay})</strong> hoặc đến cơ sở y tế
             để được khám và điều trị đúng. Trường hợp khẩn cấp, gọi ngay <strong>{EMERGENCY_NUMBER}</strong>.
           </p>
         </div>
       </div>
-
     </div>
   );
 }

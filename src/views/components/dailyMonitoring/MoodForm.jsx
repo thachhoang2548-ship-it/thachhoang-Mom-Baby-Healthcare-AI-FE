@@ -1,43 +1,70 @@
+import React from "react";
+import { CloudRain, Frown, Heart, Meh, Smile, Sun } from "lucide-react";
+
+const MOOD_LEVELS = [
+  { score: 1, label: "Mệt mỏi", icon: <CloudRain className="w-4 h-4 shrink-0" aria-hidden="true" /> },
+  { score: 2, label: "Lo lắng", icon: <Frown className="w-4 h-4 shrink-0" aria-hidden="true" /> },
+  { score: 3, label: "Bình thường", icon: <Meh className="w-4 h-4 shrink-0" aria-hidden="true" /> },
+  { score: 4, label: "Thoải mái", icon: <Smile className="w-4 h-4 shrink-0" aria-hidden="true" /> },
+  { score: 5, label: "Rạng rỡ", icon: <Sun className="w-4 h-4 shrink-0" aria-hidden="true" /> },
+];
+
 export const MoodForm = ({ mood, setMood }) => {
   return (
-    <div className="bg-white dark:bg-gray-800/50 rounded-xl shadow-lg p-6">
-      <div className="flex items-center gap-4 mb-5">
-        <div className="bg-saffron/10 p-2.5 rounded-full">
-          <span className="material-symbols-outlined text-saffron">mood</span>
+    <section className="bg-theme-surface rounded-3xl border border-theme-line p-6 shadow-sm space-y-5">
+      <div className="flex items-center gap-3.5">
+        <div className="w-11 h-11 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center shrink-0">
+          <Heart className="w-5 h-5" aria-hidden="true" />
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Theo dõi tâm trạng</h3>
+        <div>
+          <h2 className="text-lg font-bold text-theme-ink">Theo dõi tâm trạng</h2>
+          <p className="text-xs text-theme-muted font-medium">Ghi nhận cảm xúc của mẹ hôm nay</p>
+        </div>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-3 block">
-            Hôm nay bạn cảm thấy thế nào?
-          </label>
-          <div className="flex justify-around items-center">
-            {["😣", "😕", "🙂", "😄", "🤩"].map((emo, idx) => (
-              <button
-                key={idx}
-                onClick={() => setMood({ ...mood, score: idx + 1 })}
-                className={`text-4xl transition-all ${
-                  mood.score === idx + 1
-                    ? "scale-125"
-                    : "opacity-50 hover:opacity-100 hover:scale-110"
-                }`}
-              >
-                {idx === 3 ? <span className="p-2 rounded-full bg-saffron/20">{emo}</span> : emo}
-              </button>
-            ))}
+          <span className="text-sm font-semibold text-theme-ink mb-2.5 block">
+            Hôm nay mẹ cảm thấy thế nào?
+          </span>
+          <div className="grid grid-cols-5 gap-2" role="radiogroup" aria-label="Tâm trạng hôm nay">
+            {MOOD_LEVELS.map(({ score, label, icon }) => {
+              const selected = mood.score === score;
+              return (
+                <button
+                  key={score}
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  onClick={() => setMood({ ...mood, score })}
+                  className={`flex flex-col items-center justify-center gap-1 min-h-[60px] rounded-2xl border px-1.5 py-2 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+                    selected
+                      ? "bg-theme-brand text-theme-surface border-theme-brand shadow-sm"
+                      : "bg-theme-page text-theme-ink border-theme-line hover:bg-theme-brand-soft"
+                  }`}
+                >
+                  {icon}
+                  <span className="text-center leading-tight">{label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        <textarea
-          className="w-full rounded-lg border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:ring-saffron focus:border-saffron transition placeholder:text-gray-400"
-          placeholder="Thêm ghi chú khác... (Không bắt buộc)"
-          rows="2"
-          value={mood.note}
-          onChange={(e) => setMood({ ...mood, note: e.target.value })}
-        />
+        <div className="space-y-1.5">
+          <label htmlFor="daily-mood-note" className="block text-xs font-bold text-theme-ink">
+            Ghi chú tâm trạng (không bắt buộc)
+          </label>
+          <textarea
+            id="daily-mood-note"
+            rows={2}
+            value={mood.note}
+            onChange={(e) => setMood({ ...mood, note: e.target.value })}
+            placeholder="Chia sẻ điều làm mẹ vui hoặc băn khoăn hôm nay..."
+            className="w-full rounded-2xl border border-theme-line bg-theme-page/60 px-4 py-3 text-sm font-medium text-theme-ink placeholder:text-theme-muted focus:border-theme-brand focus:bg-theme-surface focus:outline-none focus:ring-2 focus:ring-theme-brand/30"
+          />
+        </div>
       </div>
-    </div>
+    </section>
   );
 };

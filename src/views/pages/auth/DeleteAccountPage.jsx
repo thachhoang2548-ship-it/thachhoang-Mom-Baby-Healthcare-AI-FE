@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import { API_BASE_URL } from '../../../models/api/axiosClient';
 import { MARKET } from '../../../config/market.vn';
+import momOiLogo from '../../../assets/Logo/mom-oi-submark-cropped.png';
 
 const DELETED_DATA = [
   'Thông tin tài khoản (họ tên, email, số điện thoại)',
@@ -69,107 +70,133 @@ export default function DeleteAccountPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center py-10 px-4">
-      <div className="max-w-xl w-full bg-white p-8 rounded-2xl shadow-xl border border-gray-200">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Xóa tài khoản {MARKET.appName}</h1>
-
-        {done ? (
-          <div className="mt-6 space-y-4">
-            <div className="flex items-start gap-3 rounded-xl bg-green-50 border border-green-200 p-4">
-              <CheckCircle2 className="w-5 h-5 text-green-700 shrink-0 mt-0.5" />
-              <p className="text-sm text-green-900">
-                Tài khoản và dữ liệu của bạn đã được xóa vĩnh viễn. Nếu ứng dụng vẫn đang mở trên điện thoại, phiên đăng
-                nhập sẽ không còn dùng được.
-              </p>
-            </div>
-            <Link to="/" className="text-sm font-semibold text-gray-600 underline">
-              Về trang chủ
-            </Link>
+    <div className="min-h-screen bg-theme-page px-4 py-8 font-display text-theme-ink sm:px-6 lg:py-12">
+      <div className="mx-auto max-w-xl">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <Link
+            to="/"
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-full px-3 text-sm font-semibold text-theme-muted transition-colors hover:bg-theme-surface hover:text-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Về trang chủ</span>
+          </Link>
+          <div className="flex items-center gap-2.5">
+            <img
+              src={momOiLogo}
+              alt="Mom Ơi!"
+              className="h-9 w-9 rounded-full border border-theme-line object-cover"
+            />
+            <span className="font-brand text-xl font-extrabold leading-none text-theme-brand">
+              Mom Ơi!
+            </span>
           </div>
-        ) : (
-          <>
-            <p className="text-gray-600 text-sm mb-6">
-              Bạn cũng có thể xóa trong ứng dụng: <strong>Hồ sơ của mẹ → Xóa tài khoản</strong>.
-            </p>
+        </div>
 
-            <div className="flex items-start gap-3 rounded-xl bg-red-50 border border-red-200 p-4 mb-5">
-              <AlertTriangle className="w-5 h-5 text-red-700 shrink-0 mt-0.5" />
-              <p className="text-sm text-red-900">
-                Việc xóa là <strong>vĩnh viễn</strong>. Bạn sẽ không thể đăng nhập lại hay khôi phục dữ liệu. Gói dịch vụ
-                còn hạn (nếu có) cũng sẽ mất.
-              </p>
-            </div>
+        <div className="rounded-3xl border border-theme-line bg-theme-surface p-6 shadow-sm sm:p-8">
+          <h1 className="text-2xl font-bold text-theme-ink sm:text-3xl">
+            Xóa tài khoản {MARKET.appName}
+          </h1>
 
-            <h2 className="text-sm font-bold text-gray-800 mb-2">Dữ liệu sẽ bị xóa</h2>
-            <ul className="list-disc pl-6 text-sm text-gray-700 space-y-1 mb-3">
-              {DELETED_DATA.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-            <p className="text-xs text-gray-500 mb-6">
-              Lịch sử giao dịch thanh toán (nếu có) được giữ lại ở dạng không gắn với tài khoản để phục vụ nghĩa vụ kế
-              toán. Xem thêm tại{' '}
-              <Link to="/consent" className="underline">
-                Chính sách quyền riêng tư
-              </Link>
-              .
-            </p>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="delete-email" className="text-sm font-semibold text-gray-700 block mb-1">
-                  Email tài khoản
-                </label>
-                <input
-                  id="delete-email"
-                  type="email"
-                  autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-300"
-                />
-              </div>
-              <div>
-                <label htmlFor="delete-password" className="text-sm font-semibold text-gray-700 block mb-1">
-                  Mật khẩu
-                </label>
-                <input
-                  id="delete-password"
-                  type="password"
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-red-300"
-                />
-              </div>
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={confirmed}
-                  onChange={(e) => setConfirmed(e.target.checked)}
-                  className="h-5 w-5 rounded border-gray-400 mt-0.5"
-                />
-                <span className="text-sm text-gray-700">
-                  Tôi hiểu tài khoản và toàn bộ dữ liệu sẽ bị xóa vĩnh viễn, không thể khôi phục.
-                </span>
-              </label>
-
-              {error ? (
-                <p role="alert" className="text-sm font-semibold text-red-700">
-                  {error}
+          {done ? (
+            <div className="mt-6 space-y-5">
+              <div className="flex items-start gap-3 rounded-2xl border border-status-ok/40 bg-status-ok/10 p-4">
+                <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-status-ok" />
+                <p className="text-sm font-medium leading-relaxed text-theme-ink">
+                  Tài khoản và dữ liệu của bạn đã được xóa vĩnh viễn. Nếu ứng dụng vẫn đang mở trên điện thoại, phiên đăng nhập sẽ không còn dùng được.
                 </p>
-              ) : null}
-
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full rounded-lg bg-red-700 px-3 py-3 font-semibold text-white hover:bg-red-800 disabled:opacity-60 transition"
+              </div>
+              <Link
+                to="/"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-full border border-theme-line bg-theme-page px-5 py-2.5 text-sm font-bold text-theme-ink hover:bg-theme-brand-soft"
               >
-                {submitting ? 'Đang xóa...' : 'Xóa vĩnh viễn tài khoản'}
-              </button>
-            </form>
-          </>
-        )}
+                Về trang chủ
+              </Link>
+            </div>
+          ) : (
+            <>
+              <p className="mt-2 text-sm leading-relaxed text-theme-muted">
+                Bạn cũng có thể thực hiện ngay trong ứng dụng tại mục <strong>Hồ sơ của mẹ → Xóa tài khoản</strong>.
+              </p>
+
+              <div className="mt-5 flex items-start gap-3 rounded-2xl border border-red-300 bg-red-50 p-4">
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-700" />
+                <p className="text-sm leading-relaxed text-red-900">
+                  Việc xóa là <strong>vĩnh viễn</strong>. Bạn sẽ không thể đăng nhập lại hay khôi phục dữ liệu. Gói dịch vụ còn hạn (nếu có) cũng sẽ mất.
+                </p>
+              </div>
+
+              <div className="mt-5 rounded-2xl border border-theme-line bg-theme-page/60 p-4">
+                <h2 className="text-sm font-bold text-theme-ink">Dữ liệu sẽ bị xóa</h2>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-theme-ink/90">
+                  {DELETED_DATA.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+                <p className="mt-3 text-xs leading-relaxed text-theme-muted">
+                  Lịch sử giao dịch thanh toán (nếu có) được giữ lại ở dạng không gắn với tài khoản để phục vụ nghĩa vụ kế toán. Xem thêm tại{' '}
+                  <Link to="/consent" className="font-semibold text-theme-brand underline">
+                    Chính sách quyền riêng tư
+                  </Link>
+                  .
+                </p>
+              </div>
+
+              <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+                <div>
+                  <label htmlFor="delete-email" className="mb-1.5 block text-sm font-semibold text-theme-ink">
+                    Email tài khoản
+                  </label>
+                  <input
+                    id="delete-email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="min-h-[48px] w-full rounded-2xl border border-theme-line bg-theme-page/50 px-4 text-sm font-medium text-theme-ink focus:border-red-600 focus:bg-theme-surface focus:outline-none focus:ring-2 focus:ring-red-600/20"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="delete-password" className="mb-1.5 block text-sm font-semibold text-theme-ink">
+                    Mật khẩu
+                  </label>
+                  <input
+                    id="delete-password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="min-h-[48px] w-full rounded-2xl border border-theme-line bg-theme-page/50 px-4 text-sm font-medium text-theme-ink focus:border-red-600 focus:bg-theme-surface focus:outline-none focus:ring-2 focus:ring-red-600/20"
+                  />
+                </div>
+                <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-theme-line bg-theme-page/50 p-3.5">
+                  <input
+                    type="checkbox"
+                    checked={confirmed}
+                    onChange={(e) => setConfirmed(e.target.checked)}
+                    className="mt-0.5 h-5 w-5 rounded border-theme-line accent-red-700"
+                  />
+                  <span className="text-sm leading-relaxed text-theme-ink">
+                    Tôi hiểu tài khoản và toàn bộ dữ liệu sẽ bị xóa vĩnh viễn, không thể khôi phục.
+                  </span>
+                </label>
+
+                {error ? (
+                  <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-800">
+                    {error}
+                  </p>
+                ) : null}
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex min-h-[48px] w-full items-center justify-center rounded-full bg-red-700 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-theme-line disabled:text-theme-muted"
+                >
+                  {submitting ? 'Đang xóa tài khoản...' : 'Xóa vĩnh viễn tài khoản'}
+                </button>
+              </form>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

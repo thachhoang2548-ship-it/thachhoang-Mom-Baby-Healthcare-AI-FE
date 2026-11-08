@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { Pill } from "lucide-react";
+import toast from "react-hot-toast";
 import MedicationForm from "../components/MedincineSchedule/MedicationForm";
 import MedicationList from "../components/MedincineSchedule/MedicationList";
 import NextDoseCard from "../components/MedincineSchedule/NextDoseCard";
@@ -8,32 +10,18 @@ const MedicationScheduler = () => {
   const [medications, setMedications] = useState([]);
   const [nextDose, setNextDose] = useState(null);
 
-  const fetchMeds = async () => {
-    try {
-      const meds = (await medicationService.getMedications()) || [];
-      setMedications(meds);
-      updateNextDose(meds);
-    } catch (err) {
-      console.error("Error fetching meds:", err);
-    }
-  };
-
-  useEffect(() => {
-    fetchMeds();
-    const timer = setInterval(() => updateNextDose(medications), 1000);
-    return () => clearInterval(timer);
-  }, [medications]);
-
   const updateNextDose = useCallback((meds) => {
     if (!meds || meds.length === 0) return setNextDose(null);
 
     const now = new Date();
     const upcoming = meds
       .filter((m) => !m.status || m.status === "pending")
-      .flatMap((m) => m.times.map((time) => ({
-        ...m,
-        doseTime: new Date(`${now.toISOString().slice(0,10)}T${time}:00`)
-      })))
+      .flatMap((m) =>
+        (m.times || []).map((time) => ({
+          ...m,
+          doseTime: new Date(`${now.toISOString().slice(0, 10)}T${time}:00`),
+        }))
+      )
       .filter((m) => m.doseTime > now)
       .sort((a, b) => a.doseTime - b.doseTime);
 
@@ -46,6 +34,29 @@ const MedicationScheduler = () => {
     const secs = String(Math.floor((diff % 60000) / 1000)).padStart(2, "0");
     setNextDose({ ...next, time: `${hours}:${mins}:${secs}` });
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    medicationService
+      .getMedications()
+      .then((res) => {
+        if (!active) return;
+        const meds = res || [];
+        setMedications(meds);
+        updateNextDose(meds);
+      })
+      .catch((err) => {
+        console.error("Error fetching meds:", err);
+      });
+    return () => {
+      active = false;
+    };
+  }, [updateNextDose]);
+
+  useEffect(() => {
+    const timer = setInterval(() => updateNextDose(medications), 1000);
+    return () => clearInterval(timer);
+  }, [medications, updateNextDose]);
 
   const handleAdd = (med) => {
     const updated = [...medications, med];
@@ -65,38 +76,50 @@ const MedicationScheduler = () => {
       const updated = medications.filter((m) => m._id !== id);
       setMedications(updated);
       updateNextDose(updated);
+      toast.success("Đã xóa lịch thuốc.");
     } catch (err) {
       console.error("Error deleting medication:", err);
+      toast.error("Không thể xóa lịch thuốc.");
     }
   };
 
   return (
-    <main className="px-4 sm:px-8 lg:px-10 py-8 mx-auto w-full max-w-7xl">
-      <div className="flex flex-col gap-8">
-        <header className="flex flex-col gap-1">
-          <h1 className="text-[#181611] dark:text-white text-4xl font-black leading-tight tracking-[-0.033em]">
-            Lịch uống thuốc
-          </h1>
-          <p className="text-[#8a8060] dark:text-white/70 text-base font-normal leading-normal">
-            Quản lý và theo dõi việc uống thuốc của bạn một cách dễ dàng.
-          </p>
-        </header>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-          <div className="lg:col-span-1 lg:sticky lg:top-8">
-            <MedicationForm onAdd={handleAdd} />
-          </div>
-          <div className="lg:col-span-2 flex flex-col gap-6">
-            <h2 className="text-[#181611] dark:text-white text-[22px] font-bold leading-tight tracking-[-0.015em]">
-              Lịch trình hôm nay
-            </h2>
-            <MedicationList
-              medications={medications}
-              onUpdateAdherence={handleUpdate}
-              onDelete={handleDelete}
-            />
-          </div>
+    <div className="font-display max-w-6xl mx-auto space-y-6 pb-24 text-theme-ink">
+      <header className="bg-theme-surface rounded-3xl border border-theme-line p-6 sm:p-8 shadow-sm">
+        <div className="inline-flex items-center gap-2 rounded-full bg-theme-brand-soft text-theme-ink px-3.5 py-1.5 text-xs font-bold border border-theme-brand/20">
+          <Pill className="w-4 h-4 text-theme-brand" aria-hidden="true" />
+          <span>Vitamin & thuốc theo chỉ định</span>
         </div>
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-theme-ink mt-3">
+          Lịch uống thuốc & vi chất
+        </h1>
+        <p className="text-sm sm:text-base text-theme-muted font-medium mt-1.5 max-w-2xl leading-relaxed">
+          Quản lý lịch uống sắt, canxi, axit folic hoặc thuốc theo toa bác sĩ để mẹ luôn đúng giờ mỗi ngày.
+        </p>
+      </header>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className="lg:col-span-5 lg:sticky lg:top-24">
+          <MedicationForm onAdd={handleAdd} />
+        </div>
+
+        <section className="lg:col-span-7 bg-theme-surface rounded-3xl border border-theme-line p-5 sm:p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between gap-3 pb-4 border-b border-theme-line">
+            <div>
+              <h2 className="text-lg font-bold text-theme-ink">Lịch trình hôm nay</h2>
+              <p className="text-xs text-theme-muted font-medium">Đánh dấu đã uống để hệ thống cập nhật cữ kế tiếp</p>
+            </div>
+            <span className="inline-flex items-center rounded-full bg-theme-page border border-theme-line px-3 py-1 text-xs font-bold text-theme-ink">
+              {medications.length} loại
+            </span>
+          </div>
+
+          <MedicationList
+            medications={medications}
+            onUpdateAdherence={handleUpdate}
+            onDelete={handleDelete}
+          />
+        </section>
       </div>
 
       <NextDoseCard
@@ -104,7 +127,7 @@ const MedicationScheduler = () => {
         onMarkTaken={() => nextDose && handleUpdate(nextDose._id, "taken")}
         onSkip={() => nextDose && handleUpdate(nextDose._id, "skipped")}
       />
-    </main>
+    </div>
   );
 };
 

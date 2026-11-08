@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import babyService from '../../../models/services/babyService';
 import { useProfileController } from '../../../controllers/profileController';
-import { useBabyTheme } from '../../../hooks/useBabyTheme';
+import { formatBabyDisplayName, pickPreferredBaby, useBabyTheme } from '../../../hooks/useBabyTheme';
 import {
   Line,
   XAxis,
@@ -203,8 +203,8 @@ export default function GrowthChartPage() {
         setBabies(res.data);
         const targetId = preferredBabyId;
         const defaultBaby = targetId
-          ? res.data.find((b) => b.id === targetId) || res.data[0]
-          : res.data[0];
+          ? res.data.find((b) => b.id === targetId) || pickPreferredBaby(res.data)
+          : pickPreferredBaby(res.data);
         setSelectedBaby(defaultBaby);
         parseAndSetLogs(defaultBaby);
       } else {
@@ -616,7 +616,7 @@ export default function GrowthChartPage() {
   const summary = getLatestStatsSummary();
 
   return (
-    <div className="font-display rounded-3xl bg-theme-page p-4 sm:p-6 border border-theme-line space-y-6">
+    <div className="font-display space-y-6 pb-8 text-theme-ink">
       {/* Header Back */}
       <div>
         <button
@@ -630,14 +630,14 @@ export default function GrowthChartPage() {
       </div>
 
       {/* Main Header & Baby Switcher */}
-      <section className="bg-theme-surface rounded-2xl border border-theme-line p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <section className="bg-theme-surface rounded-3xl border border-theme-line p-5 sm:p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h1 className="text-xl sm:text-2xl font-bold text-theme-ink flex items-center gap-2">
             <Activity className="w-6 h-6 text-theme-brand shrink-0" aria-hidden="true" />
             <span>Biểu đồ tăng trưởng chuẩn WHO</span>
           </h1>
           <p className="text-xs sm:text-sm text-theme-muted font-medium leading-relaxed">
-            Theo dõi sự phát triển thể chất của bé {selectedBaby?.name} dựa trên tiêu chuẩn tăng trưởng toàn cầu từ Tổ chức Y tế Thế giới (WHO).
+            Theo dõi sự phát triển thể chất của {formatBabyDisplayName(selectedBaby?.name)} dựa trên tiêu chuẩn tăng trưởng toàn cầu từ Tổ chức Y tế Thế giới (WHO).
           </p>
         </div>
 

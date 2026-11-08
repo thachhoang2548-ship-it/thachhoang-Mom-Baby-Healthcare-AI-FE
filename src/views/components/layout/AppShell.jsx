@@ -1,52 +1,164 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthController } from '../../../controllers/authController';
 import { useProfileController } from '../../../controllers/profileController';
+import babyService from '../../../models/services/babyService';
 import momOiLogo from '../../../assets/Logo/mom-oi-submark-cropped.png';
-import { getTierNameVi } from '../../../utils/tierHelpers';
-import { getFullName } from '../../../utils/displayName';
+import { checkTierUnlocked, getTierLevel } from '../../../utils/tierHelpers';
+import { formatTodayVi, getFullName } from '../../../utils/displayName';
 import MedicalDisclaimer from '../common/MedicalDisclaimer';
 import { useOnlineStatus } from '../../../hooks/useOnlineStatus';
+import {
+  applyBabyThemeToDom,
+  clearGlobalActiveBaby,
+  formatBabyDisplayName,
+  pickPreferredBaby,
+  setGlobalActiveBaby,
+  useActiveBaby,
+} from '../../../hooks/useBabyTheme';
 
 import {
-  Calendar, Heart, Baby, Sparkles, LogOut, Activity, MessageSquare, Home, User, Settings,
-  ShieldCheck, HeartPulse, Bell, Microscope, ExternalLink, Headphones, Phone, ReceiptText,
-  Stethoscope, Menu, X, ChefHat,
+  Calendar,
+  Heart,
+  Baby,
+  Sparkles,
+  LogOut,
+  Activity,
+  MessageSquare,
+  Home,
+  User,
+  Settings,
+  ShieldCheck,
+  HeartPulse,
+  Bell,
+  Microscope,
+  ExternalLink,
+  Headphones,
+  Phone,
+  ReceiptText,
+  Stethoscope,
+  Menu,
+  X,
+  ChefHat,
+  WifiOff,
+  ChevronRight,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const isPathActive = (pathname, path) =>
   pathname === path || (path !== '/' && pathname.startsWith(path));
 
+const STAGE_LABELS = {
+  PrePregnancy: 'Chuẩn bị mang thai',
+  Pregnant: 'Đang mang thai',
+  Postpartum: 'Mẹ & bé sau sinh',
+};
+
+function getCleanTierName(tier) {
+  const level = getTierLevel(tier);
+  if (level === 2) return 'Super Mom VIP';
+  if (level === 1) return 'Mẹ Hiện Đại';
+  return 'Mẹ Bầu Cơ Bản';
+}
+
 export default function AppShell() {
   const { user, tier, tierExpiresAt, logout, token, isAuthenticated } = useAuthController();
   const { journeyStage, fetchProfile, momProfile } = useProfileController();
   const online = useOnlineStatus();
+  const activeBaby = useActiveBaby();
   const navigate = useNavigate();
   const location = useLocation();
+
   // Menu "Thêm" gắn với trang đang mở: chuyển trang là tự đóng
   const [moreOpenAt, setMoreOpenAt] = useState(null);
   const moreOpen = moreOpenAt === location.pathname;
   const setMoreOpen = (open) => setMoreOpenAt(open ? location.pathname : null);
   const [now] = useState(() => Date.now());
+  const loadedBabyOwnerRef = useRef(null);
 
-  const userRoles = Array.isArray(user?.roles) ? user.roles : (user?.role ? [user.role] : []);
+  const userRoles = Array.isArray(user?.roles) ? user.roles : user?.role ? [user.role] : [];
   const email = user?.email || '';
-  const isAdmin = userRoles.some(r => r.includes('Admin')) || email.includes('admin');
-  const isExpert = userRoles.some(r => r.includes('Expert')) || email.includes('expert');
-  const isStaff = userRoles.some(r => r.includes('Staff')) || email.includes('staff');
+  const ownerKey = user?.id || email || null;
+  const isAdmin = userRoles.some((r) => r.includes('Admin')) || email.includes('admin');
+  const isExpert = userRoles.some((r) => r.includes('Expert')) || email.includes('expert');
+  const isStaff = userRoles.some((r) => r.includes('Staff')) || email.includes('staff');
   const isMom = !isAdmin && !isExpert && !isStaff;
   const fullName = getFullName(user, token);
 
   // 1. Fetch profile once when authenticated and profile is missing
   useEffect(() => {
-    // Khi mất mạng không gọi tải hồ sơ (sẽ báo lỗi vô ích); có mạng lại thì tự tải
     if (isAuthenticated && token && !momProfile && isMom && online) {
       fetchProfile();
     }
   }, [isAuthenticated, token, momProfile, isMom, fetchProfile, online]);
 
-  // 2. Auto redirect special roles away from Mom pages to their respective portals
+  // 2. Giữ đồng bộ theme theo giới tính bé trên TOÀN BỘ các trang trong AppShell
+  useEffect(() => {
+    if (!isAuthenticated || !isMom) {
+      applyBabyThemeToDom(null);
+      return undefined;
+    }
+
+    // Nếu đổi sang tài khoản khác thì xóa bộ nhớ bé của phiên trước
+    if (activeBaby?.ownerKey && ownerKey && activeBaby.ownerKey !== ownerKey) {
+      clearGlobalActiveBaby();
+      return undefined;
+    }
+
+    // Nếu mẹ đang ở giai đoạn chưa sinh bé (Mong con / Đang mang thai), giữ màu thương hiệu mặc định
+    if (journeyStage && journeyStage !== 'Postpartum') {
+      if (activeBaby) clearGlobalActiveBaby();
+      else applyBabyThemeToDom(null);
+      return undefined;
+    }
+
+    applyBabyThemeToDom(activeBaby?.theme || null);
+
+    return () => {
+      // Khi rời AppShell ra trang công khai (Landing, Login), trả lại màu thương hiệu gốc
+      applyBabyThemeToDom(null);
+    };
+  }, [isAuthenticated, isMom, ownerKey, journeyStage, activeBaby]);
+
+  // 3. Tự tải hồ sơ bé 1 lần ngay khi vào bất kỳ trang nào của dashboard (nếu mẹ sau sinh & đủ gói)
+  useEffect(() => {
+    if (
+      !isAuthenticated ||
+      !token ||
+      !isMom ||
+      !online ||
+      journeyStage !== 'Postpartum' ||
+      !checkTierUnlocked(tier, 'MomHienDai')
+    ) {
+      return undefined;
+    }
+
+    const fetchKey = `${ownerKey || 'mom'}:${journeyStage}`;
+    if (loadedBabyOwnerRef.current === fetchKey) return undefined;
+    loadedBabyOwnerRef.current = fetchKey;
+
+    let cancelled = false;
+    babyService
+      .getProfiles()
+      .then((res) => {
+        if (cancelled) return;
+        if (res?.isSuccess && Array.isArray(res.data) && res.data.length > 0) {
+          const preferred = pickPreferredBaby(res.data);
+          if (preferred) setGlobalActiveBaby(preferred, ownerKey);
+        } else {
+          clearGlobalActiveBaby();
+        }
+      })
+      .catch(() => {
+        // Giữ yên lặng nếu chưa có hồ sơ hoặc mạng chập chờn
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, token, isMom, online, journeyStage, tier, ownerKey]);
+
+  // 4. Auto redirect special roles away from Mom pages to their respective portals
   useEffect(() => {
     const path = location.pathname;
     if (isAdmin && path !== '/admin' && path !== '/profile') {
@@ -56,7 +168,6 @@ export default function AppShell() {
     } else if (isStaff && path !== '/staff') {
       navigate('/staff', { replace: true });
     } else if (isMom) {
-      // Normal Mom users cannot access Admin, Expert, or Staff portals
       if (path === '/admin' || path === '/expert' || path === '/staff') {
         navigate('/dashboard', { replace: true });
       }
@@ -64,9 +175,10 @@ export default function AppShell() {
   }, [location.pathname, isAdmin, isExpert, isStaff, isMom, navigate]);
 
   const handleLogout = async () => {
-    // Hỏi lại để mẹ không lỡ tay đăng xuất
     if (!window.confirm('Mẹ có chắc muốn đăng xuất không?')) return;
     try {
+      clearGlobalActiveBaby();
+      loadedBabyOwnerRef.current = null;
       await logout();
       toast.success('Đã đăng xuất. Hẹn gặp lại mẹ!');
       navigate('/login');
@@ -75,11 +187,13 @@ export default function AppShell() {
     }
   };
 
-  // Menu chia nhóm, tên gọi đời thường, không biệt ngữ
   const getNavGroups = () => {
-    if (isAdmin) return [{ title: null, items: [{ label: 'Quản trị hệ thống', path: '/admin', icon: Settings }] }];
-    if (isExpert) return [{ title: null, items: [{ label: 'Duyệt AI & tư vấn', path: '/expert', icon: ShieldCheck }] }];
-    if (isStaff) return [{ title: null, items: [{ label: 'Cổng chăm sóc', path: '/staff', icon: HeartPulse }] }];
+    if (isAdmin)
+      return [{ title: null, items: [{ label: 'Quản trị hệ thống', path: '/admin', icon: Settings }] }];
+    if (isExpert)
+      return [{ title: null, items: [{ label: 'Duyệt AI & tư vấn', path: '/expert', icon: ShieldCheck }] }];
+    if (isStaff)
+      return [{ title: null, items: [{ label: 'Cổng chăm sóc', path: '/staff', icon: HeartPulse }] }];
 
     const daily = [{ label: 'Trang chủ', path: '/dashboard', icon: Home }];
     if (journeyStage === 'PrePregnancy') {
@@ -116,11 +230,12 @@ export default function AppShell() {
   };
 
   const navGroups = getNavGroups();
-  const allItems = navGroups.flatMap(g => g.items);
-  // Điện thoại: tối đa 3 mục chính + Khẩn cấp + Thêm, chữ đủ lớn để bấm
+  const allItems = navGroups.flatMap((g) => g.items);
+  const currentNavItem = allItems.find((i) => isPathActive(location.pathname, i.path));
+
   const mobileMain = isMom
-    ? [allItems[0], allItems[1], allItems.find(i => i.path === '/care-calendar')].filter(
-        (item, idx, arr) => item && arr.findIndex(x => x.path === item.path) === idx
+    ? [allItems[0], allItems[1], allItems.find((i) => i.path === '/care-calendar')].filter(
+        (item, idx, arr) => item && arr.findIndex((x) => x.path === item.path) === idx
       )
     : allItems;
 
@@ -129,33 +244,6 @@ export default function AppShell() {
     ? Math.ceil((tierExpiryDate.getTime() - now) / 86400000)
     : null;
   const shouldShowExpiryNotice = isMom && tier !== 'Free' && tierDaysLeft !== null && tierDaysLeft <= 7;
-
-  // Module bé (/baby-nutrition...), hậu sản (/postpartum...) và thư giãn (/relax...): khung ngoài dùng token theme
-  // (module bé đổi theo giới tính bé qua data-baby-theme; các trang kia dùng bảng mặc định). Mọi trang khác giữ nguyên màu hồng cũ.
-  const inBabyModule = ['/baby-nutrition', '/postpartum', '/relax'].some((p) => location.pathname.startsWith(p));
-  const shell = inBabyModule
-    ? {
-        root: 'bg-theme-page',
-        line: 'border-theme-line',
-        logo: 'text-theme-brand',
-        badge: 'text-theme-brand',
-        navActive: 'bg-theme-brand-soft text-theme-brand',
-        sidebar: 'bg-theme-sidebar',
-        icon: 'text-theme-brand',
-        linkHover: 'hover:text-theme-brand',
-        muted: 'text-theme-muted',
-      }
-    : {
-        root: 'bg-[#FCF8F8] dark:bg-[#0E0C0F]',
-        line: 'border-pink-100 dark:border-gray-800',
-        logo: 'text-momPink-dark dark:text-pink-400',
-        badge: 'text-momPink-dark dark:text-pink-300',
-        navActive: 'bg-momPink-light text-momPink-dark dark:bg-momPink/20 dark:text-pink-300',
-        sidebar: '',
-        icon: 'text-momPink',
-        linkHover: 'hover:text-momPink',
-        muted: 'text-gray-500 dark:text-gray-400',
-      };
 
   const handleLogoClick = () => {
     if (isAdmin) navigate('/admin');
@@ -168,7 +256,7 @@ export default function AppShell() {
     if (isAdmin) return 'Quản trị viên';
     if (isExpert) return 'Chuyên gia';
     if (isStaff) return 'Nhân viên';
-    return getTierNameVi(tier);
+    return getCleanTierName(tier);
   };
 
   const NavLink = ({ item, large = false }) => {
@@ -178,172 +266,344 @@ export default function AppShell() {
       <Link
         to={item.path}
         aria-current={active ? 'page' : undefined}
-        className={`flex items-center gap-3 px-4 ${large ? 'py-4 text-lg' : 'py-3 text-base'} rounded-2xl font-semibold transition-colors ${
+        className={`group flex min-h-[44px] items-center gap-3 rounded-2xl px-3.5 ${
+          large ? 'py-3.5 text-base' : 'py-2.5 text-sm'
+        } font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-1 ${
           active
-            ? shell.navActive
-            : 'text-gray-700 dark:text-gray-200 hover:bg-white dark:hover:bg-gray-800'
+            ? 'bg-theme-brand text-theme-surface shadow-sm'
+            : 'text-theme-ink/85 hover:bg-theme-surface hover:text-theme-ink'
         }`}
       >
-        <Icon className="w-6 h-6 shrink-0" />
-        {item.label}
+        <Icon
+          className={`h-[18px] w-[18px] shrink-0 transition-colors ${
+            active ? 'text-theme-surface' : 'text-theme-muted group-hover:text-theme-brand'
+          }`}
+        />
+        <span className="truncate">{item.label}</span>
       </Link>
     );
   };
 
   return (
-    <div className={`h-screen ${shell.root} text-gray-800 dark:text-gray-100 flex flex-col font-sans relative overflow-hidden`}>
-      {/* Header */}
-      <header className={`sticky top-0 z-30 bg-white dark:bg-gray-900 border-b ${shell.line} py-3 px-4 sm:px-8 flex items-center justify-between gap-3`}>
-        <button onClick={handleLogoClick} className="flex items-center gap-3 text-left" aria-label="Về trang chủ">
-          <img src={momOiLogo} alt="" className="h-12 w-12 rounded-full object-cover shadow" />
-          <span className={`font-brand text-2xl font-extrabold leading-none ${shell.logo}`}>
-            Mom Ơi!
-          </span>
-        </button>
-
-        <div className="flex items-center gap-2 sm:gap-3">
-          {user && (
-            <Link to="/profile" className="hidden md:flex flex-col items-end text-right mr-1">
-              <span className="text-base font-bold text-gray-800 dark:text-gray-100">
-                {fullName || 'Tài khoản của mẹ'}
-              </span>
-              <span className={`text-sm font-semibold ${shell.badge}`}>{getRoleBadgeVi()}</span>
-            </Link>
-          )}
-
-          {isMom && (
-            <Link
-              to="/emergency"
-              className="hidden sm:inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-red-600 hover:bg-red-700 text-white text-base font-bold shadow"
-            >
-              <Phone className="w-5 h-5" /> Khẩn cấp
-            </Link>
-          )}
-
+    <div className="relative flex h-screen overflow-hidden bg-theme-page font-display text-theme-ink">
+      {/* Thanh bên máy tính — trải suốt chiều cao tạo bố cục hiện đại, liền lạc */}
+      <aside className="hidden h-full w-72 shrink-0 flex-col border-r border-theme-line bg-theme-sidebar lg:flex">
+        <div className="border-b border-theme-line px-5 py-4">
           <button
-            onClick={handleLogout}
-            className="inline-flex items-center gap-2 px-3 sm:px-4 py-2.5 rounded-full border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 text-base font-semibold"
+            type="button"
+            onClick={handleLogoClick}
+            className="flex min-h-[44px] w-full items-center gap-3 rounded-2xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+            aria-label="Về trang chủ"
           >
-            <LogOut className="w-5 h-5" />
-            <span className="hidden sm:inline">Đăng xuất</span>
+            <img
+              src={momOiLogo}
+              alt=""
+              className="h-11 w-11 shrink-0 rounded-full border border-theme-line bg-theme-surface object-cover"
+            />
+            <div className="min-w-0">
+              <span className="block font-brand text-2xl font-extrabold leading-none text-theme-brand">
+                Mom Ơi!
+              </span>
+              <span className="mt-1 block truncate text-xs font-medium text-theme-muted">
+                {isMom && journeyStage && STAGE_LABELS[journeyStage]
+                  ? STAGE_LABELS[journeyStage]
+                  : 'Sổ tay sức khỏe mẹ & bé'}
+              </span>
+            </div>
           </button>
-        </div>
-      </header>
 
-      <div className="flex-1 flex max-w-7xl w-full mx-auto pb-24 lg:pb-0 relative z-10 overflow-hidden">
-        {/* Sidebar (máy tính) */}
-        <aside className={`hidden lg:flex flex-col w-72 border-r ${shell.line} ${shell.sidebar} p-4 shrink-0 overflow-y-auto h-full`}>
-          <nav className="space-y-6 flex-1" aria-label="Menu chính">
-            {navGroups.map(group => (
-              <div key={group.title || 'main'}>
-                {group.title && (
-                  <p className={`px-4 mb-2 text-sm font-bold ${shell.muted}`}>{group.title}</p>
-                )}
-                <div className="space-y-1">
-                  {group.items.map(item => <NavLink key={item.path} item={item} />)}
+          {/* Thẻ ngữ cảnh đồng hành của bé (khi đã có hồ sơ bé) */}
+          {isMom && journeyStage === 'Postpartum' && activeBaby && (
+            <Link
+              to="/baby-nutrition"
+              className="mt-3.5 flex min-h-[44px] items-center justify-between gap-2 rounded-2xl border border-theme-line bg-theme-surface px-3.5 py-2.5 text-xs transition-colors hover:border-theme-brand/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+            >
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-full bg-theme-brand"
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <p className="truncate font-bold text-theme-ink">
+                    {formatBabyDisplayName(activeBaby.name)}
+                    {activeBaby.ageMonths != null ? ` · ${activeBaby.ageMonths} tháng` : ''}
+                  </p>
+                  <p className="truncate font-medium text-theme-muted">
+                    Giao diện {activeBaby.theme === 'boy' ? 'Bé trai' : 'Bé gái'} toàn trang
+                  </p>
                 </div>
               </div>
-            ))}
-          </nav>
-        </aside>
+              <ChevronRight className="h-4 w-4 shrink-0 text-theme-muted" aria-hidden="true" />
+            </Link>
+          )}
+        </div>
 
-        {/* Nội dung */}
-        <main className="flex-1 min-w-0 p-4 sm:p-8 overflow-y-auto flex flex-col justify-between">
-          <div>
+        <nav className="flex-1 space-y-6 overflow-y-auto px-4 py-5" aria-label="Menu chính">
+          {navGroups.map((group) => (
+            <div key={group.title || 'main'}>
+              {group.title && (
+                <p className="mb-2 px-3.5 text-xs font-bold text-theme-muted">{group.title}</p>
+              )}
+              <div className="space-y-1">
+                {group.items.map((item) => (
+                  <NavLink key={item.path} item={item} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        {user && (
+          <div className="border-t border-theme-line p-4">
+            <Link
+              to="/profile"
+              className="flex min-h-[48px] items-center gap-3 rounded-2xl border border-theme-line bg-theme-surface px-3.5 py-2.5 transition-colors hover:border-theme-brand/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-theme-brand-soft text-sm font-bold text-theme-ink">
+                {(fullName || 'M').trim().charAt(0).toUpperCase()}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-theme-ink">
+                  {fullName || 'Tài khoản của mẹ'}
+                </p>
+                <p className="truncate text-xs font-semibold text-theme-brand">
+                  {getRoleBadgeVi()}
+                </p>
+              </div>
+            </Link>
+          </div>
+        )}
+      </aside>
+
+      {/* Khối phải: Thanh đầu trang + Nội dung cuộn */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-theme-line bg-theme-surface/95 px-4 py-2.5 backdrop-blur-sm sm:px-6 lg:px-10">
+          {/* Logo cho màn hình nhỏ */}
+          <div className="flex items-center gap-3 lg:hidden">
+            <button
+              type="button"
+              onClick={handleLogoClick}
+              className="flex min-h-[44px] items-center gap-2.5 rounded-full pr-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
+              aria-label="Về trang chủ"
+            >
+              <img
+                src={momOiLogo}
+                alt=""
+                className="h-10 w-10 rounded-full border border-theme-line object-cover"
+              />
+              <div className="flex flex-col">
+                <span className="font-brand text-xl font-extrabold leading-none text-theme-brand">
+                  Mom Ơi!
+                </span>
+                {isMom && journeyStage && STAGE_LABELS[journeyStage] && (
+                  <span className="mt-0.5 text-xs font-medium text-theme-muted">
+                    {STAGE_LABELS[journeyStage]}
+                  </span>
+                )}
+              </div>
+            </button>
+          </div>
+
+          {/* Ngữ cảnh ngày & mục hiện tại trên máy tính */}
+          <div className="hidden min-w-0 items-center gap-3 lg:flex">
+            <span className="truncate text-sm font-bold text-theme-ink">
+              {currentNavItem?.label || 'Không gian của mẹ & bé'}
+            </span>
+            <span className="text-theme-line" aria-hidden="true">
+              |
+            </span>
+            <span className="truncate text-xs font-medium text-theme-muted first-letter:uppercase">
+              {formatTodayVi()}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            {isMom && (
+              <Link
+                to="/notifications"
+                aria-label="Thông báo"
+                className="hidden min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-theme-line bg-theme-page/70 text-theme-ink transition-colors hover:border-theme-brand/40 hover:bg-theme-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand sm:inline-flex"
+              >
+                <Bell className="h-4 w-4" />
+              </Link>
+            )}
+
+            {isMom && (
+              <Link
+                to="/emergency"
+                className="hidden min-h-[44px] items-center gap-2 rounded-full bg-red-700 px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-2 sm:inline-flex"
+              >
+                <Phone className="h-4 w-4" />
+                <span>Khẩn cấp</span>
+              </Link>
+            )}
+
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-theme-line bg-theme-surface px-3.5 py-2 text-sm font-semibold text-theme-ink transition-colors hover:bg-theme-page focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2 sm:px-4"
+            >
+              <LogOut className="h-4 w-4 text-theme-muted" />
+              <span className="hidden sm:inline">Đăng xuất</span>
+            </button>
+          </div>
+        </header>
+
+        <main className="flex min-w-0 flex-1 flex-col justify-between overflow-y-auto px-4 py-5 pb-24 sm:px-6 sm:py-7 lg:px-10 lg:pb-8">
+          <div className="mx-auto w-full max-w-6xl">
             {shouldShowExpiryNotice && (
-              <div className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-status-warn-line bg-status-warn-bg px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-base font-bold text-amber-900">Gói của mẹ sắp hết hạn</p>
-                  <p className="text-base text-amber-800 mt-1">
+                  <p className="text-base font-bold text-status-warn-text">Gói của mẹ sắp hết hạn</p>
+                  <p className="mt-0.5 text-sm font-medium text-status-warn-text">
                     Còn {Math.max(tierDaysLeft, 0)} ngày. Gia hạn để tiếp tục dùng các tính năng nâng cao.
                   </p>
                 </div>
-                <Link to="/upgrade" className="px-5 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-base font-bold text-center">
+                <Link
+                  to="/upgrade"
+                  className="inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-full bg-theme-brand px-5 py-2.5 text-center text-sm font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
+                >
                   Gia hạn ngay
                 </Link>
               </div>
             )}
+
             {!online && (
-              <div role="status" className="mb-5 rounded-2xl border border-status-warn-line bg-status-warn-bg px-5 py-4 text-base font-semibold text-status-warn-text">
-                Bạn đang offline. Các tính năng cần mạng tạm thời chưa dùng được. Mục Thư giãn vẫn nghe được nếu trước đó mẹ đã mở khi có mạng.
+              <div
+                role="status"
+                className="mb-6 flex items-start gap-3 rounded-2xl border border-status-warn-line bg-status-warn-bg px-5 py-4 text-sm font-semibold text-status-warn-text sm:text-base"
+              >
+                <WifiOff className="mt-0.5 h-5 w-5 shrink-0" />
+                <span>
+                  Bạn đang offline. Các tính năng cần mạng tạm thời chưa dùng được. Mục Thư giãn vẫn nghe được nếu trước đó mẹ đã mở khi có mạng.
+                </span>
               </div>
             )}
+
             <Outlet />
           </div>
 
-          {isMom && <MedicalDisclaimer className="mt-14" />}
-          <footer className={`mt-6 pt-5 border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm ${shell.muted}`}>
-            <span className="inline-flex items-center gap-2 text-center sm:text-left">
-              <Microscope className={`w-4 h-4 ${shell.icon}`} />
-              Khuyến nghị dinh dưỡng theo chuẩn WHO và dữ liệu USDA
-            </span>
-            <div className="flex items-center gap-4 shrink-0">
-              <a href="https://www.who.int/publications/i/item/9789240081864" target="_blank" rel="noopener noreferrer" className={`${shell.linkHover} inline-flex items-center gap-1`}>
-                WHO <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-              <a href="https://fdc.nal.usda.gov/" target="_blank" rel="noopener noreferrer" className={`${shell.linkHover} inline-flex items-center gap-1`}>
-                USDA <ExternalLink className="w-3.5 h-3.5" />
-              </a>
-            </div>
-          </footer>
+          <div className="mx-auto mt-12 w-full max-w-6xl">
+            {isMom && <MedicalDisclaimer />}
+            <footer className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-theme-line pt-5 text-xs font-medium text-theme-muted sm:flex-row sm:text-sm">
+              <span className="inline-flex items-center gap-2 text-center sm:text-left">
+                <Microscope className="h-4 w-4 shrink-0 text-theme-brand" />
+                Khuyến nghị dinh dưỡng theo chuẩn WHO và dữ liệu USDA
+              </span>
+              <div className="flex shrink-0 items-center gap-4">
+                <a
+                  href="https://www.who.int/publications/i/item/9789240081864"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-[44px] items-center gap-1 rounded-md px-2 text-theme-ink hover:text-theme-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+                >
+                  WHO <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+                <a
+                  href="https://fdc.nal.usda.gov/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-[44px] items-center gap-1 rounded-md px-2 text-theme-ink hover:text-theme-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+                >
+                  USDA <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+              </div>
+            </footer>
+          </div>
         </main>
       </div>
 
       {/* Menu "Thêm" (điện thoại) */}
       {moreOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex flex-col justify-end bg-black/40" onClick={() => setMoreOpen(false)}>
+        <div
+          className="fixed inset-0 z-50 flex flex-col justify-end bg-theme-ink/45 backdrop-blur-[2px] lg:hidden"
+          onClick={() => setMoreOpen(false)}
+        >
           <div
-            className="bg-white dark:bg-gray-900 rounded-t-3xl p-4 pb-8 max-h-[80vh] overflow-y-auto"
-            onClick={e => e.stopPropagation()}
+            className="max-h-[82vh] overflow-y-auto rounded-t-3xl border-t border-theme-line bg-theme-page p-4 pb-8 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
             role="dialog"
+            aria-modal="true"
             aria-label="Tất cả mục"
           >
-            <div className="flex items-center justify-between mb-3 px-2">
-              <p className="text-xl font-bold">Tất cả mục</p>
-              <button onClick={() => setMoreOpen(false)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Đóng">
-                <X className="w-7 h-7" />
+            <div className="mb-3 flex items-center justify-between border-b border-theme-line px-2 pb-3">
+              <div>
+                <p className="text-lg font-bold text-theme-ink">Danh mục chăm sóc</p>
+                {user && (
+                  <p className="text-xs font-medium text-theme-muted">
+                    {fullName || 'Tài khoản của mẹ'} · {getRoleBadgeVi()}
+                  </p>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setMoreOpen(false)}
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full border border-theme-line bg-theme-surface text-theme-ink hover:bg-theme-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+                aria-label="Đóng"
+              >
+                <X className="h-5 w-5" />
               </button>
             </div>
-            {navGroups.map(group => (
-              <div key={group.title || 'main'} className="mb-4">
-                {group.title && <p className="px-4 mb-1 text-sm font-bold text-gray-500">{group.title}</p>}
-                {group.items.map(item => <NavLink key={item.path} item={item} large />)}
-              </div>
-            ))}
+            <div className="space-y-4">
+              {navGroups.map((group) => (
+                <div key={group.title || 'main'}>
+                  {group.title && (
+                    <p className="mb-1.5 px-3.5 text-xs font-bold text-theme-muted">{group.title}</p>
+                  )}
+                  <div className="space-y-1">
+                    {group.items.map((item) => (
+                      <NavLink key={item.path} item={item} large />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
 
       {/* Thanh điều hướng dưới (điện thoại) */}
-      <nav className={`lg:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t ${shell.line} grid grid-flow-col auto-cols-fr z-40 shadow-2xl`} aria-label="Điều hướng nhanh">
-        {mobileMain.map(item => {
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-40 grid auto-cols-fr grid-flow-col border-t border-theme-line bg-theme-surface/95 backdrop-blur-sm lg:hidden"
+        aria-label="Điều hướng nhanh"
+      >
+        {mobileMain.map((item) => {
           const Icon = item.icon;
           const active = isPathActive(location.pathname, item.path);
           return (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center justify-center gap-1 py-2.5 min-h-[64px] text-sm font-semibold ${
-                active ? shell.badge : 'text-gray-600 dark:text-gray-300'
+              aria-current={active ? 'page' : undefined}
+              className={`relative flex min-h-[60px] flex-col items-center justify-center gap-1 px-1 py-2 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-brand ${
+                active ? 'font-bold text-theme-brand' : 'text-theme-muted hover:text-theme-ink'
               }`}
             >
-              <Icon className="w-7 h-7" />
-              <span className="leading-tight text-center">{item.label}</span>
+              {active && (
+                <span className="absolute top-0 h-0.5 w-8 rounded-full bg-theme-brand" aria-hidden="true" />
+              )}
+              <Icon className="h-5 w-5 shrink-0" />
+              <span className="line-clamp-1 text-center leading-tight">{item.label}</span>
             </Link>
           );
         })}
         {isMom && (
           <>
-            <Link to="/emergency" className="flex flex-col items-center justify-center gap-1 py-2.5 min-h-[64px] text-sm font-bold text-red-600">
-              <Phone className="w-7 h-7" />
-              Khẩn cấp
+            <Link
+              to="/emergency"
+              className="flex min-h-[60px] flex-col items-center justify-center gap-1 px-1 py-2 text-xs font-bold text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red-700"
+            >
+              <Phone className="h-5 w-5 shrink-0" />
+              <span className="leading-tight">Khẩn cấp</span>
             </Link>
             <button
+              type="button"
               onClick={() => setMoreOpen(true)}
-              className="flex flex-col items-center justify-center gap-1 py-2.5 min-h-[64px] text-sm font-semibold text-gray-600 dark:text-gray-300"
+              aria-expanded={moreOpen}
+              className="flex min-h-[60px] flex-col items-center justify-center gap-1 px-1 py-2 text-xs font-semibold text-theme-muted hover:text-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-theme-brand"
             >
-              <Menu className="w-7 h-7" />
-              Thêm
+              <Menu className="h-5 w-5 shrink-0" />
+              <span className="leading-tight">Thêm</span>
             </button>
           </>
         )}

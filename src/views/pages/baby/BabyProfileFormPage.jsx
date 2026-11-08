@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import babyService from '../../../models/services/babyService';
-import { useBabyTheme } from '../../../hooks/useBabyTheme';
+import { formatBabyDisplayName, setGlobalActiveBaby, useBabyTheme } from '../../../hooks/useBabyTheme';
 import toast from 'react-hot-toast';
 import {
   ArrowLeft,
@@ -222,11 +222,18 @@ export default function BabyProfileFormPage() {
         }
       }
 
+      // Đồng bộ ngay theme toàn trang theo giới tính bé vừa lưu
+      setGlobalActiveBaby({
+        id: savedBabyId,
+        name: formData.babyName.trim(),
+        gender: payload.gender,
+      });
+
       // ── Step 5: Show success & redirect ────────────────────────────────────
       toast.success(
         isEditMode
-          ? `Đã cập nhật hồ sơ bé ${formData.babyName} thành công!`
-          : `Tạo hồ sơ bé ${formData.babyName} thành công!`
+          ? `Đã cập nhật hồ sơ ${formatBabyDisplayName(formData.babyName)} thành công!`
+          : `Tạo hồ sơ ${formatBabyDisplayName(formData.babyName)} thành công!`
       );
 
       // Navigate back to Baby Profile dashboard
@@ -276,7 +283,7 @@ export default function BabyProfileFormPage() {
   // Render
   // ─────────────────────────────────────────────────────────────────────────────
   return (
-    <div className="font-display max-w-xl mx-auto rounded-3xl bg-theme-page p-4 sm:p-6 border border-theme-line space-y-6">
+    <div className="font-display max-w-2xl mx-auto space-y-6 pb-8 text-theme-ink">
       {/* ── Back button ── */}
       <div>
         <button

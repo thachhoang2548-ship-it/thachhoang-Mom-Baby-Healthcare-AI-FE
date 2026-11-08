@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import babyService from '../../../models/services/babyService';
-import { useBabyTheme } from '../../../hooks/useBabyTheme';
+import { formatBabyDisplayName, pickPreferredBaby, useBabyTheme } from '../../../hooks/useBabyTheme';
 
 const AGE_STAGES = {
   infant: {
@@ -263,7 +263,8 @@ export default function BabyMenuPage() {
         }
 
         setBabies(profileList);
-        return loadMenusForBaby(profileList[0], false);
+        const preferred = pickPreferredBaby(profileList) || profileList[0];
+        return loadMenusForBaby(preferred, false);
       })
       .catch((error) => {
         console.error('Failed to load baby menu:', error);
@@ -279,7 +280,7 @@ export default function BabyMenuPage() {
     setEatenStatusFilter('all');
     setAllergyFilter('all');
     loadMenusForBaby(targetBaby, false);
-    toast.success(`Đã chuyển sang thực đơn của bé ${targetBaby.name || 'yêu'}`);
+    toast.success(`Đã chuyển sang thực đơn của ${formatBabyDisplayName(targetBaby.name)}`);
   };
 
   const eatenMap = eatenByBaby[selectedBaby?.id];
@@ -463,7 +464,7 @@ export default function BabyMenuPage() {
     : 'bg-theme-ink text-theme-surface hover:bg-status-ok';
 
   return (
-    <div className="font-display rounded-3xl bg-theme-page p-4 sm:p-6 border border-theme-line space-y-6">
+    <div className="font-display space-y-6 pb-8 text-theme-ink">
       {/* Nút quay lại & Bộ chọn hồ sơ bé (Multi-baby selector) */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button

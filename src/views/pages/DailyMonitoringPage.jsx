@@ -1,5 +1,7 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ClipboardList } from "lucide-react";
+import toast from "react-hot-toast";
 import { useAuthController } from "../../controllers/authController";
 import dailyMonitoringService from "../../models/services/dailyMonitoringService";
 import { SleepForm } from "../components/dailyMonitoring/SleepForm";
@@ -23,7 +25,6 @@ const DailyMonitoringPage = () => {
   const [symptoms, setSymptoms] = useState({ severity: 2, note: "" });
   const [loading, setLoading] = useState(false);
 
-  // Student lifestyle state
   const [lifestyle, setLifestyle] = useState({
     studyHours: 4,
     extracurricularHours: 1,
@@ -31,7 +32,7 @@ const DailyMonitoringPage = () => {
     socialHours: 2,
     physicalActivityHours: 1,
     gpa: 3.0,
-    stressLevel: "Moderate"
+    stressLevel: "Moderate",
   });
 
   const handleSleepChange = (newSleep) => {
@@ -70,61 +71,77 @@ const DailyMonitoringPage = () => {
       weight: Number(vitals.weight),
       symptomSeverity: Number(symptoms.severity),
       symptomNote: symptoms.note,
-      ...(user?.userType === "student" ? {
-        studyHours: lifestyle.studyHours,
-        extracurricularHours: lifestyle.extracurricularHours,
-        sleepHours: lifestyle.sleepHours,
-        socialHours: lifestyle.socialHours,
-        physicalActivityHours: lifestyle.physicalActivityHours,
-        gpa: lifestyle.gpa,
-        stressLevel: lifestyle.stressLevel
-      } : {})
+      ...(user?.userType === "student"
+        ? {
+            studyHours: lifestyle.studyHours,
+            extracurricularHours: lifestyle.extracurricularHours,
+            sleepHours: lifestyle.sleepHours,
+            socialHours: lifestyle.socialHours,
+            physicalActivityHours: lifestyle.physicalActivityHours,
+            gpa: lifestyle.gpa,
+            stressLevel: lifestyle.stressLevel,
+          }
+        : {}),
     };
 
     try {
       await dailyMonitoringService.createDailyMonitoring(payload);
-      alert("Đã lưu nhật ký hàng ngày thành công!");
+      toast.success("Đã lưu nhật ký hàng ngày thành công!");
       navigate("/dashboard");
     } catch (err) {
       console.error("Error saving daily monitoring:", err);
-      alert(err.message || "Không thể lưu nhật ký. Vui lòng thử lại.");
+      toast.error(err.message || "Không thể lưu nhật ký. Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="bg-background-light dark:bg-background-dark min-h-screen font-display text-gray-800 dark:text-gray-200 p-6">
-      <div className="max-w-7xl mx-auto">
-        <header className="mb-6">
-          <h1 className="text-4xl font-black tracking-tighter text-gray-900 dark:text-white">
-            Nhật ký hàng ngày
-          </h1>
-          <p className="text-base text-gray-500 dark:text-gray-400 mt-1">
-            Theo dõi sức khỏe hàng ngày của bạn chỉ trong 20 giây.
-          </p>
-        </header>
+  const completedMealsCount = [meals.breakfast, meals.lunch, meals.dinner].filter(Boolean).length;
 
-        <div className="mb-8">
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5">
-            <div className="bg-saffron h-1.5 rounded-full" style={{ width: "33%" }} />
+  return (
+    <div className="font-display max-w-6xl mx-auto space-y-6 pb-12 text-theme-ink">
+      <header className="bg-theme-surface rounded-3xl border border-theme-line p-6 sm:p-8 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 rounded-full bg-theme-brand-soft text-theme-ink px-3.5 py-1.5 text-xs font-bold border border-theme-brand/20">
+              <ClipboardList className="w-4 h-4 text-theme-brand" aria-hidden="true" />
+              <span>Ghi chép sức khỏe hàng ngày</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-theme-ink">
+              Nhật ký sức khỏe hôm nay
+            </h1>
+            <p className="text-sm sm:text-base text-theme-muted font-medium max-w-2xl leading-relaxed">
+              Dành khoảng 20 giây lưu lại giấc ngủ, nước uống, bữa ăn và các chỉ số cơ thể để theo dõi hành trình của mẹ sát sao hơn.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2 shrink-0">
+            <span className="inline-flex items-center rounded-full bg-theme-page border border-theme-line px-3.5 py-1.5 text-xs font-bold text-theme-ink">
+              Ngủ: {sleep.hours} giờ
+            </span>
+            <span className="inline-flex items-center rounded-full bg-theme-page border border-theme-line px-3.5 py-1.5 text-xs font-bold text-theme-ink">
+              Nước: {water.liters} cốc
+            </span>
+            <span className="inline-flex items-center rounded-full bg-theme-page border border-theme-line px-3.5 py-1.5 text-xs font-bold text-theme-ink">
+              Bữa ăn: {completedMealsCount}/3
+            </span>
           </div>
         </div>
+      </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <SleepForm sleep={sleep} setSleep={handleSleepChange} />
-          <WaterForm water={water} setWater={setWater} />
-          <MealForm meals={meals} setMeals={setMeals} />
-          <MoodForm mood={mood} setMood={setMood} />
-          <VitalsForm vitals={vitals} setVitals={setVitals} />
-          <SymptomsForm symptoms={symptoms} setSymptoms={setSymptoms} />
-          {user?.userType === "student" && (
-            <StudentLifestyleForm lifestyle={lifestyle} setLifestyle={handleLifestyleChange} />
-          )}
-        </div>
-
-        <SubmitCard loading={loading} onSubmit={handleSubmit} />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <SleepForm sleep={sleep} setSleep={handleSleepChange} />
+        <WaterForm water={water} setWater={setWater} />
+        <MealForm meals={meals} setMeals={setMeals} />
+        <MoodForm mood={mood} setMood={setMood} />
+        <VitalsForm vitals={vitals} setVitals={setVitals} />
+        <SymptomsForm symptoms={symptoms} setSymptoms={setSymptoms} />
+        {user?.userType === "student" && (
+          <StudentLifestyleForm lifestyle={lifestyle} setLifestyle={handleLifestyleChange} />
+        )}
       </div>
+
+      <SubmitCard loading={loading} onSubmit={handleSubmit} />
     </div>
   );
 };

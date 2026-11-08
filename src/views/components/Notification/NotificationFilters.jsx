@@ -1,36 +1,47 @@
 import React from "react";
 
-const NotificationFilters = ({ filters, setFilters }) => {
+const FILTER_LABELS = {
+  all: "Tất cả chưa đọc",
+  symptom: "Triệu chứng",
+  medication: "Nhắc thuốc",
+  resolved: "Đã xử lý",
+};
+
+const NotificationFilters = ({ filters, setFilters, unreadCount = 0 }) => {
   const types = ["all", "symptom", "medication", "resolved"];
+
   return (
-    <div className="sticky top-16 z-10 -mx-4 px-4 sm:mx-0 sm:px-0 bg-background-light/95 dark:bg-background-dark/95 backdrop-blur-sm py-2 transition-all duration-200">
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide sm:flex-wrap">
-        {types.map(type => (
+    <div className="flex gap-2 overflow-x-auto pb-1 sm:flex-wrap" role="tablist" aria-label="Bộ lọc thông báo">
+      {types.map((type) => {
+        const active = filters.type === type;
+        return (
           <button
             key={type}
-            onClick={() => setFilters(prev => ({ ...prev, type }))}
-            className={`flex h-9 sm:h-10 shrink-0 items-center gap-x-2 rounded-full px-4 text-sm font-medium transition-colors duration-200 ${
-              filters.type === type 
-                ? "bg-primary text-white shadow-md" 
-                : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
+            type="button"
+            role="tab"
+            aria-selected={active}
+            onClick={() => setFilters((prev) => ({ ...prev, type }))}
+            className={`inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2 ${
+              active
+                ? "bg-theme-brand text-theme-surface shadow-sm"
+                : "bg-theme-surface text-theme-ink border border-theme-line hover:bg-theme-brand-soft"
             }`}
           >
-            <p>
-              {type === "all" && "Tất cả"}
-              {type === "symptom" && "Triệu chứng"}
-              {type === "medication" && "Thuốc"}
-              {type === "resolved" && "Đã xử lý"}
-            </p>
+            <span>{FILTER_LABELS[type]}</span>
             {type === "all" && (
-              <span className={`grid size-5 place-items-center rounded-full text-xs font-bold ${
-                filters.type === type ? "bg-white/20 text-white" : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
-              }`}>
-                {filters.length}
+              <span
+                className={`inline-flex min-w-[22px] h-[22px] px-1.5 items-center justify-center rounded-full text-xs font-extrabold ${
+                  active
+                    ? "bg-theme-surface text-theme-ink"
+                    : "bg-theme-brand-soft text-theme-ink"
+                }`}
+              >
+                {unreadCount}
               </span>
             )}
           </button>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 };

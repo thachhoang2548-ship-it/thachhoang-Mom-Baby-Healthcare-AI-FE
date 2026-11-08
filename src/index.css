@@ -55,7 +55,11 @@
 }
 
 body {
-  font-family: "Inter", sans-serif;
+  font-family: "Manrope", "Inter", system-ui, -apple-system, sans-serif;
+  background-color: rgb(var(--c-page));
+  color: rgb(var(--c-ink));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .glassmorphic {
@@ -164,7 +168,21 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-baby-idle {
-    animation: none;
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .hero-baby-idle,
+  .animate-float,
+  .animate-fade-in-up,
+  .animate-loading-bar,
+  .animate-fade-in,
+  .animate-slide-in {
+    animation: none !important;
   }
 }

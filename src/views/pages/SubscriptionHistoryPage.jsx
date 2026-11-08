@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, CreditCard, Download, ReceiptText, Sparkles } from 'lucide-react';
+import { ArrowLeft, CalendarClock, CreditCard, Crown, Download, ReceiptText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import paymentService from '../../models/services/paymentService';
 import { useAuthController } from '../../controllers/authController';
@@ -13,17 +13,30 @@ const formatDate = (value) => {
   return new Date(value).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
-const statusClass = {
-  Completed: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-  Pending: 'bg-amber-50 text-amber-700 border-amber-100',
-  Failed: 'bg-red-50 text-red-700 border-red-100',
-  Refunded: 'bg-slate-50 text-slate-700 border-slate-100',
+const STATUS_META = {
+  Completed: {
+    badge: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    label: 'Hoàn tất',
+  },
+  Pending: {
+    badge: 'bg-status-warn-bg text-status-warn-text border-status-warn-line/50',
+    label: 'Đang chờ',
+  },
+  Failed: {
+    badge: 'bg-red-50 text-red-800 border-red-200',
+    label: 'Thất bại',
+  },
+  Refunded: {
+    badge: 'bg-theme-page text-theme-ink border-theme-line',
+    label: 'Đã hoàn tiền',
+  },
 };
 
 export default function SubscriptionHistoryPage() {
   const { tier, tierExpiresAt } = useAuthController();
   const [history, setHistory] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [nowTs] = useState(() => Date.now());
 
   useEffect(() => {
     let active = true;
@@ -52,8 +65,8 @@ export default function SubscriptionHistoryPage() {
   const daysLeft = useMemo(() => {
     const expiry = history?.tierExpiresAt || tierExpiresAt;
     if (!expiry) return null;
-    return Math.ceil((new Date(expiry).getTime() - Date.now()) / 86400000);
-  }, [history?.tierExpiresAt, tierExpiresAt]);
+    return Math.ceil((new Date(expiry).getTime() - nowTs) / 86400000);
+  }, [history?.tierExpiresAt, tierExpiresAt, nowTs]);
 
   const exportCsv = () => {
     const header = ['OrderCode', 'Plan', 'Amount', 'Status', 'Method', 'PaidAt'];
@@ -65,7 +78,9 @@ export default function SubscriptionHistoryPage() {
       item.paymentMethod,
       item.paidAt || '',
     ]);
-    const csv = [header, ...rows].map((row) => row.map((cell) => `"${String(cell ?? '').replaceAll('"', '""')}"`).join(',')).join('\n');
+    const csv = [header, ...rows]
+      .map((row) => row.map((cell) => `"${String(cell ?? '').replaceAll('"', '""')}"`).join(','))
+      .join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -75,86 +90,134 @@ export default function SubscriptionHistoryPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-10">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <Link to="/upgrade" className="text-xs font-bold text-gray-500 hover:text-momPink inline-flex items-center gap-1">
-            <Clock className="w-4 h-4" /> Quay lại gói dịch vụ
-          </Link>
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 mt-3">Lịch sử gói & hóa đơn</h1>
-          <p className="text-sm text-gray-500 font-medium mt-1">Theo dõi giao dịch, hạn gói và đối soát thanh toán của tài khoản.</p>
-        </div>
+    <div className="font-display max-w-6xl mx-auto space-y-6 pb-10 text-theme-ink">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link
+          to="/upgrade"
+          className="inline-flex min-h-[44px] items-center gap-2 rounded-2xl px-3.5 py-2 text-xs sm:text-sm font-bold text-theme-muted hover:text-theme-ink hover:bg-theme-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+        >
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+          <span>Quay lại bảng gói dịch vụ</span>
+        </Link>
+
         <button
+          type="button"
           onClick={exportCsv}
           disabled={transactions.length === 0}
-          className="px-4 py-3 rounded-2xl bg-gray-900 text-white text-xs font-black inline-flex items-center gap-2 disabled:opacity-40"
+          className="min-h-[44px] px-4 py-2.5 rounded-2xl bg-theme-ink text-theme-surface text-xs sm:text-sm font-bold inline-flex items-center gap-2 hover:bg-theme-brand transition-colors disabled:bg-theme-line disabled:text-theme-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
         >
-          <Download className="w-4 h-4" /> Xuất CSV
+          <Download className="w-4 h-4" aria-hidden="true" />
+          <span>Xuất đối soát CSV</span>
         </button>
       </div>
 
+      <header className="bg-theme-surface rounded-3xl border border-theme-line p-6 sm:p-8 shadow-sm">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-theme-ink tracking-tight">
+          Lịch sử gói & hóa đơn
+        </h1>
+        <p className="text-sm sm:text-base text-theme-muted font-medium mt-1.5">
+          Theo dõi chi tiết các giao dịch nâng cấp, thời hạn gói hội viên và xuất chứng từ đối soát.
+        </p>
+      </header>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-3xl border border-pink-100 p-5 shadow-sm">
-          <p className="text-[11px] font-black uppercase tracking-wider text-gray-400">Gói hiện tại</p>
-          <h2 className="text-xl font-black text-momPink mt-2">{getTierNameVi(tier)}</h2>
-          <p className="text-xs font-bold text-gray-500 mt-2">Hết hạn: {formatDate(history?.tierExpiresAt || tierExpiresAt)}</p>
-        </div>
-        <div className="bg-white rounded-3xl border border-emerald-100 p-5 shadow-sm">
-          <p className="text-[11px] font-black uppercase tracking-wider text-gray-400">Đã thanh toán</p>
-          <h2 className="text-xl font-black text-emerald-600 mt-2">{formatMoney(totalPaid)}</h2>
-          <p className="text-xs font-bold text-gray-500 mt-2">{completedCount} giao dịch hoàn tất</p>
-        </div>
-        <div className="bg-white rounded-3xl border border-amber-100 p-5 shadow-sm">
-          <p className="text-[11px] font-black uppercase tracking-wider text-gray-400">Nhắc gia hạn</p>
-          <h2 className="text-xl font-black text-amber-600 mt-2">{daysLeft == null ? 'Chưa có hạn' : `${Math.max(daysLeft, 0)} ngày`}</h2>
-          <p className="text-xs font-bold text-gray-500 mt-2">Mom Ơi! sẽ nhắc khi gói gần hết hạn.</p>
-        </div>
+        <article className="bg-theme-surface rounded-3xl border border-theme-line p-5 sm:p-6 shadow-sm space-y-2">
+          <div className="w-10 h-10 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center">
+            <Crown className="w-5 h-5" aria-hidden="true" />
+          </div>
+          <p className="text-xs font-bold text-theme-muted">Gói hiện tại</p>
+          <h2 className="text-xl font-extrabold text-theme-ink">{getTierNameVi(tier)}</h2>
+          <p className="text-xs font-semibold text-theme-muted">
+            Ngày hết hạn: {formatDate(history?.tierExpiresAt || tierExpiresAt)}
+          </p>
+        </article>
+
+        <article className="bg-theme-surface rounded-3xl border border-theme-line p-5 sm:p-6 shadow-sm space-y-2">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-status-ok border border-emerald-200 flex items-center justify-center">
+            <CreditCard className="w-5 h-5" aria-hidden="true" />
+          </div>
+          <p className="text-xs font-bold text-theme-muted">Tổng đã thanh toán</p>
+          <h2 className="text-xl font-extrabold text-theme-ink">{formatMoney(totalPaid)}</h2>
+          <p className="text-xs font-semibold text-theme-muted">{completedCount} giao dịch hoàn tất</p>
+        </article>
+
+        <article className="bg-theme-surface rounded-3xl border border-theme-line p-5 sm:p-6 shadow-sm space-y-2">
+          <div className="w-10 h-10 rounded-2xl bg-status-warn-bg text-status-warn-text border border-status-warn-line/40 flex items-center justify-center">
+            <CalendarClock className="w-5 h-5" aria-hidden="true" />
+          </div>
+          <p className="text-xs font-bold text-theme-muted">Thời hạn còn lại</p>
+          <h2 className="text-xl font-extrabold text-theme-ink">
+            {daysLeft == null ? 'Không giới hạn' : `${Math.max(daysLeft, 0)} ngày`}
+          </h2>
+          <p className="text-xs font-semibold text-theme-muted">
+            Mom Ơi! sẽ nhắc mẹ trước khi gói hội viên hết hạn.
+          </p>
+        </article>
       </div>
 
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-5 border-b border-gray-100 flex items-center gap-2">
-          <ReceiptText className="w-5 h-5 text-momPink" />
-          <h2 className="text-sm font-black text-gray-900 uppercase tracking-wider">Giao dịch gần đây</h2>
+      <section className="bg-theme-surface rounded-3xl border border-theme-line shadow-sm overflow-hidden">
+        <div className="p-5 sm:p-6 border-b border-theme-line flex items-center gap-2.5">
+          <ReceiptText className="w-5 h-5 text-theme-brand" aria-hidden="true" />
+          <h2 className="text-base font-bold text-theme-ink">Danh sách giao dịch gần đây</h2>
         </div>
+
         {loading ? (
-          <div className="p-10 text-center text-sm font-bold text-gray-400">Đang tải lịch sử...</div>
+          <div className="p-10 text-center text-sm font-semibold text-theme-muted">
+            Đang tải lịch sử giao dịch...
+          </div>
         ) : transactions.length === 0 ? (
-          <div className="p-10 text-center">
-            <Sparkles className="w-10 h-10 text-pink-300 mx-auto mb-3" />
-            <p className="text-sm font-bold text-gray-500">Chưa có giao dịch nào.</p>
-            <Link to="/upgrade" className="text-xs font-black text-momPink hover:underline mt-2 inline-block">Xem gói dịch vụ</Link>
+          <div className="p-10 text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center mx-auto">
+              <ReceiptText className="w-6 h-6" aria-hidden="true" />
+            </div>
+            <p className="text-sm font-bold text-theme-ink">Chưa có giao dịch nào được ghi nhận</p>
+            <Link
+              to="/upgrade"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-2xl bg-theme-brand text-theme-surface px-5 py-2.5 text-xs sm:text-sm font-bold hover:bg-theme-ink transition-colors"
+            >
+              Xem các gói hội viên
+            </Link>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-gray-50 text-gray-400 uppercase tracking-wider font-black">
+            <table className="w-full text-left text-xs sm:text-sm">
+              <thead className="bg-theme-page text-theme-muted font-bold border-b border-theme-line">
                 <tr>
-                  <th className="px-5 py-4">Mã đơn</th>
-                  <th className="px-5 py-4">Gói</th>
-                  <th className="px-5 py-4">Số tiền</th>
-                  <th className="px-5 py-4">Trạng thái</th>
-                  <th className="px-5 py-4">Ngày thanh toán</th>
+                  <th className="px-5 py-3.5">Mã đơn</th>
+                  <th className="px-5 py-3.5">Gói dịch vụ</th>
+                  <th className="px-5 py-3.5">Số tiền</th>
+                  <th className="px-5 py-3.5">Trạng thái</th>
+                  <th className="px-5 py-3.5">Ngày cập nhật</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
-                {transactions.map((txn) => (
-                  <tr key={txn.id || txn.orderCode}>
-                    <td className="px-5 py-4 font-black text-gray-900">{txn.orderCode}</td>
-                    <td className="px-5 py-4 font-bold text-gray-600">{txn.planCode} · {txn.durationMonths} tháng</td>
-                    <td className="px-5 py-4 font-black text-emerald-600">{formatMoney(txn.amount)}</td>
-                    <td className="px-5 py-4">
-                      <span className={`px-2.5 py-1 rounded-full border font-black ${statusClass[txn.status] || statusClass.Pending}`}>
-                        {txn.status}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 font-bold text-gray-500">{formatDate(txn.paidAt || txn.updatedAt)}</td>
-                  </tr>
-                ))}
+              <tbody className="divide-y divide-theme-line">
+                {transactions.map((txn) => {
+                  const meta = STATUS_META[txn.status] || STATUS_META.Pending;
+                  return (
+                    <tr key={txn.id || txn.orderCode} className="hover:bg-theme-page/50">
+                      <td className="px-5 py-4 font-bold text-theme-ink whitespace-nowrap">{txn.orderCode}</td>
+                      <td className="px-5 py-4 font-semibold text-theme-ink">
+                        {txn.planCode} ({txn.durationMonths} tháng)
+                      </td>
+                      <td className="px-5 py-4 font-extrabold text-theme-ink whitespace-nowrap">
+                        {formatMoney(txn.amount)}
+                      </td>
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2.5 py-1 rounded-full border text-xs font-bold ${meta.badge}`}>
+                          {meta.label}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 font-medium text-theme-muted whitespace-nowrap">
+                        {formatDate(txn.paidAt || txn.updatedAt)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

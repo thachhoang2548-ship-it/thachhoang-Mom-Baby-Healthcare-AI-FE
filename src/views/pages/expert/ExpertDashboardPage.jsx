@@ -1,56 +1,72 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import expertService from "../../../models/services/expertService";
-import { CheckCircle, XCircle, Clock, Utensils, UserCheck, MessageSquare, Sparkles, ShieldCheck, BadgeCheck, Baby, Heart } from "lucide-react";
+import {
+  CheckCircle,
+  XCircle,
+  Clock,
+  Utensils,
+  UserCheck,
+  MessageSquare,
+  Sparkles,
+  ShieldCheck,
+  BadgeCheck,
+  Baby,
+  Heart,
+  X,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
-// ── Reusable Recipe Table Component ──────────────────────────────────────────
-function RecipeTable({ title, icon, iconColor, accentFrom, accentTo, recipes, onApprove, onReject }) {
-  const approved = recipes.filter(r => r.status === "Approved");
-  const pending = recipes.filter(r => r.status !== "Approved");
-  // Show approved first, then pending
+function RecipeTable({ title, icon, recipes, onApprove, onReject }) {
+  const approved = recipes.filter((r) => r.status === "Approved" || r._reviewedStatus === "approved");
+  const pending = recipes.filter((r) => r.status !== "Approved" && r._reviewedStatus !== "approved");
   const sorted = [...approved, ...pending];
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700/60 shadow-sm overflow-hidden">
-      {/* Table Header */}
-      <div className={`bg-gradient-to-r ${accentFrom} ${accentTo} px-6 py-4 flex items-center justify-between`}>
-        <div className="flex items-center gap-2.5 text-white">
-          {icon}
-          <h3 className="text-sm font-extrabold">{title}</h3>
-          <span className="text-[10px] bg-white/20 backdrop-blur-sm px-2.5 py-0.5 rounded-full font-bold">
-            {recipes.length} công thức
-          </span>
+    <section className="bg-theme-surface rounded-3xl border border-theme-line shadow-sm overflow-hidden">
+      <div className="px-6 py-4 bg-theme-page/70 border-b border-theme-line flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center shrink-0">
+            {icon}
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-theme-ink">{title}</h2>
+            <p className="text-xs text-theme-muted font-medium">{recipes.length} công thức trong danh mục</p>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <span className="text-[9px] bg-white/20 text-white px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-            <BadgeCheck className="w-3 h-3" /> {approved.length} đã duyệt
+
+        <div className="flex flex-wrap gap-2">
+          <span className="inline-flex items-center gap-1.5 text-xs bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 rounded-full font-bold">
+            <BadgeCheck className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>{approved.length} đã duyệt</span>
           </span>
-          <span className="text-[9px] bg-amber-400/30 text-white px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-            <Clock className="w-3 h-3" /> {pending.length} chờ duyệt
+          <span className="inline-flex items-center gap-1.5 text-xs bg-status-warn-bg text-status-warn-text border border-status-warn-line/50 px-3 py-1 rounded-full font-bold">
+            <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+            <span>{pending.length} chờ duyệt</span>
           </span>
         </div>
       </div>
 
-      {/* Table Body */}
       {sorted.length === 0 ? (
-        <div className="text-center py-12 px-6">
-          <Utensils className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-          <p className="text-xs font-bold text-gray-400">Chưa có thực đơn nào trong danh mục này</p>
+        <div className="text-center py-12 px-6 space-y-2">
+          <div className="w-12 h-12 rounded-2xl bg-theme-brand-soft text-theme-brand flex items-center justify-center mx-auto">
+            <Utensils className="w-6 h-6" aria-hidden="true" />
+          </div>
+          <p className="text-sm font-bold text-theme-ink">Chưa có thực đơn nào trong danh mục này</p>
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full text-left">
+          <table className="w-full text-left text-xs sm:text-sm">
             <thead>
-              <tr className="border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/30">
-                <th className="px-5 py-3 text-[10px] font-black text-gray-400 uppercase w-10">TT</th>
-                <th className="px-5 py-3 text-[10px] font-black text-gray-400 uppercase">Tên thực đơn</th>
-                <th className="px-5 py-3 text-[10px] font-black text-gray-400 uppercase">Mô tả</th>
-                <th className="px-5 py-3 text-[10px] font-black text-gray-400 uppercase text-center">Kcal</th>
-                <th className="px-5 py-3 text-[10px] font-black text-gray-400 uppercase text-center">Trạng thái</th>
-                <th className="px-5 py-3 text-[10px] font-black text-gray-400 uppercase text-center">Hành động</th>
+              <tr className="border-b border-theme-line bg-theme-page/40 text-theme-muted font-bold">
+                <th className="px-5 py-3.5 w-12">STT</th>
+                <th className="px-5 py-3.5">Tên thực đơn</th>
+                <th className="px-5 py-3.5">Mô tả dinh dưỡng</th>
+                <th className="px-5 py-3.5 text-center">Năng lượng</th>
+                <th className="px-5 py-3.5 text-center">Trạng thái</th>
+                <th className="px-5 py-3.5 text-center">Thao tác</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-theme-line">
               {sorted.map((item, idx) => {
                 const isApproved = item.status === "Approved";
                 const isPending = item.status === "PendingReview" && !item._reviewedStatus;
@@ -60,75 +76,76 @@ function RecipeTable({ title, icon, iconColor, accentFrom, accentTo, recipes, on
                 return (
                   <tr
                     key={item.id}
-                    className={`border-b border-gray-50 dark:border-gray-800 transition-colors hover:bg-gray-50/50 dark:hover:bg-gray-900/20 ${
-                      isApproved || localApproved ? "bg-emerald-50/20 dark:bg-emerald-950/10" : ""
+                    className={`transition-colors hover:bg-theme-page/50 ${
+                      isApproved || localApproved ? "bg-emerald-50/20" : ""
                     }`}
                   >
-                    {/* Index */}
-                    <td className="px-5 py-3.5 text-xs font-bold text-gray-400">{idx + 1}</td>
+                    <td className="px-5 py-4 text-xs font-bold text-theme-muted">{idx + 1}</td>
 
-                    {/* Title */}
-                    <td className="px-5 py-3.5">
+                    <td className="px-5 py-4">
                       <div className="flex items-center gap-2">
                         {(isApproved || localApproved) && (
-                          <BadgeCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                          <BadgeCheck className="w-4 h-4 text-status-ok shrink-0" aria-hidden="true" />
                         )}
-                        <span className="text-xs font-extrabold text-gray-800 dark:text-white leading-tight">
-                          {item.title || item.name || "Thực đơn AI"}
+                        <span className="text-sm font-bold text-theme-ink leading-snug">
+                          {item.title || item.name || "Thực đơn gợi ý"}
                         </span>
                       </div>
                     </td>
 
-                    {/* Description */}
-                    <td className="px-5 py-3.5">
-                      <p className="text-[11px] text-gray-500 dark:text-gray-400 font-medium line-clamp-2 max-w-xs">
-                        {item.description || "Công thức dinh dưỡng do AI tạo."}
+                    <td className="px-5 py-4">
+                      <p className="text-xs text-theme-muted font-medium line-clamp-2 max-w-xs leading-relaxed">
+                        {item.description || "Công thức dinh dưỡng chờ chuyên gia thẩm định."}
                       </p>
                     </td>
 
-                    {/* Calories */}
-                    <td className="px-5 py-3.5 text-center">
-                      <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
-                        {item.calories || 0}
+                    <td className="px-5 py-4 text-center whitespace-nowrap">
+                      <span className="text-xs font-bold text-theme-ink">
+                        {item.calories || 0} kcal
                       </span>
                     </td>
 
-                    {/* Status Badge */}
-                    <td className="px-5 py-3.5 text-center">
+                    <td className="px-5 py-4 text-center whitespace-nowrap">
                       {isApproved || localApproved ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-bold px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
-                          <CheckCircle className="w-3 h-3" /> Đã Duyệt ✓
+                        <span className="inline-flex items-center gap-1 text-xs bg-emerald-50 text-emerald-800 font-bold px-2.5 py-1 rounded-full border border-emerald-200">
+                          <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                          <span>Đã duyệt</span>
                         </span>
                       ) : localRejected ? (
-                        <span className="inline-flex items-center gap-1 text-[10px] bg-red-50 dark:bg-red-900/30 text-red-500 font-bold px-2.5 py-1 rounded-full border border-red-200 dark:border-red-800">
-                          <XCircle className="w-3 h-3" /> Đã Từ Chối
+                        <span className="inline-flex items-center gap-1 text-xs bg-red-50 text-red-800 font-bold px-2.5 py-1 rounded-full border border-red-200">
+                          <XCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                          <span>Đã từ chối</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[10px] bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 font-bold px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800 animate-pulse">
-                          <Clock className="w-3 h-3" /> Chờ duyệt
+                        <span className="inline-flex items-center gap-1 text-xs bg-status-warn-bg text-status-warn-text font-bold px-2.5 py-1 rounded-full border border-status-warn-line/50">
+                          <Clock className="w-3.5 h-3.5" aria-hidden="true" />
+                          <span>Chờ duyệt</span>
                         </span>
                       )}
                     </td>
 
-                    {/* Actions */}
-                    <td className="px-5 py-3.5 text-center">
+                    <td className="px-5 py-4 text-center whitespace-nowrap">
                       {isPending && !localApproved && !localRejected ? (
                         <div className="flex gap-2 justify-center">
                           <button
+                            type="button"
                             onClick={() => onApprove(item.id)}
-                            className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[10px] font-bold transition-all shadow-sm flex items-center gap-1"
+                            className="min-h-[44px] px-3.5 py-2 bg-status-ok hover:bg-emerald-800 text-white rounded-2xl text-xs font-bold transition-colors inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
                           >
-                            <CheckCircle className="w-3 h-3" /> Duyệt
+                            <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                            <span>Duyệt</span>
                           </button>
                           <button
+                            type="button"
                             onClick={() => onReject(item)}
-                            className="px-3 py-1.5 bg-red-50 dark:bg-red-950/30 text-red-500 hover:bg-red-100 rounded-lg text-[10px] font-bold transition-all border border-red-200 dark:border-red-800 flex items-center gap-1"
+                            className="min-h-[44px] px-3.5 py-2 bg-red-50 text-red-800 hover:bg-red-100 rounded-2xl text-xs font-bold transition-colors border border-red-200 inline-flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
                           >
-                            <XCircle className="w-3 h-3" /> Từ chối
+                            <XCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                            <span>Từ chối</span>
                           </button>
                         </div>
                       ) : (
-                        <span className="text-[10px] text-gray-400 font-semibold">—</span>
+                        <span className="text-xs text-theme-muted font-semibold">Đã xử lý</span>
                       )}
                     </td>
                   </tr>
@@ -138,40 +155,36 @@ function RecipeTable({ title, icon, iconColor, accentFrom, accentTo, recipes, on
           </table>
         </div>
       )}
-    </div>
+    </section>
   );
 }
 
-// ── Main Expert Dashboard ────────────────────────────────────────────────────
 export default function ExpertDashboardPage() {
-  const [activeTab, setActiveTab] = useState("recipes"); // "recipes" | "moms"
+  const [activeTab, setActiveTab] = useState("recipes");
   const [momRecipes, setMomRecipes] = useState([]);
   const [babyRecipes, setBabyRecipes] = useState([]);
   const [pendingRecipes, setPendingRecipes] = useState([]);
   const [assignedMoms, setAssignedMoms] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Modal states
   const [rejectingRecipe, setRejectingRecipe] = useState(null);
   const [rejectNote, setRejectNote] = useState("");
   const [selectedMom, setSelectedMom] = useState(null);
   const [consultMessage, setConsultMessage] = useState("");
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       if (activeTab === "recipes") {
-        // Try new grouped endpoint first, fall back to pending-only
         try {
           const res = await expertService.getAllRecipes();
           if ((res.isSuccess || res.success) && res.data) {
-            const payload = res.data.momRecipes ? res.data : (res.data.data || {});
+            const payload = res.data.momRecipes ? res.data : res.data.data || {};
             setMomRecipes(payload.momRecipes || []);
             setBabyRecipes(payload.babyRecipes || []);
             return;
           }
         } catch {
-          // Fallback: use old pending endpoint
           const res = await expertService.getPendingRecipes();
           if ((res.isSuccess || res.success) && res.data) {
             setPendingRecipes(Array.isArray(res.data) ? res.data : []);
@@ -188,13 +201,15 @@ export default function ExpertDashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab]);
 
-  useEffect(() => { loadData(); }, [activeTab]);
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
-  // Helper: update recipe status in the correct list
   const updateRecipeStatus = (recipeId, status) => {
-    const updater = prev => prev.map(r => r.id === recipeId ? { ...r, _reviewedStatus: status } : r);
+    const updater = (prev) =>
+      prev.map((r) => (r.id === recipeId ? { ...r, _reviewedStatus: status } : r));
     setMomRecipes(updater);
     setBabyRecipes(updater);
     setPendingRecipes(updater);
@@ -202,181 +217,232 @@ export default function ExpertDashboardPage() {
 
   const handleApprove = async (recipeId) => {
     try {
-      const res = await expertService.reviewRecipe(recipeId, true, "Đã kiểm duyệt bởi chuyên gia dinh dưỡng.");
+      const res = await expertService.reviewRecipe(
+        recipeId,
+        true,
+        "Đã kiểm duyệt bởi chuyên gia dinh dưỡng."
+      );
       if (res.isSuccess || res.success) {
-        toast.success("Đã phê duyệt công thức món ăn thành công! 🎉");
+        toast.success("Đã phê duyệt công thức món ăn thành công.");
         updateRecipeStatus(recipeId, "approved");
       }
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleRejectSubmit = async (e) => {
     e.preventDefault();
     if (!rejectingRecipe) return;
     try {
-      const res = await expertService.reviewRecipe(rejectingRecipe.id, false, rejectNote || "Công thức chưa đạt yêu cầu dinh dưỡng.");
+      const res = await expertService.reviewRecipe(
+        rejectingRecipe.id,
+        false,
+        rejectNote || "Công thức chưa đạt yêu cầu dinh dưỡng."
+      );
       if (res.isSuccess || res.success) {
         toast.success("Đã từ chối công thức thành công.");
         updateRecipeStatus(rejectingRecipe.id, "rejected");
         setRejectingRecipe(null);
         setRejectNote("");
       }
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleConsultSubmit = async (e) => {
     e.preventDefault();
     if (!selectedMom || !consultMessage.trim()) return;
     try {
-      const res = await expertService.consultMom(selectedMom.id || selectedMom.userId, consultMessage);
+      const res = await expertService.consultMom(
+        selectedMom.id || selectedMom.userId,
+        consultMessage
+      );
       if (res.isSuccess || res.success) {
         toast.success(`Đã gửi lời tư vấn cho mẹ ${selectedMom.fullName || selectedMom.email}!`);
         setSelectedMom(null);
         setConsultMessage("");
       }
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  // Merge pending recipes into mom list if we're using old endpoint fallback
   const effectiveMomRecipes = momRecipes.length > 0 ? momRecipes : pendingRecipes;
   const totalPending = [...effectiveMomRecipes, ...babyRecipes].filter(
-    r => (r.status === "PendingReview" || !r.status) && !r._reviewedStatus
+    (r) => (r.status === "PendingReview" || !r.status) && !r._reviewedStatus
   ).length;
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pb-12">
-      {/* ── Header ── */}
-      <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-800 rounded-3xl p-6 text-white shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative overflow-hidden">
-        <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-pink-500/20 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="z-10">
-          <div className="flex items-center gap-2 text-pink-300 font-extrabold text-xs uppercase tracking-wider mb-1">
-            <ShieldCheck className="w-4 h-4" /> Portals Dành Cho Chuyên Gia (Medical Expert)
+    <div className="font-display space-y-6 max-w-6xl mx-auto pb-12 text-theme-ink">
+      {/* Header */}
+      <header className="bg-theme-surface rounded-3xl border border-theme-line p-6 sm:p-8 shadow-sm flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5">
+        <div className="space-y-2 max-w-2xl">
+          <div className="inline-flex items-center gap-2 rounded-full bg-theme-brand-soft text-theme-ink px-3.5 py-1.5 text-xs font-bold border border-theme-brand/20">
+            <ShieldCheck className="w-4 h-4 text-theme-brand" aria-hidden="true" />
+            <span>Không gian làm việc Chuyên gia Y tế</span>
           </div>
-          <h1 className="text-2xl font-black">Cổng Kiểm Duyệt & Tư Vấn Y Khoa 🩺</h1>
-          <p className="text-xs text-purple-200 mt-1 max-w-xl font-medium leading-relaxed">
-            Kiểm duyệt công thức dinh dưỡng do AI tạo cho Mẹ bầu và Bé yêu. Thực đơn đã duyệt sẽ được ưu tiên hiển thị kèm dấu tích ✓.
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-theme-ink tracking-tight">
+            Cổng kiểm duyệt dinh dưỡng & tư vấn y khoa
+          </h1>
+          <p className="text-sm text-theme-muted font-medium leading-relaxed">
+            Thẩm định các thực đơn cho mẹ bầu và bé ăn dặm trước khi gắn nhãn đã kiểm duyệt, đồng thời gửi hướng dẫn chuyên môn trực tiếp cho mẹ.
           </p>
         </div>
 
-        {/* Tab switcher */}
-        <div className="flex bg-white/10 p-1.5 rounded-2xl backdrop-blur-md border border-white/20 z-10 shrink-0">
+        <div className="flex flex-wrap gap-2 shrink-0" role="tablist" aria-label="Chế độ chuyên gia">
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "recipes"}
             onClick={() => setActiveTab("recipes")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-              activeTab === "recipes" ? "bg-white text-purple-900 shadow-md" : "text-purple-100 hover:text-white"
+            className={`min-h-[44px] px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-colors inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+              activeTab === "recipes"
+                ? "bg-theme-brand text-theme-surface shadow-sm"
+                : "bg-theme-page text-theme-ink border border-theme-line hover:bg-theme-brand-soft"
             }`}
           >
-            <Sparkles className="w-4 h-4 text-amber-500" />
-            Thực Đơn ({totalPending} chờ duyệt)
+            <Sparkles className="w-4 h-4" aria-hidden="true" />
+            <span>Thực đơn ({totalPending} chờ duyệt)</span>
           </button>
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "moms"}
             onClick={() => setActiveTab("moms")}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-              activeTab === "moms" ? "bg-white text-purple-900 shadow-md" : "text-purple-100 hover:text-white"
+            className={`min-h-[44px] px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-colors inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+              activeTab === "moms"
+                ? "bg-theme-brand text-theme-surface shadow-sm"
+                : "bg-theme-page text-theme-ink border border-theme-line hover:bg-theme-brand-soft"
             }`}
           >
-            <UserCheck className="w-4 h-4 text-emerald-500" />
-            Tư Vấn Mẹ Bầu
+            <UserCheck className="w-4 h-4" aria-hidden="true" />
+            <span>Tư vấn mẹ bầu</span>
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* ── Loading ── */}
       {loading ? (
-        <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-3xl border border-gray-100 dark:border-gray-700">
-          <div className="w-8 h-8 border-4 border-momPurple border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-xs font-bold text-gray-500">Đang tải dữ liệu kiểm duyệt...</p>
+        <div className="text-center py-16 bg-theme-surface rounded-3xl border border-theme-line">
+          <p className="text-sm font-semibold text-theme-muted">Đang tải dữ liệu thẩm định...</p>
         </div>
-
       ) : activeTab === "recipes" ? (
-        /* ── Two Recipe Tables ── */
         <div className="space-y-6">
-          {/* Mom Recipes Table */}
           <RecipeTable
-            title="Thực Đơn Cho Mẹ Bầu"
-            icon={<Heart className="w-5 h-5 text-white" />}
-            iconColor="text-pink-400"
-            accentFrom="from-pink-500"
-            accentTo="to-rose-500"
+            title="Thực đơn dành cho mẹ bầu & sau sinh"
+            icon={<Heart className="w-5 h-5" aria-hidden="true" />}
             recipes={effectiveMomRecipes}
             onApprove={handleApprove}
             onReject={setRejectingRecipe}
           />
 
-          {/* Baby Recipes Table */}
           <RecipeTable
-            title="Thực Đơn Cho Bé Yêu"
-            icon={<Baby className="w-5 h-5 text-white" />}
-            iconColor="text-sky-400"
-            accentFrom="from-sky-500"
-            accentTo="to-cyan-500"
+            title="Thực đơn ăn dặm cho bé"
+            icon={<Baby className="w-5 h-5" aria-hidden="true" />}
             recipes={babyRecipes}
             onApprove={handleApprove}
             onReject={setRejectingRecipe}
           />
         </div>
-
       ) : (
-        /* ── Mom Consultation Tab ── */
-        <div className="space-y-4">
-          <h2 className="text-base font-extrabold text-gray-850 dark:text-white flex items-center gap-2">
-            <UserCheck className="w-5 h-5 text-momPurple" />
-            Danh Sách Mẹ Bầu Cần Tư Vấn Chuyên Gia
+        <section className="space-y-4">
+          <h2 className="text-lg font-bold text-theme-ink flex items-center gap-2">
+            <UserCheck className="w-5 h-5 text-theme-brand" aria-hidden="true" />
+            <span>Danh sách mẹ bầu được phân công tư vấn</span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {assignedMoms.length === 0 ? (
-              <div className="col-span-3 text-center py-16 bg-white dark:bg-gray-800 rounded-3xl border border-dashed border-gray-200 dark:border-gray-700">
-                <p className="text-xs text-gray-400 font-semibold">Chưa có mami nào được phân công tư vấn trực tiếp.</p>
+              <div className="md:col-span-3 text-center py-16 bg-theme-surface rounded-3xl border border-theme-line">
+                <p className="text-sm text-theme-muted font-semibold">
+                  Hiện chưa có hồ sơ mẹ bầu nào được phân công tư vấn trực tiếp.
+                </p>
               </div>
             ) : (
               assignedMoms.map((mom) => (
-                <div key={mom.id || mom.userId} className="bg-white dark:bg-gray-800 rounded-3xl p-5 border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col justify-between gap-4">
+                <article
+                  key={mom.id || mom.userId}
+                  className="bg-theme-surface rounded-3xl p-5 border border-theme-line shadow-sm flex flex-col justify-between gap-4"
+                >
                   <div>
-                    <h3 className="font-bold text-sm text-gray-900 dark:text-white">{mom.fullName || mom.email}</h3>
-                    <p className="text-xs text-gray-400 mt-0.5">{mom.email}</p>
-                    <div className="mt-3 inline-block bg-pink-50 dark:bg-pink-900/30 text-momPink text-[10px] font-extrabold px-2.5 py-1 rounded-full">
+                    <h3 className="font-bold text-base text-theme-ink">
+                      {mom.fullName || mom.email}
+                    </h3>
+                    <p className="text-xs text-theme-muted mt-0.5">{mom.email}</p>
+                    <div className="mt-3 inline-flex bg-theme-brand-soft text-theme-ink text-xs font-bold px-3 py-1 rounded-full border border-theme-brand/20">
                       Giai đoạn: {mom.stage || "Thai kỳ"}
                     </div>
                   </div>
                   <button
+                    type="button"
                     onClick={() => setSelectedMom(mom)}
-                    className="w-full py-2.5 bg-momPurple text-white rounded-xl text-xs font-bold hover:opacity-90 transition-all flex items-center justify-center gap-1.5 shadow-md shadow-purple-500/10"
+                    className="w-full min-h-[44px] py-2.5 bg-theme-brand text-theme-surface rounded-2xl text-xs sm:text-sm font-bold hover:bg-theme-ink transition-colors inline-flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
                   >
-                    <MessageSquare className="w-4 h-4" /> Tư Vấn Y Khoa
+                    <MessageSquare className="w-4 h-4" aria-hidden="true" />
+                    <span>Gửi tư vấn y khoa</span>
                   </button>
-                </div>
+                </article>
               ))
             )}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* ── Rejection Modal ── */}
+      {/* Modal từ chối thực đơn */}
       {rejectingRecipe && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-gray-100 dark:border-gray-700">
-            <h3 className="font-extrabold text-base text-red-500 flex items-center gap-2">
-              <XCircle className="w-5 h-5" /> Từ Chối Thực Đơn AI
-            </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
-              Vui lòng nhập lý do hoặc ghi chú chỉnh sửa gửi cho hệ thống:
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reject-recipe-title"
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+        >
+          <div className="bg-theme-surface rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl border border-theme-line">
+            <div className="flex items-center justify-between gap-3">
+              <h3 id="reject-recipe-title" className="font-bold text-base text-red-800 flex items-center gap-2">
+                <XCircle className="w-5 h-5" aria-hidden="true" />
+                <span>Từ chối công thức món ăn</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setRejectingRecipe(null)}
+                aria-label="Đóng hộp thoại"
+                className="w-10 h-10 rounded-full inline-flex items-center justify-center text-theme-muted hover:bg-theme-page"
+              >
+                <X className="w-5 h-5" aria-hidden="true" />
+              </button>
+            </div>
+
+            <p className="text-xs sm:text-sm text-theme-muted font-medium">
+              Vui lòng ghi rõ lý do chuyên môn để hệ thống điều chỉnh lại thực đơn:
             </p>
             <form onSubmit={handleRejectSubmit} className="space-y-4">
-              <textarea
-                rows={3} required
-                placeholder="Ví dụ: Lượng đường trong món ăn vượt quá mức khuyến cáo..."
-                value={rejectNote}
-                onChange={(e) => setRejectNote(e.target.value)}
-                className="w-full p-3 rounded-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-red-400"
-              />
+              <div>
+                <label htmlFor="reject-note" className="sr-only">
+                  Lý do từ chối
+                </label>
+                <textarea
+                  id="reject-note"
+                  rows={3}
+                  required
+                  placeholder="Ví dụ: Lượng đường hoặc muối vượt mức khuyến nghị cho giai đoạn này..."
+                  value={rejectNote}
+                  onChange={(e) => setRejectNote(e.target.value)}
+                  className="w-full p-3.5 rounded-2xl border border-theme-line bg-theme-page/60 text-sm font-medium text-theme-ink placeholder:text-theme-muted focus:outline-none focus:ring-2 focus:ring-theme-brand"
+                />
+              </div>
               <div className="flex gap-3 justify-end">
-                <button type="button" onClick={() => setRejectingRecipe(null)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <button
+                  type="button"
+                  onClick={() => setRejectingRecipe(null)}
+                  className="min-h-[44px] px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold text-theme-ink bg-theme-page border border-theme-line hover:bg-theme-brand-soft"
+                >
                   Hủy
                 </button>
-                <button type="submit"
-                  className="px-5 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold shadow-md">
-                  Xác Nhận Từ Chối
+                <button
+                  type="submit"
+                  className="min-h-[44px] px-5 py-2 bg-red-700 hover:bg-red-800 text-white rounded-2xl text-xs sm:text-sm font-bold"
+                >
+                  Xác nhận từ chối
                 </button>
               </div>
             </form>
@@ -384,29 +450,57 @@ export default function ExpertDashboardPage() {
         </div>
       )}
 
-      {/* ── Consultation Modal ── */}
+      {/* Modal gửi tư vấn */}
       {selectedMom && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl border border-gray-100 dark:border-gray-700">
-            <h3 className="font-extrabold text-base text-momPurple flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" /> Tư Vấn Cho: {selectedMom.fullName || selectedMom.email}
-            </h3>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="consult-mom-title"
+          className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
+        >
+          <div className="bg-theme-surface rounded-3xl max-w-md w-full p-6 space-y-4 shadow-xl border border-theme-line">
+            <div className="flex items-center justify-between gap-3">
+              <h3 id="consult-mom-title" className="font-bold text-base text-theme-ink flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-theme-brand" aria-hidden="true" />
+                <span>Tư vấn cho {selectedMom.fullName || selectedMom.email}</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setSelectedMom(null)}
+                aria-label="Đóng hộp thoại"
+                className="w-10 h-10 rounded-full inline-flex items-center justify-center text-theme-muted hover:bg-theme-page"
+              >
+                <X className="w-5 h-5" aria-hidden="true" />
+              </button>
+            </div>
             <form onSubmit={handleConsultSubmit} className="space-y-4">
-              <textarea
-                rows={4} required
-                placeholder="Nhập lời khuyên dinh dưỡng, chế độ nghỉ ngơi hoặc chỉ định y khoa..."
-                value={consultMessage}
-                onChange={(e) => setConsultMessage(e.target.value)}
-                className="w-full p-3 rounded-2xl border border-gray-200 dark:border-gray-700 dark:bg-gray-900 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-momPurple"
-              />
+              <div>
+                <label htmlFor="expert-consult-msg" className="block text-xs font-bold text-theme-ink mb-1.5">
+                  Nội dung khuyến nghị chuyên môn
+                </label>
+                <textarea
+                  id="expert-consult-msg"
+                  rows={4}
+                  required
+                  placeholder="Nhập lời khuyên dinh dưỡng, chế độ nghỉ ngơi hoặc lưu ý theo dõi..."
+                  value={consultMessage}
+                  onChange={(e) => setConsultMessage(e.target.value)}
+                  className="w-full p-3.5 rounded-2xl border border-theme-line bg-theme-page/60 text-sm font-medium text-theme-ink placeholder:text-theme-muted focus:outline-none focus:ring-2 focus:ring-theme-brand"
+                />
+              </div>
               <div className="flex gap-3 justify-end">
-                <button type="button" onClick={() => setSelectedMom(null)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">
+                <button
+                  type="button"
+                  onClick={() => setSelectedMom(null)}
+                  className="min-h-[44px] px-4 py-2 rounded-2xl text-xs sm:text-sm font-bold text-theme-ink bg-theme-page border border-theme-line hover:bg-theme-brand-soft"
+                >
                   Hủy
                 </button>
-                <button type="submit"
-                  className="px-5 py-2 bg-momPurple text-white rounded-xl text-xs font-bold shadow-md">
-                  Gửi Tư Vấn
+                <button
+                  type="submit"
+                  className="min-h-[44px] px-5 py-2 bg-theme-brand hover:bg-theme-ink text-theme-surface rounded-2xl text-xs sm:text-sm font-bold"
+                >
+                  Gửi tư vấn
                 </button>
               </div>
             </form>

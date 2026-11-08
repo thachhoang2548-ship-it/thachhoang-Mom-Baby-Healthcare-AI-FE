@@ -1,22 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useProfileController } from '../../../controllers/profileController';
 import fertilityService from '../../../models/services/fertilityService';
 import CycleCalendar from '../../components/fertility/CycleCalendar';
-import TierGate from '../../components/layout/TierGate';
-import { Calendar, HelpCircle, Sparkles, Heart, Clock, Plus, Info } from 'lucide-react';
+import newbornFeetPhoto from '../../../assets/editorial/newborn-feet-towel.jpg';
+import { Calendar, Heart, Plus, Info, X, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function FertilityPage() {
   const { momProfile, fetchProfile } = useProfileController();
-  const navigate = useNavigate();
 
   const [selectedMonth, setSelectedMonth] = useState(
     new Date().toISOString().substring(0, 7) // YYYY-MM
   );
   const [calendarData, setCalendarData] = useState(null);
   const [showLogModal, setShowLogModal] = useState(false);
-  
+
   // Menstrual Log Form states
   const [logDate, setLogDate] = useState(new Date().toISOString().substring(0, 10));
   const [logLength, setLogLength] = useState(28);
@@ -33,26 +31,25 @@ export default function FertilityPage() {
 
   useEffect(() => {
     fetchProfile();
-  }, []);
+  }, [fetchProfile]);
 
-  useEffect(() => {
-    // Chỉ gọi API khi user đã có dữ liệu kinh nguyệt (tránh 400 Bad Request)
-    if (momProfile?.lastPeriodDate) {
-      loadCalendarData();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedMonth, momProfile?.lastPeriodDate]);
-
-  const loadCalendarData = async () => {
+  const loadCalendarData = useCallback(async (monthStr) => {
     try {
-      const res = await fertilityService.getCalendar(selectedMonth);
+      const res = await fertilityService.getCalendar(monthStr);
       if (res.isSuccess && res.data) {
         setCalendarData(res.data);
       }
     } catch (err) {
       console.error('Failed to load calendar data:', err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Chỉ gọi API khi user đã có dữ liệu kinh nguyệt (tránh 400 Bad Request)
+    if (momProfile?.lastPeriodDate) {
+      loadCalendarData(selectedMonth);
+    }
+  }, [selectedMonth, momProfile?.lastPeriodDate, loadCalendarData]);
 
   const handleSymptomToggle = (symptom) => {
     if (logSymptoms.includes(symptom)) {
@@ -70,9 +67,8 @@ export default function FertilityPage() {
       if (res.isSuccess) {
         toast.success('Ghi nhận kỳ kinh thành công! Lịch dự đoán đã được cập nhật.');
         setShowLogModal(false);
-        // Refresh states
         await fetchProfile();
-        loadCalendarData();
+        loadCalendarData(selectedMonth);
       } else {
         toast.error(res.message || 'Ghi nhận không thành công');
       }
@@ -84,10 +80,13 @@ export default function FertilityPage() {
     }
   };
 
-  // Calculate countdown to fertile window
   const getFertileCountdownText = () => {
-    if (!calendarData || !calendarData.fertileWindowDays || calendarData.fertileWindowDays.length === 0) {
-      return 'Chưa có thông tin dự báo thụ thai.';
+    if (
+      !calendarData ||
+      !calendarData.fertileWindowDays ||
+      calendarData.fertileWindowDays.length === 0
+    ) {
+      return 'Chưa có thông tin dự báo thụ thai. Mẹ hãy ghi nhận kỳ kinh gần nhất để bắt đầu.';
     }
 
     const today = new Date();
@@ -97,63 +96,75 @@ export default function FertilityPage() {
       .map((d) => new Date(d))
       .sort((a, b) => a - b);
 
-    // Check if today is in fertile window
     const isInWindow = fertileDates.some((d) => d.toDateString() === today.toDateString());
     if (isInWindow) {
-      return 'Mami đang trong cửa sổ thụ thai vàng! 💚';
+      return 'Mẹ đang ở trong cửa sổ thụ thai thuận lợi nhất của chu kỳ này.';
     }
 
-    // Find next fertile day
     const nextFertile = fertileDates.find((d) => d > today);
     if (!nextFertile) {
-      return 'Cửa sổ thụ thai tháng này đã qua. Chúc mami may mắn kỳ tới!';
+      return 'Cửa sổ thụ thai của tháng này đã qua. Mẹ hãy chuyển sang tháng tiếp theo để xem dự báo.';
     }
 
     const diffTime = nextFertile.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return `Còn ${diffDays} ngày đến cửa sổ thụ thai tiếp theo. ✨`;
+    return `Còn ${diffDays} ngày nữa đến cửa sổ thụ thai tiếp theo.`;
   };
 
   return (
-    <div className="space-y-6">
-      
-      {/* Page Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-extrabold text-gray-800 dark:text-white uppercase tracking-wider flex items-center gap-1.5">
-            <Heart className="w-5 h-5 text-momPink fill-momPink" />
-            Theo Dõi Rụng Trứng
-          </h2>
-          <p className="text-xs text-gray-500 font-semibold">
-            Quản lý chu kỳ kinh nguyệt và lập kế hoạch thụ thai thông minh
-          </p>
-        </div>
+    <div className="space-y-6 pb-8 font-display text-theme-ink">
+      {/* Editorial Hero */}
+      <section className="overflow-hidden rounded-3xl border border-theme-line bg-theme-surface shadow-sm">
+        <div className="grid grid-cols-1 lg:grid-cols-12">
+          <div className="flex flex-col justify-between gap-5 p-5 sm:p-7 lg:col-span-8">
+            <div className="space-y-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-theme-brand-soft px-3.5 py-1 text-xs font-bold text-theme-ink">
+                <Heart className="h-3.5 w-3.5 text-theme-brand" />
+                Chuẩn bị mang thai
+              </span>
+              <h1 className="text-2xl font-bold text-theme-ink sm:text-3xl">
+                Theo dõi chu kỳ &amp; rụng trứng
+              </h1>
+              <p className="max-w-xl text-xs font-medium leading-relaxed text-theme-muted sm:text-sm">
+                Quản lý lịch kinh nguyệt đều đặn để nhận biết thời điểm dễ thụ thai tự nhiên và chuẩn bị sức khỏe tiền sản.
+              </p>
+            </div>
 
-        <button
-          onClick={() => setShowLogModal(true)}
-          className="self-start sm:self-center px-4 py-2.5 bg-gradient-to-r from-momPink to-momPurple text-white text-xs font-bold rounded-xl shadow-md hover:shadow-momPink/20 hover:scale-105 active:scale-95 transition-all duration-300 flex items-center gap-1.5"
-        >
-          <Plus className="w-4 h-4" /> Ghi kỳ kinh
-        </button>
-      </div>
+            <div className="flex flex-col gap-3 border-t border-theme-line pt-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3 rounded-2xl border border-theme-line bg-theme-page px-4 py-2.5">
+                <Sparkles className="h-5 w-5 shrink-0 text-theme-brand" />
+                <div>
+                  <p className="text-xs font-semibold text-theme-muted">Dự báo cửa sổ thụ thai</p>
+                  <p className="text-xs font-bold text-theme-ink sm:text-sm">
+                    {getFertileCountdownText()}
+                  </p>
+                </div>
+              </div>
 
-      {/* Countdown Card Banner */}
-      <div className="bg-white/40 dark:bg-gray-850/20 backdrop-blur-md border border-white/60 dark:border-gray-800 p-5 rounded-3xl flex items-center gap-4 shadow-sm hover:shadow-md transition-all duration-300">
-        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-momPink/20 to-momPurple/20 flex items-center justify-center text-momPink shadow-inner text-xl shrink-0">
-          🥚
-        </div>
-        <div>
-          <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Thông tin dự báo thụ thai</h4>
-          <p className="text-sm text-momPink-dark dark:text-pink-400 font-extrabold mt-1">
-            {getFertileCountdownText()}
-          </p>
-        </div>
-      </div>
+              <button
+                type="button"
+                onClick={() => setShowLogModal(true)}
+                className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-full bg-theme-brand px-5 py-2.5 text-sm font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
+              >
+                <Plus className="h-4 w-4" />
+                <span>Ghi nhận kỳ kinh</span>
+              </button>
+            </div>
+          </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+          <div className="border-t border-theme-line bg-theme-page p-2.5 lg:col-span-4 lg:border-l lg:border-t-0">
+            <img
+              src={newbornFeetPhoto}
+              alt="Đôi bàn chân em bé trong khăn bông trắng ấm áp"
+              className="h-44 w-full rounded-2xl object-cover sm:h-52 lg:h-full lg:min-h-[190px]"
+            />
+          </div>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Cycle Calendar Column */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-8">
           <CycleCalendar
             profile={momProfile}
             calendarData={calendarData}
@@ -162,106 +173,113 @@ export default function FertilityPage() {
             onUpdatePeriod={() => setShowLogModal(true)}
             onDateClick={(cell) => {
               const selectedDate = cell.date.toLocaleDateString('vi-VN');
-              let status = 'Bình thường';
-              if (cell.isPeriod) status = 'Kỳ hành kinh (🩸)';
-              if (cell.isOvulation) status = 'Ngày rụng trứng (🥚)';
-              if (cell.isFertile && !cell.isOvulation) status = 'Cửa sổ thụ thai (💚)';
-              toast(`Ngày ${selectedDate}: ${status}`, { icon: '📅' });
+              let status = 'Ngày bình thường trong chu kỳ';
+              if (cell.isPeriod) status = 'Ngày hành kinh dự kiến';
+              if (cell.isOvulation) status = 'Ngày dự kiến rụng trứng';
+              if (cell.isFertile && !cell.isOvulation) status = 'Cửa sổ dễ thụ thai';
+              toast(`Ngày ${selectedDate}: ${status}`);
             }}
           />
         </div>
 
-        {/* Stats and IVF Gates Column */}
-        <div className="space-y-6">
-          
-          {/* Cycle Stats Block */}
-          <div className="bg-white/40 dark:bg-gray-850/20 backdrop-blur-md p-5 rounded-3xl border border-white/60 dark:border-gray-800 shadow-sm hover:shadow-md transition-all duration-300 space-y-4">
-            <h3 className="text-xs font-bold text-gray-400 dark:text-gray-400 uppercase tracking-wider">
-              Chỉ Số Chu Kỳ
-            </h3>
-            
+        {/* Stats Column */}
+        <div className="space-y-6 lg:col-span-4">
+          <section className="space-y-4 rounded-3xl border border-theme-line bg-theme-surface p-6 shadow-sm">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-theme-brand" />
+              <h2 className="text-lg font-bold text-theme-ink">Chỉ số chu kỳ hiện tại</h2>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-white/50 dark:bg-gray-900/40 p-3.5 rounded-2xl border border-white/40 dark:border-gray-850 shadow-sm">
-                <span className="text-[10px] text-gray-400 block font-bold uppercase">Kinh nguyệt cuối</span>
-                <span className="text-xs font-extrabold text-momPink-dark dark:text-pink-400 mt-1 block">
+              <div className="rounded-2xl border border-theme-line bg-theme-page/60 p-4">
+                <span className="block text-xs font-semibold text-theme-muted">Kỳ kinh gần nhất</span>
+                <span className="mt-1.5 block text-base font-bold text-theme-ink">
                   {momProfile?.lastPeriodDate
                     ? new Date(momProfile.lastPeriodDate).toLocaleDateString('vi-VN')
-                    : 'Chưa có'}
+                    : 'Chưa cập nhật'}
                 </span>
               </div>
-              
-              <div className="bg-white/50 dark:bg-gray-900/40 p-3.5 rounded-2xl border border-white/40 dark:border-gray-850 shadow-sm">
-                <span className="text-[10px] text-gray-400 block font-bold uppercase">Chu kỳ TB</span>
-                <span className="text-xs font-extrabold text-momPurple-dark dark:text-purple-400 mt-1 block">
-                  {momProfile?.avgCycleLength ? `${momProfile.avgCycleLength} ngày` : 'Chưa có'}
+
+              <div className="rounded-2xl border border-theme-line bg-theme-page/60 p-4">
+                <span className="block text-xs font-semibold text-theme-muted">Độ dài trung bình</span>
+                <span className="mt-1.5 block text-base font-bold text-theme-ink">
+                  {momProfile?.avgCycleLength ? `${momProfile.avgCycleLength} ngày` : 'Chưa cập nhật'}
                 </span>
               </div>
             </div>
 
-            <div className="bg-white/20 dark:bg-gray-900/20 p-3 rounded-2xl border border-white/30 dark:border-gray-850 flex items-start gap-2.5">
-              <Info className="w-4 h-4 text-momPink/75 mt-0.5 shrink-0" />
-              <p className="text-[10px] text-gray-400 dark:text-gray-400 font-semibold leading-relaxed">
-                Các chỉ số chu kỳ giúp thuật toán của Mom Ơi! dự báo cửa sổ thụ thai an toàn. Hãy cập nhật lịch kinh nguyệt đều đặn mỗi tháng để có kết quả chính xác nhất.
+            <div className="flex items-start gap-3 rounded-2xl border border-theme-line bg-theme-sidebar/60 p-4">
+              <Info className="mt-0.5 h-4 w-4 shrink-0 text-theme-brand" />
+              <p className="text-xs leading-relaxed text-theme-muted sm:text-sm">
+                Các chỉ số chu kỳ giúp Mom Ơi! ước tính ngày rụng trứng và cửa sổ thụ thai. Mẹ nên ghi nhận ngày đầu kỳ kinh mỗi tháng để lịch dự báo sát thực tế hơn.
               </p>
             </div>
-          </div>
-
-
-
+          </section>
         </div>
-
       </div>
 
       {/* Log Period Modal */}
       {showLogModal && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-pink-50 animate-scale-in">
-            <div className="flex justify-between items-center border-b border-pink-50 pb-3 mb-4">
-              <h3 className="text-sm font-extrabold text-gray-800 flex items-center gap-1.5">
-                🩸 Ghi nhận kỳ hành kinh mới
-              </h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-theme-ink/45 p-4 backdrop-blur-[2px]"
+          onClick={() => setShowLogModal(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-3xl border border-theme-line bg-theme-surface p-6 shadow-xl sm:p-7"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="period-modal-title"
+          >
+            <div className="mb-5 flex items-center justify-between border-b border-theme-line pb-4">
+              <h2 id="period-modal-title" className="text-lg font-bold text-theme-ink">
+                Ghi nhận kỳ hành kinh mới
+              </h2>
               <button
+                type="button"
                 onClick={() => setShowLogModal(false)}
-                className="text-gray-400 hover:text-gray-600 font-bold"
+                aria-label="Đóng hộp thoại"
+                className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-full border border-theme-line bg-theme-page text-theme-ink hover:bg-theme-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
               >
-                ✕
+                <X className="h-4 w-4" />
               </button>
             </div>
 
             <form onSubmit={handleLogSubmit} className="space-y-4">
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">
+                <label htmlFor="log-period-date" className="mb-1.5 block text-sm font-semibold text-theme-ink">
                   Ngày bắt đầu có kinh nguyệt
                 </label>
                 <input
+                  id="log-period-date"
                   type="date"
                   required
                   value={logDate}
                   onChange={(e) => setLogDate(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-pink-100 focus:outline-none focus:ring-2 focus:ring-momPink/30 focus:border-momPink text-xs font-semibold"
+                  className="min-h-[48px] w-full rounded-2xl border border-theme-line bg-theme-page/50 px-4 text-sm font-semibold text-theme-ink focus:border-theme-brand focus:bg-theme-surface focus:outline-none focus:ring-2 focus:ring-theme-brand/25"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-1">
+                <label htmlFor="log-cycle-length" className="mb-1.5 block text-sm font-semibold text-theme-ink">
                   Độ dài chu kỳ trung bình (ngày)
                 </label>
                 <input
+                  id="log-cycle-length"
                   type="number"
                   required
                   min="20"
                   max="45"
                   value={logLength}
                   onChange={(e) => setLogLength(Number(e.target.value))}
-                  className="w-full px-4 py-2.5 rounded-xl border border-pink-100 focus:outline-none focus:ring-2 focus:ring-momPink/30 focus:border-momPink text-xs font-semibold"
+                  className="min-h-[48px] w-full rounded-2xl border border-theme-line bg-theme-page/50 px-4 text-sm font-semibold text-theme-ink focus:border-theme-brand focus:bg-theme-surface focus:outline-none focus:ring-2 focus:ring-theme-brand/25"
                 />
               </div>
 
-              {/* Symptoms checklist */}
               <div>
-                <label className="text-xs font-bold text-gray-700 block mb-2">
-                  Triệu chứng cơ thể đi kèm
-                </label>
+                <p className="mb-2 text-sm font-semibold text-theme-ink">
+                  Triệu chứng đi kèm (nếu có)
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {symptomOptions.map((symptom) => {
                     const isSelected = logSymptoms.includes(symptom);
@@ -270,10 +288,11 @@ export default function FertilityPage() {
                         type="button"
                         key={symptom}
                         onClick={() => handleSymptomToggle(symptom)}
-                        className={`px-3 py-1.5 rounded-xl text-[10px] font-bold border transition-all duration-300 ${
+                        aria-pressed={isSelected}
+                        className={`min-h-[38px] rounded-full border px-3.5 py-1.5 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
                           isSelected
-                            ? 'bg-momPink-light border-momPink text-momPink-dark shadow-sm'
-                            : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
+                            ? 'border-theme-brand bg-theme-brand-soft text-theme-ink'
+                            : 'border-theme-line bg-theme-page/50 text-theme-muted hover:border-theme-brand/40 hover:text-theme-ink'
                         }`}
                       >
                         {symptom}
@@ -283,27 +302,26 @@ export default function FertilityPage() {
                 </div>
               </div>
 
-              <div className="pt-2 flex gap-3">
+              <div className="flex gap-3 pt-3">
                 <button
                   type="button"
                   onClick={() => setShowLogModal(false)}
-                  className="flex-1 py-2.5 bg-gray-50 hover:bg-gray-100 text-gray-500 text-xs font-bold rounded-xl border border-gray-200 transition-all text-center"
+                  className="min-h-[48px] flex-1 rounded-full border border-theme-line bg-theme-page px-4 py-2.5 text-sm font-bold text-theme-ink transition-colors hover:bg-theme-sidebar focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
                 >
-                  Hủy bỏ
+                  Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={submittingLog}
-                  className="flex-1 py-2.5 bg-gradient-to-r from-momPink to-momPurple text-white text-xs font-bold rounded-xl shadow-md hover:opacity-95 transition-all text-center"
+                  className="min-h-[48px] flex-1 rounded-full bg-theme-brand px-4 py-2.5 text-sm font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-theme-line disabled:text-theme-muted"
                 >
-                  {submittingLog ? 'Đang lưu...' : 'Lưu lại 🌸'}
+                  {submittingLog ? 'Đang lưu...' : 'Lưu kỳ kinh'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
-
     </div>
   );
 }

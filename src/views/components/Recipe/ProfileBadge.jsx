@@ -1,5 +1,14 @@
 import React, { useState } from "react";
-import { HelpCircle, X, ShieldAlert } from "lucide-react";
+import {
+  HelpCircle,
+  X,
+  ShieldAlert,
+  Flame,
+  BookOpen,
+  Zap,
+  Sprout,
+  Sparkles,
+} from "lucide-react";
 
 export default function ProfileBadge({ profile }) {
   const [showExplanation, setShowExplanation] = useState(false);
@@ -8,48 +17,44 @@ export default function ProfileBadge({ profile }) {
 
   const { profileId, profileName, nutritionNeeds, description } = profile;
 
-  // Design styles based on profileId
-  let badgeStyles = "bg-amber-50 border-amber-200 text-amber-800";
-  let icon = "🍳";
+  let toneStyles = "bg-theme-brand-soft text-theme-brand";
+  let ProfileIcon = Sparkles;
 
   if (profileId === "burned-out") {
-    badgeStyles = "bg-red-50 border-red-200 text-red-800";
-    icon = "🔥";
+    toneStyles = "bg-status-warn-bg text-status-warn-text";
+    ProfileIcon = Flame;
   } else if (profileId === "couch-scholar") {
-    badgeStyles = "bg-blue-50 border-blue-200 text-blue-800";
-    icon = "📚";
+    toneStyles = "bg-theme-sidebar text-theme-ink";
+    ProfileIcon = BookOpen;
   } else if (profileId === "overachiever") {
-    badgeStyles = "bg-purple-50 border-purple-200 text-purple-800";
-    icon = "⚡";
+    toneStyles = "bg-theme-brand-soft text-theme-brand";
+    ProfileIcon = Zap;
   } else if (profileId === "balanced") {
-    badgeStyles = "bg-green-50 border-green-200 text-green-800";
-    icon = "🌱";
+    toneStyles = "bg-status-ok/15 text-status-ok";
+    ProfileIcon = Sprout;
   }
 
   return (
-    <div className={`p-4 rounded-2xl border ${badgeStyles} flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300`}>
-      <div className="flex items-start gap-3">
-        <span className="text-3xl select-none leading-none">{icon}</span>
+    <section className="flex flex-col justify-between gap-4 rounded-3xl border border-theme-line bg-theme-surface p-5 font-display shadow-sm sm:p-6 md:flex-row md:items-center">
+      <div className="flex items-start gap-3.5">
+        <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${toneStyles}`}>
+          <ProfileIcon className="h-6 w-6" />
+        </span>
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="font-bold text-lg leading-tight">Nhóm: {profileName}</h3>
-            <button
-              onClick={() => setShowExplanation(true)}
-              className="text-current opacity-70 hover:opacity-100 transition-opacity"
-              title="Giải thích phân loại"
-            >
-              <HelpCircle className="w-4.5 h-4.5" />
-            </button>
+            <h2 className="text-base font-bold text-theme-ink sm:text-lg">
+              Hồ sơ thể trạng: {profileName}
+            </h2>
           </div>
-          <p className="text-sm mt-1 text-current opacity-90 font-medium">
-            {description || "Hồ sơ lối sống đã được phân tích tự động."}
+          <p className="mt-1 text-sm leading-relaxed text-theme-muted">
+            {description || "Hồ sơ dinh dưỡng đã được phân tích tự động dựa trên chỉ số của mẹ."}
           </p>
           {nutritionNeeds && nutritionNeeds.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-3">
+            <div className="mt-3 flex flex-wrap gap-2">
               {nutritionNeeds.map((need, idx) => (
                 <span
                   key={idx}
-                  className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-white/60 border border-current/10 shadow-sm"
+                  className="rounded-full border border-theme-line bg-theme-page px-3 py-1 text-xs font-semibold text-theme-ink"
                 >
                   {need}
                 </span>
@@ -60,67 +65,82 @@ export default function ProfileBadge({ profile }) {
       </div>
 
       <button
+        type="button"
         onClick={() => setShowExplanation(true)}
-        className="self-start md:self-center px-4 py-2 rounded-full bg-white/80 hover:bg-white text-sm font-semibold transition-colors duration-200 shadow-sm flex items-center gap-1.5 whitespace-nowrap text-current"
+        className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 self-start rounded-full border border-theme-line bg-theme-page px-4 py-2 text-xs font-bold text-theme-ink transition-colors hover:border-theme-brand/40 hover:bg-theme-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand sm:text-sm md:self-center"
       >
-        <HelpCircle className="w-4 h-4" />
-        Tại sao tôi thuộc nhóm này?
+        <HelpCircle className="h-4 w-4 text-theme-brand" />
+        <span>Giải thích nhóm này</span>
       </button>
 
-      {/* Explanation Modal */}
       {showExplanation && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl relative border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
-            <button
-              onClick={() => setShowExplanation(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-100 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-2.5 mb-4">
-              <span className="text-2xl">{icon}</span>
-              <h2 className="text-xl font-bold text-gray-900">Chi tiết nhóm {profileName}</h2>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-theme-ink/45 p-4 backdrop-blur-[2px]"
+          onClick={() => setShowExplanation(false)}
+        >
+          <div
+            className="relative w-full max-w-md rounded-3xl border border-theme-line bg-theme-surface p-6 shadow-xl sm:p-7"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="profile-badge-modal-title"
+          >
+            <div className="mb-4 flex items-center justify-between gap-3 border-b border-theme-line pb-4">
+              <div className="flex items-center gap-2.5">
+                <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${toneStyles}`}>
+                  <ProfileIcon className="h-5 w-5" />
+                </span>
+                <h3 id="profile-badge-modal-title" className="text-lg font-bold text-theme-ink">
+                  Chi tiết nhóm {profileName}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowExplanation(false)}
+                aria-label="Đóng"
+                className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-full border border-theme-line bg-theme-page text-theme-ink hover:bg-theme-brand-soft"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
 
-            <p className="text-gray-600 text-sm leading-relaxed mb-5">
-              {description}
-            </p>
+            <p className="mb-5 text-sm leading-relaxed text-theme-muted">{description}</p>
 
-            <div className="bg-gray-50 rounded-2xl p-4 mb-5 border border-gray-100">
-              <h4 className="font-bold text-xs text-gray-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <ShieldAlert className="w-3.5 h-3.5 text-amber-500" />
-                Tiêu chuẩn phân loại tự động
+            <div className="mb-6 rounded-2xl border border-theme-line bg-theme-page/60 p-4">
+              <h4 className="mb-2.5 flex items-center gap-1.5 text-xs font-bold text-theme-ink sm:text-sm">
+                <ShieldAlert className="h-4 w-4 text-status-warn-text" />
+                <span>Tiêu chuẩn phân loại tự động</span>
               </h4>
-              <ul className="space-y-2 text-xs text-gray-600">
-                <li className="flex items-start gap-1.5">
-                  <span className="font-semibold text-gray-800 min-w-[90px]">Burned Out:</span>
-                  <span>Căng thẳng Cao, Ngủ &lt; 6.5h, Học tập &gt; 8h/ngày.</span>
+              <ul className="space-y-2 text-xs leading-relaxed text-theme-muted sm:text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="min-w-[96px] font-bold text-theme-ink">Burned Out:</span>
+                  <span>Căng thẳng cao, ngủ dưới 6.5 giờ, làm việc trên 8 giờ/ngày.</span>
                 </li>
-                <li className="flex items-start gap-1.5">
-                  <span className="font-semibold text-gray-800 min-w-[90px]">Couch Scholar:</span>
-                  <span>Căng thẳng Vừa, Vận động &lt; 1h, GPA &lt; 3.0.</span>
+                <li className="flex items-start gap-2">
+                  <span className="min-w-[96px] font-bold text-theme-ink">Couch Scholar:</span>
+                  <span>Căng thẳng vừa, ít vận động dưới 1 giờ/ngày.</span>
                 </li>
-                <li className="flex items-start gap-1.5">
-                  <span className="font-semibold text-gray-800 min-w-[90px]">Overachiever:</span>
-                  <span>GPA &gt;= 3.5, Học tập &gt; 7h, Căng thẳng Cao, Ngủ &lt; 7h.</span>
+                <li className="flex items-start gap-2">
+                  <span className="min-w-[96px] font-bold text-theme-ink">Overachiever:</span>
+                  <span>Cường độ hoạt động cao, căng thẳng cao, ngủ dưới 7 giờ.</span>
                 </li>
-                <li className="flex items-start gap-1.5">
-                  <span className="font-semibold text-gray-800 min-w-[90px]">Balanced:</span>
-                  <span>Căng thẳng Thấp/Vừa, Ngủ 7-9h, Vận động &gt;= 1h.</span>
+                <li className="flex items-start gap-2">
+                  <span className="min-w-[96px] font-bold text-theme-ink">Balanced:</span>
+                  <span>Căng thẳng thấp/vừa, ngủ đủ 7–9 giờ, vận động đều đặn.</span>
                 </li>
               </ul>
             </div>
 
             <button
+              type="button"
               onClick={() => setShowExplanation(false)}
-              className="w-full py-3 bg-gray-900 hover:bg-gray-800 text-white font-bold rounded-2xl text-sm transition-colors shadow-lg shadow-gray-900/10"
+              className="flex min-h-[48px] w-full items-center justify-center rounded-full bg-theme-brand px-5 py-2.5 text-sm font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
             >
               Đã hiểu
             </button>
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }

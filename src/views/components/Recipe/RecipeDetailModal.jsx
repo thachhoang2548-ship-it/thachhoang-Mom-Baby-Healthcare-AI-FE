@@ -1,5 +1,15 @@
 import React, { useState } from "react";
-import { X, Clock, Flame, ChefHat, Check, ChevronLeft, ChevronRight, Award, Salad, BarChart3 } from "lucide-react";
+import {
+  X,
+  Clock,
+  ChefHat,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Award,
+  Salad,
+  BarChart3,
+} from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from "recharts";
 
 export default function RecipeDetailModal({ recipe, onClose }) {
@@ -8,32 +18,28 @@ export default function RecipeDetailModal({ recipe, onClose }) {
   const [cookMode, setCookMode] = useState(false);
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
 
-  const { title, description, ingredients, steps, nutritionInfo, tags, imageUrl } = recipe;
+  const { title, ingredients, steps, nutritionInfo, tags, imageUrl } = recipe;
 
   const prepTime = nutritionInfo?.prepTime || "20 phút";
   const difficulty = nutritionInfo?.difficulty || "Dễ";
   const calories = nutritionInfo?.calories || 0;
 
-  // Tab change handler
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     if (tab !== "steps") setCookMode(false);
   };
 
-  // Checkbox toggle
   const toggleIngredient = (idx) => {
     setCheckedIngredients((prev) => ({
       ...prev,
-      [idx]: !prev[idx]
+      [idx]: !prev[idx],
     }));
   };
 
-  // Parsing nutrient grams
   const parseGrams = (value) => {
     if (!value) return 0;
-    // Giá trị có thể là số (12) hoặc chuỗi ("12g") tuỳ nguồn dữ liệu
     if (typeof value === "number") return value;
-    return parseInt(String(value).replace(/[^0-9]/g, "")) || 0;
+    return parseInt(String(value).replace(/[^0-9]/g, ""), 10) || 0;
   };
 
   const pVal = parseGrams(nutritionInfo?.protein);
@@ -41,172 +47,235 @@ export default function RecipeDetailModal({ recipe, onClose }) {
   const fVal = parseGrams(nutritionInfo?.fat);
 
   const chartData = [
-    { name: "Đạm (Protein)", value: pVal, color: "#f87171" },
-    { name: "Đường bột (Carbs)", value: cVal, color: "#fbbf24" },
-    { name: "Chất béo (Fat)", value: fVal, color: "#34d399" }
+    { name: "Chất đạm (Protein)", value: pVal, color: "#AB4256" },
+    { name: "Tinh bột (Carbs)", value: cVal, color: "#D9962B" },
+    { name: "Chất béo (Fat)", value: fVal, color: "#4F7F66" },
   ];
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex justify-center items-end sm:items-center p-0 sm:p-4 overflow-hidden">
-      <div className="bg-white w-full max-w-2xl h-[92vh] sm:h-[85vh] sm:max-h-[750px] rounded-t-[32px] sm:rounded-[32px] shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300">
-        
-        {/* Header Image/Banner */}
-        <div className="relative h-48 w-full bg-amber-50 flex-shrink-0">
-          {imageUrl ? (
-            <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-r from-amber-100 to-orange-100">
-              <ChefHat className="w-12 h-12 text-amber-500" />
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center overflow-hidden bg-theme-ink/50 p-0 backdrop-blur-[2px] sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="flex h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-3xl border border-theme-line bg-theme-surface font-display text-theme-ink shadow-2xl sm:h-[85vh] sm:max-h-[760px] sm:rounded-3xl"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="recipe-modal-title"
+      >
+        {/* Header Banner */}
+        <div className="relative shrink-0 border-b border-theme-line bg-theme-sidebar p-6">
+          {imageUrl && (
+            <div className="mb-4 h-40 w-full overflow-hidden rounded-2xl border border-theme-line">
+              <img src={imageUrl} alt={title} className="h-full w-full object-cover" />
             </div>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent flex items-end p-6">
-            <div>
-              <div className="flex flex-wrap gap-1 mb-2">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white/20 text-white backdrop-blur-sm">
-                  ⭐ {difficulty}
-                </span>
-                {tags && tags.slice(0, 2).map((tag, idx) => (
-                  <span key={idx} className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400/80 text-white backdrop-blur-sm">
-                    {tag}
-                  </span>
-                ))}
-              </div>
-              <h2 className="text-xl sm:text-2xl font-black text-white leading-tight drop-shadow-sm">{title}</h2>
-            </div>
-          </div>
 
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 rounded-full bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm transition-colors duration-200"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-theme-line bg-theme-surface px-3 py-1 text-xs font-bold text-theme-ink">
+                  Độ khó: {difficulty}
+                </span>
+                <span className="rounded-full border border-theme-line bg-theme-surface px-3 py-1 text-xs font-bold text-theme-muted">
+                  {prepTime}
+                </span>
+                {tags &&
+                  tags.slice(0, 2).map((tag, idx) => (
+                    <span
+                      key={idx}
+                      className="rounded-full bg-theme-brand-soft px-3 py-1 text-xs font-bold text-theme-ink"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+              </div>
+              <h2
+                id="recipe-modal-title"
+                className="text-xl font-bold leading-snug text-theme-ink sm:text-2xl"
+              >
+                {title}
+              </h2>
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Đóng công thức"
+              className="inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full border border-theme-line bg-theme-surface text-theme-ink transition-colors hover:bg-theme-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {/* Tab Selection */}
-        <div className="flex border-b border-gray-100 bg-gray-50/50 p-1 flex-shrink-0">
+        <div
+          className="flex shrink-0 gap-1.5 border-b border-theme-line bg-theme-page/70 p-2"
+          role="tablist"
+        >
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "ingredients"}
             onClick={() => handleTabChange("ingredients")}
-            className={`flex-1 py-3 text-xs font-bold rounded-2xl flex items-center justify-center gap-1.5 transition-all ${
-              activeTab === "ingredients" ? "bg-white text-amber-500 shadow-sm" : "text-gray-500 hover:text-gray-900"
+            className={`flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-2xl px-3 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand sm:text-sm ${
+              activeTab === "ingredients"
+                ? "bg-theme-surface text-theme-brand shadow-sm border border-theme-line"
+                : "text-theme-muted hover:text-theme-ink"
             }`}
           >
-            <Salad className="w-4 h-4" />
-            Nguyên liệu
+            <Salad className="h-4 w-4" />
+            <span>Nguyên liệu</span>
           </button>
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "steps"}
             onClick={() => handleTabChange("steps")}
-            className={`flex-1 py-3 text-xs font-bold rounded-2xl flex items-center justify-center gap-1.5 transition-all ${
-              activeTab === "steps" ? "bg-white text-amber-500 shadow-sm" : "text-gray-500 hover:text-gray-900"
+            className={`flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-2xl px-3 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand sm:text-sm ${
+              activeTab === "steps"
+                ? "bg-theme-surface text-theme-brand shadow-sm border border-theme-line"
+                : "text-theme-muted hover:text-theme-ink"
             }`}
           >
-            <ChefHat className="w-4 h-4" />
-            Các bước
+            <ChefHat className="h-4 w-4" />
+            <span>Các bước nấu</span>
           </button>
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "nutrition"}
             onClick={() => handleTabChange("nutrition")}
-            className={`flex-1 py-3 text-xs font-bold rounded-2xl flex items-center justify-center gap-1.5 transition-all ${
-              activeTab === "nutrition" ? "bg-white text-amber-500 shadow-sm" : "text-gray-500 hover:text-gray-900"
+            className={`flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-2xl px-3 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand sm:text-sm ${
+              activeTab === "nutrition"
+                ? "bg-theme-surface text-theme-brand shadow-sm border border-theme-line"
+                : "text-theme-muted hover:text-theme-ink"
             }`}
           >
-            <BarChart3 className="w-4 h-4" />
-            Dinh dưỡng
+            <BarChart3 className="h-4 w-4" />
+            <span>Dinh dưỡng</span>
           </button>
         </div>
 
         {/* Content Body */}
-        <div className="flex-grow overflow-y-auto p-6">
-          
+        <div className="flex-1 overflow-y-auto p-6">
           {/* TAB 1: INGREDIENTS */}
           {activeTab === "ingredients" && (
-            <div className="space-y-4 animate-in fade-in duration-200">
-              <p className="text-xs text-gray-500 font-medium">Đánh dấu những nguyên liệu bạn đã chuẩn bị sẵn sàng:</p>
+            <div className="space-y-4">
+              <p className="text-xs font-medium text-theme-muted sm:text-sm">
+                Đánh dấu những nguyên liệu mẹ đã chuẩn bị sẵn trên bàn bếp:
+              </p>
               <div className="space-y-2">
-                {ingredients && ingredients.map((item, idx) => (
-                  <label
-                    key={idx}
-                    onClick={() => toggleIngredient(idx)}
-                    className={`flex items-center justify-between p-3.5 rounded-2xl border cursor-pointer select-none transition-all duration-200 ${
-                      checkedIngredients[idx]
-                        ? "bg-amber-50/50 border-amber-200 text-gray-400"
-                        : "bg-white border-gray-100 hover:border-gray-200 text-gray-800"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-5.5 h-5.5 rounded-lg border flex items-center justify-center transition-colors ${
-                        checkedIngredients[idx] ? "bg-amber-400 border-amber-400 text-white" : "border-gray-300"
-                      }`}>
-                        {checkedIngredients[idx] && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-                      </div>
-                      <span className={`text-sm font-semibold ${checkedIngredients[idx] ? "line-through" : ""}`}>
-                        {item.name}
-                      </span>
-                    </div>
-                    <span className="text-xs font-bold text-gray-400">
-                      {item.amount} {item.unit}
-                    </span>
-                  </label>
-                ))}
+                {ingredients &&
+                  ingredients.map((item, idx) => {
+                    const checked = Boolean(checkedIngredients[idx]);
+                    return (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => toggleIngredient(idx)}
+                        aria-pressed={checked}
+                        className={`flex min-h-[48px] w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+                          checked
+                            ? "border-theme-brand/30 bg-theme-brand-soft/50 text-theme-muted"
+                            : "border-theme-line bg-theme-page/40 text-theme-ink hover:border-theme-brand/40"
+                        }`}
+                      >
+                        <span className="flex items-center gap-3">
+                          <span
+                            className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
+                              checked
+                                ? "border-theme-brand bg-theme-brand text-theme-surface"
+                                : "border-theme-line bg-theme-surface"
+                            }`}
+                          >
+                            {checked && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                          </span>
+                          <span className={`text-sm font-semibold ${checked ? "line-through" : ""}`}>
+                            {item.name}
+                          </span>
+                        </span>
+                        <span className="text-xs font-bold text-theme-muted sm:text-sm">
+                          {item.amount} {item.unit}
+                        </span>
+                      </button>
+                    );
+                  })}
               </div>
             </div>
           )}
 
           {/* TAB 2: STEPS */}
           {activeTab === "steps" && (
-            <div className="h-full flex flex-col justify-between animate-in fade-in duration-200">
+            <div className="flex h-full flex-col justify-between">
               {!cookMode ? (
-                <div className="space-y-4 pb-6">
+                <div className="space-y-5 pb-4">
                   <div className="space-y-3">
-                    {steps && steps.map((step, idx) => (
-                      <div key={idx} className="flex gap-4 p-4 rounded-2xl bg-gray-50 border border-gray-100 items-start">
-                        <span className="w-6 h-6 rounded-full bg-amber-400 text-white text-xs font-black flex items-center justify-center flex-shrink-0 mt-0.5">
-                          {step.stepNumber}
-                        </span>
-                        <div className="flex-grow">
-                          <p className="text-sm font-medium text-gray-800 leading-relaxed">{step.instruction}</p>
-                          {step.duration && (
-                            <span className="inline-flex items-center gap-1 mt-2 text-[10px] font-bold text-amber-500 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-100">
-                              <Clock className="w-3 h-3" />
-                              {step.duration}
-                            </span>
-                          )}
+                    {steps &&
+                      steps.map((step, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-start gap-3.5 rounded-2xl border border-theme-line bg-theme-page/50 p-4"
+                        >
+                          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-theme-brand text-xs font-bold text-theme-surface">
+                            {step.stepNumber || idx + 1}
+                          </span>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium leading-relaxed text-theme-ink">
+                              {step.instruction}
+                            </p>
+                            {step.duration && (
+                              <span className="mt-2 inline-flex items-center gap-1 rounded-full border border-theme-line bg-theme-surface px-2.5 py-0.5 text-xs font-semibold text-theme-muted">
+                                <Clock className="h-3 w-3 text-theme-brand" />
+                                {step.duration}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
-                  <button
-                    onClick={() => {
-                      setCookMode(true);
-                      setCurrentStepIdx(0);
-                    }}
-                    className="w-full py-3.5 bg-amber-400 hover:bg-amber-500 text-white font-black rounded-2xl text-sm transition-colors shadow-lg shadow-amber-400/10 flex items-center justify-center gap-2"
-                  >
-                    <ChefHat className="w-5 h-5" />
-                    Bắt đầu nấu ăn từng bước
-                  </button>
+                  {steps && steps.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCookMode(true);
+                        setCurrentStepIdx(0);
+                      }}
+                      className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full bg-theme-brand px-6 py-3 text-sm font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+                    >
+                      <ChefHat className="h-5 w-5" />
+                      <span>Chế độ nấu từng bước</span>
+                    </button>
+                  )}
                 </div>
               ) : (
-                /* Step by step interactive wizard */
-                <div className="flex flex-col justify-between h-full min-h-[300px] py-4">
-                  <div className="text-center">
-                    <span className="text-xs font-bold text-amber-500 uppercase tracking-widest">
-                      Bước {currentStepIdx + 1} / {steps.length}
-                    </span>
-                    <div className="w-full bg-gray-100 h-1.5 rounded-full mt-2 overflow-hidden">
+                <div className="flex min-h-[280px] flex-col justify-between py-2">
+                  <div>
+                    <div className="flex items-center justify-between text-xs font-bold text-theme-muted">
+                      <span>Chế độ nấu từng bước</span>
+                      <span className="text-theme-brand">
+                        Bước {currentStepIdx + 1} / {steps.length}
+                      </span>
+                    </div>
+                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full border border-theme-line bg-theme-page">
                       <div
-                        className="bg-amber-400 h-full transition-all duration-300"
-                        style={{ width: `${((currentStepIdx + 1) / steps.length) * 100}%` }}
-                      ></div>
+                        className="h-full rounded-full bg-theme-brand transition-all duration-300"
+                        style={{
+                          width: `${((currentStepIdx + 1) / steps.length) * 100}%`,
+                        }}
+                      />
                     </div>
                   </div>
 
-                  <div className="my-8 p-6 bg-amber-50/30 rounded-3xl border border-amber-100/50 text-center flex flex-col items-center justify-center min-h-[160px] animate-in zoom-in-95 duration-200">
-                    <p className="text-base sm:text-lg font-bold text-gray-800 leading-relaxed max-w-md">
+                  <div className="my-6 flex min-h-[160px] flex-col items-center justify-center rounded-3xl border border-theme-line bg-theme-page/60 p-6 text-center">
+                    <p className="max-w-md text-base font-bold leading-relaxed text-theme-ink sm:text-lg">
                       {steps[currentStepIdx].instruction}
                     </p>
                     {steps[currentStepIdx].duration && (
-                      <span className="inline-flex items-center gap-1.5 mt-4 text-xs font-bold text-amber-600 bg-amber-100/50 border border-amber-200/50 px-3 py-1 rounded-full">
-                        <Clock className="w-3.5 h-3.5" />
+                      <span className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-theme-line bg-theme-surface px-3.5 py-1 text-xs font-bold text-theme-ink">
+                        <Clock className="h-3.5 w-3.5 text-theme-brand" />
                         {steps[currentStepIdx].duration}
                       </span>
                     )}
@@ -214,32 +283,31 @@ export default function RecipeDetailModal({ recipe, onClose }) {
 
                   <div className="flex gap-3">
                     <button
+                      type="button"
                       disabled={currentStepIdx === 0}
-                      onClick={() => setCurrentStepIdx(prev => prev - 1)}
-                      className={`flex-1 py-3.5 rounded-2xl border font-bold text-sm flex items-center justify-center gap-1 transition-all ${
-                        currentStepIdx === 0
-                          ? "border-gray-100 text-gray-300 cursor-not-allowed"
-                          : "border-gray-200 text-gray-700 hover:bg-gray-50"
-                      }`}
+                      onClick={() => setCurrentStepIdx((prev) => prev - 1)}
+                      className="flex min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-full border border-theme-line bg-theme-page px-4 py-2.5 text-sm font-bold text-theme-ink transition-colors hover:bg-theme-brand-soft disabled:cursor-not-allowed disabled:text-theme-muted"
                     >
-                      <ChevronLeft className="w-4 h-4" />
-                      Trước đó
+                      <ChevronLeft className="h-4 w-4" />
+                      <span>Bước trước</span>
                     </button>
                     {currentStepIdx < steps.length - 1 ? (
                       <button
-                        onClick={() => setCurrentStepIdx(prev => prev + 1)}
-                        className="flex-1 py-3.5 bg-amber-400 hover:bg-amber-500 text-white font-bold rounded-2xl text-sm flex items-center justify-center gap-1 transition-colors"
+                        type="button"
+                        onClick={() => setCurrentStepIdx((prev) => prev + 1)}
+                        className="flex min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-full bg-theme-brand px-4 py-2.5 text-sm font-bold text-theme-surface transition-colors hover:bg-theme-ink"
                       >
-                        Tiếp theo
-                        <ChevronRight className="w-4 h-4" />
+                        <span>Tiếp theo</span>
+                        <ChevronRight className="h-4 w-4" />
                       </button>
                     ) : (
                       <button
+                        type="button"
                         onClick={() => setCookMode(false)}
-                        className="flex-1 py-3.5 bg-green-500 hover:bg-green-600 text-white font-bold rounded-2xl text-sm flex items-center justify-center gap-1.5 transition-colors"
+                        className="flex min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-full bg-status-ok px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800"
                       >
-                        <Award className="w-4 h-4" />
-                        Hoàn tất món ăn
+                        <Award className="h-4 w-4" />
+                        <span>Hoàn tất món ăn</span>
                       </button>
                     )}
                   </div>
@@ -250,29 +318,26 @@ export default function RecipeDetailModal({ recipe, onClose }) {
 
           {/* TAB 3: NUTRITION */}
           {activeTab === "nutrition" && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              
-              {/* Calorie Stats Card */}
-              <div className="bg-gradient-to-br from-amber-50 to-orange-50/50 border border-amber-100 rounded-3xl p-6 text-center">
-                <span className="text-xs font-bold text-amber-600 uppercase tracking-widest">Hàm lượng Calorie</span>
-                <h3 className="text-4xl sm:text-5xl font-black text-gray-900 mt-2 flex items-center justify-center gap-1">
-                  {calories}
-                  <span className="text-lg font-bold text-gray-400 uppercase">kcal</span>
-                </h3>
-                <p className="text-xs text-gray-500 mt-2 max-w-sm mx-auto">
-                  Thời lượng chuẩn bị nhanh khoảng {prepTime}, cung cấp đầy đủ chất dinh dưỡng bền vững.
+            <div className="space-y-6">
+              <div className="rounded-3xl border border-theme-line bg-theme-page/60 p-6 text-center">
+                <span className="text-xs font-bold text-theme-muted">Năng lượng ước tính mỗi khẩu phần</span>
+                <p className="mt-1.5 flex items-baseline justify-center gap-1.5 text-4xl font-bold text-theme-ink">
+                  <span>{calories}</span>
+                  <span className="text-base font-semibold text-theme-muted">kcal</span>
+                </p>
+                <p className="mx-auto mt-2 max-w-sm text-xs leading-relaxed text-theme-muted sm:text-sm">
+                  Thời gian chuẩn bị khoảng {prepTime}, cân đối nhóm chất thiết yếu cho mẹ.
                 </p>
               </div>
 
-              {/* Recharts Bar Chart */}
               <div>
-                <h4 className="font-bold text-sm text-gray-900 mb-3">Tỷ lệ các chất đa lượng</h4>
-                <div className="h-44 w-full">
+                <h3 className="mb-3 text-sm font-bold text-theme-ink">Tỷ lệ các chất đa lượng</h3>
+                <div className="h-44 w-full rounded-2xl border border-theme-line bg-theme-page/40 p-3">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                       data={chartData}
                       layout="vertical"
-                      margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
+                      margin={{ top: 5, right: 24, left: 10, bottom: 5 }}
                     >
                       <XAxis type="number" hide />
                       <YAxis
@@ -280,12 +345,18 @@ export default function RecipeDetailModal({ recipe, onClose }) {
                         type="category"
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fill: "#6b7280", fontSize: 11, fontWeight: "600" }}
-                        width={120}
+                        tick={{ fill: "#2B2024", fontSize: 12, fontWeight: 600 }}
+                        width={130}
                       />
                       <Tooltip
                         cursor={{ fill: "transparent" }}
-                        formatter={(value) => [`${value}g`, "Lượng chất"]}
+                        contentStyle={{
+                          borderRadius: "12px",
+                          border: "1px solid #EADFDA",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                        }}
+                        formatter={(value) => [`${value}g`, "Hàm lượng"]}
                       />
                       <Bar dataKey="value" radius={[0, 8, 8, 0]} barSize={16}>
                         {chartData.map((entry, index) => (
@@ -297,19 +368,24 @@ export default function RecipeDetailModal({ recipe, onClose }) {
                 </div>
               </div>
 
-              {/* Specific breakdown details */}
-              <div className="grid grid-cols-3 gap-3 bg-gray-50 p-4 rounded-2xl border border-gray-100">
+              <div className="grid grid-cols-3 gap-3 rounded-2xl border border-theme-line bg-theme-page/50 p-4">
                 <div className="text-center">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase">Protein</span>
-                  <p className="text-base font-black text-red-500 mt-0.5">{nutritionInfo?.protein || "0g"}</p>
+                  <span className="text-xs font-medium text-theme-muted">Chất đạm</span>
+                  <p className="mt-1 text-base font-bold text-theme-brand">
+                    {nutritionInfo?.protein || "0g"}
+                  </p>
                 </div>
-                <div className="text-center border-l border-gray-200">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase">Carbohydrates</span>
-                  <p className="text-base font-black text-amber-500 mt-0.5">{nutritionInfo?.carbs || "0g"}</p>
+                <div className="border-l border-theme-line text-center">
+                  <span className="text-xs font-medium text-theme-muted">Tinh bột</span>
+                  <p className="mt-1 text-base font-bold text-status-warn-text">
+                    {nutritionInfo?.carbs || "0g"}
+                  </p>
                 </div>
-                <div className="text-center border-l border-gray-200">
-                  <span className="text-[10px] font-bold text-gray-400 uppercase">Fats</span>
-                  <p className="text-base font-black text-emerald-500 mt-0.5">{nutritionInfo?.fat || "0g"}</p>
+                <div className="border-l border-theme-line text-center">
+                  <span className="text-xs font-medium text-theme-muted">Chất béo</span>
+                  <p className="mt-1 text-base font-bold text-status-ok">
+                    {nutritionInfo?.fat || "0g"}
+                  </p>
                 </div>
               </div>
             </div>

@@ -1,26 +1,42 @@
 import React, { useState } from "react";
 import { useAlertController } from "../../../controllers/alertController";
-import { Stethoscope, Bell, AlertTriangle, CheckCircle } from "lucide-react";
+import { Stethoscope, Bell, AlertTriangle, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
 
-const severityColors = {
-  low: { border: "border-green-500", bg: "bg-green-100", text: "text-green-600", label: "Thấp" },
-  medium: { border: "border-yellow-500", bg: "bg-yellow-100", text: "text-yellow-600", label: "Trung bình" },
-  high: { border: "border-red-500", bg: "bg-red-100", text: "text-red-600", label: "Cao" },
-  50: { border: "border-yellow-500", bg: "bg-yellow-100", text: "text-yellow-600", label: "Trung bình" },
-  100: { border: "border-red-500", bg: "bg-red-100", text: "text-red-600", label: "Cao" },
+const severityStyles = {
+  low: {
+    accent: "border-l-status-ok",
+    iconBox: "bg-emerald-50 text-emerald-800 border border-emerald-200",
+    badge: "bg-emerald-50 text-emerald-800 border border-emerald-200",
+    label: "Mức thấp",
+  },
+  medium: {
+    accent: "border-l-status-warn-line",
+    iconBox: "bg-status-warn-bg text-status-warn-text border border-status-warn-line/40",
+    badge: "bg-status-warn-bg text-status-warn-text border border-status-warn-line/40",
+    label: "Trung bình",
+  },
+  high: {
+    accent: "border-l-red-600",
+    iconBox: "bg-red-50 text-red-800 border border-red-200",
+    badge: "bg-red-50 text-red-800 border border-red-200",
+    label: "Ưu tiên cao",
+  },
 };
 
-const NotificationItem = ({ alert, setAlerts }) => {
+severityStyles[50] = severityStyles.medium;
+severityStyles[100] = severityStyles.high;
+
+const NotificationItem = ({ alert }) => {
   const [expanded, setExpanded] = useState(false);
 
-  const isStaffConsult = alert.message?.includes("TƯ VẤN TỪ CARE STAFF") || alert.message?.includes("BÁC SĨ");
+  const isStaffConsult =
+    alert.message?.includes("TƯ VẤN TỪ CARE STAFF") || alert.message?.includes("BÁC SĨ");
 
   let sevKey = typeof alert.severity === "string" ? alert.severity.toLowerCase() : alert.severity;
   if (alert.type === "symptom") sevKey = "high";
   if (isStaffConsult) sevKey = "low";
 
-  const sev = severityColors[sevKey] || severityColors.low;
-
+  const sev = severityStyles[sevKey] || severityStyles.low;
   const markAsResolved = useAlertController((state) => state.markAsResolved);
 
   const markResolved = async () => {
@@ -32,58 +48,96 @@ const NotificationItem = ({ alert, setAlerts }) => {
   };
 
   return (
-    <div
-      className={`group flex flex-col cursor-pointer rounded-xl border-l-4 ${isStaffConsult ? 'border-emerald-500 bg-emerald-50/30 dark:bg-emerald-950/20' : `${sev.border} bg-white dark:bg-gray-800/50`} p-4 sm:p-5 shadow-sm transition-all duration-200 hover:shadow-md`}
+    <article
+      className={`flex flex-col rounded-3xl border border-theme-line border-l-4 ${
+        isStaffConsult ? "border-l-status-ok bg-emerald-50/30" : `${sev.accent} bg-theme-surface`
+      } p-4 sm:p-5 shadow-sm transition-colors`}
     >
-      <div className="flex flex-col sm:flex-row sm:items-start gap-4" onClick={() => setExpanded((prev) => !prev)}>
-        <div className="flex flex-grow items-start gap-3 sm:gap-4">
-          <div className={`flex size-10 sm:size-12 shrink-0 items-center justify-center rounded-lg ${isStaffConsult ? 'bg-emerald-100 text-emerald-600' : `${sev.bg} ${sev.text}`}`}>
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+        <div className="flex flex-1 items-start gap-3.5 min-w-0">
+          <div
+            className={`flex w-11 h-11 shrink-0 items-center justify-center rounded-2xl ${
+              isStaffConsult
+                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                : sev.iconBox
+            }`}
+          >
             {isStaffConsult ? (
-              <Stethoscope className="w-6 h-6" />
+              <Stethoscope className="w-5 h-5" aria-hidden="true" />
             ) : alert.type === "medication" ? (
-              <Bell className="w-6 h-6" />
+              <Bell className="w-5 h-5" aria-hidden="true" />
             ) : (
-              <AlertTriangle className="w-6 h-6" />
+              <AlertTriangle className="w-5 h-5" aria-hidden="true" />
             )}
           </div>
 
-          <div className="flex flex-1 flex-col justify-center gap-1 min-w-0">
+          <div className="flex-1 min-w-0 space-y-1.5">
             <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-sm sm:text-base font-bold text-gray-900 dark:text-white truncate">
-                {isStaffConsult ? "Lời khuyên từ Care Staff 🩺" : `Cảnh báo ${alert.type === "medication" ? "uống thuốc" : "triệu chứng"}`}
-              </p>
-              <div className={`inline-flex rounded-full px-2 py-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wider ${isStaffConsult ? 'bg-emerald-100 text-emerald-700' : `${sev.bg} ${sev.text}`}`}>
-                {isStaffConsult ? "Tư vấn Y tế" : sev.label}
-              </div>
+              <h3 className="text-sm sm:text-base font-bold text-theme-ink">
+                {isStaffConsult
+                  ? "Lời khuyên từ Care Staff"
+                  : `Cảnh báo ${alert.type === "medication" ? "uống thuốc" : "triệu chứng"}`}
+              </h3>
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
+                  isStaffConsult
+                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    : sev.badge
+                }`}
+              >
+                {isStaffConsult ? "Tư vấn y tế" : sev.label}
+              </span>
             </div>
-            <p className="text-sm text-gray-700 dark:text-gray-200 whitespace-pre-line font-medium leading-relaxed">{alert.message}</p>
-            <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{alert.createdAt ? new Date(alert.createdAt).toLocaleString() : 'Vừa xong'}</p>
+
+            <p className="text-sm text-theme-ink whitespace-pre-line font-medium leading-relaxed">
+              {alert.message}
+            </p>
+
+            <div className="flex flex-wrap items-center gap-3 pt-0.5">
+              <p className="text-xs text-theme-muted font-medium">
+                {alert.createdAt ? new Date(alert.createdAt).toLocaleString("vi-VN") : "Vừa xong"}
+              </p>
+
+              {alert.details && (
+                <button
+                  type="button"
+                  onClick={() => setExpanded((prev) => !prev)}
+                  aria-expanded={expanded}
+                  className="inline-flex items-center gap-1 text-xs font-bold text-theme-brand hover:text-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand rounded-md px-1.5 py-0.5"
+                >
+                  <span>{expanded ? "Thu gọn chi tiết" : "Xem chi tiết"}</span>
+                  {expanded ? (
+                    <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
         {alert.status !== "resolved" && (
-          <div className="flex sm:shrink-0 pl-[52px] sm:pl-0">
+          <div className="flex sm:shrink-0 pl-14 sm:pl-0">
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                markResolved();
-              }}
-              className="flex h-8 sm:h-9 items-center justify-center gap-1.5 rounded-full bg-primary/10 hover:bg-primary text-primary hover:text-white px-3 sm:px-4 text-xs sm:text-sm font-bold transition-colors duration-200"
+              type="button"
+              onClick={markResolved}
+              className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-2xl bg-theme-brand-soft border border-theme-brand/25 text-theme-ink hover:bg-theme-brand hover:text-theme-surface px-4 py-2 text-xs sm:text-sm font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
             >
-              <CheckCircle className="w-4 h-4" />
-              Đã đọc
+              <CheckCircle className="w-4 h-4" aria-hidden="true" />
+              <span>Đã đọc</span>
             </button>
           </div>
         )}
       </div>
 
       {expanded && alert.details && (
-        <div className="mt-3 pl-[52px] sm:pl-[64px] flex flex-col gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">Chi tiết:</p>
-          <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{alert.details}</p>
+        <div className="mt-3.5 ml-0 sm:ml-14 rounded-2xl bg-theme-page border border-theme-line p-4 space-y-1">
+          <p className="text-xs font-bold text-theme-ink">Chi tiết bổ sung</p>
+          <p className="text-sm text-theme-muted leading-relaxed">{alert.details}</p>
         </div>
       )}
-    </div>
+    </article>
   );
 };
 

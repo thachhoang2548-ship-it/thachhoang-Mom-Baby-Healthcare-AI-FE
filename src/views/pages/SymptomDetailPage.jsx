@@ -4,7 +4,8 @@ import { useSymptomController } from "../../controllers/symptomController";
 import AnalysisResult from "../components/Symptom/AnalysisResult";
 import { ChevronLeft, Calendar, FileText, RefreshCw, AlertCircle } from "lucide-react";
 
-const ASSET_BASE_URL = import.meta.env.VITE_NODE_API_URL || "https://momoi-api-production.up.railway.app";
+const ASSET_BASE_URL =
+  import.meta.env.VITE_NODE_API_URL || "https://momoi-api-production.up.railway.app";
 
 export default function SymptomDetailPage() {
   const { id } = useParams();
@@ -15,9 +16,10 @@ export default function SymptomDetailPage() {
 
   const getImageUrl = (url) => {
     if (!url) return "";
-    if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) return url;
-    const baseUrl = ASSET_BASE_URL;
-    return `${baseUrl}${url.startsWith("/") ? "" : "/"}${url}`;
+    if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:")) {
+      return url;
+    }
+    return `${ASSET_BASE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
   };
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export default function SymptomDetailPage() {
         if (data) {
           setAnalysis(data);
         } else {
-          setError("Không thể tìm thấy kết quả phân tích này.");
+          setError("Không tìm thấy kết quả phân tích này.");
         }
       } catch (err) {
         setError(err.response?.data?.message || "Không thể tải chi tiết phân tích triệu chứng.");
@@ -41,7 +43,7 @@ export default function SymptomDetailPage() {
     if (id) {
       loadAnalysis();
     }
-  }, [id]);
+  }, [id, fetchAnalysisById]);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return "";
@@ -51,100 +53,90 @@ export default function SymptomDetailPage() {
       month: "2-digit",
       year: "numeric",
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
     });
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20 font-sans">
-      <div className="max-w-3xl mx-auto px-4 pt-6 space-y-6">
-        
-        {/* Back Link Header */}
-        <header className="space-y-2">
-          <Link
-            to="/symptoms/history"
-            className="inline-flex items-center gap-1 text-xs font-black text-amber-500 hover:text-amber-600 transition-colors"
-          >
-            <ChevronLeft className="w-4.5 h-4.5" />
-            Quay lại lịch sử
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Chi tiết phân tích triệu chứng
-          </h1>
-        </header>
+    <div className="mx-auto max-w-3xl space-y-6 pb-8 font-display text-theme-ink">
+      <header className="space-y-3 border-b border-theme-line pb-5">
+        <Link
+          to="/symptoms/history"
+          className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-3 text-sm font-semibold text-theme-muted transition-colors hover:bg-theme-surface hover:text-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          <span>Quay lại lịch sử</span>
+        </Link>
+        <h1 className="text-2xl font-bold text-theme-ink sm:text-3xl">
+          Chi tiết bản ghi triệu chứng
+        </h1>
+      </header>
 
-        {isLoading ? (
-          /* Loading indicator */
-          <div className="bg-white border border-gray-100 rounded-3xl p-12 shadow-sm text-center">
-            <RefreshCw className="w-8 h-8 text-amber-500 animate-spin mx-auto mb-4" />
-            <p className="text-sm font-bold text-gray-500">Đang tải báo cáo phân tích...</p>
+      {isLoading ? (
+        <div className="rounded-3xl border border-theme-line bg-theme-surface p-12 text-center shadow-sm">
+          <RefreshCw className="mx-auto mb-3 h-7 w-7 animate-spin text-theme-brand" />
+          <p className="text-sm font-semibold text-theme-muted">Đang tải bản ghi triệu chứng...</p>
+        </div>
+      ) : error ? (
+        <div className="flex items-start gap-3.5 rounded-3xl border border-red-200 bg-red-50 p-6">
+          <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-red-700" />
+          <div>
+            <h2 className="text-base font-bold text-red-900">Không thể mở bản ghi</h2>
+            <p className="mt-1 text-sm text-red-800">{error}</p>
+            <Link
+              to="/symptoms/history"
+              className="mt-4 inline-flex min-h-[40px] items-center text-sm font-bold text-red-900 underline"
+            >
+              Quay lại danh sách lịch sử
+            </Link>
           </div>
-        ) : error ? (
-          /* Error display */
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm flex items-start gap-3">
-            <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0" />
-            <div>
-              <h3 className="font-extrabold text-sm text-gray-900">Lỗi tải dữ liệu</h3>
-              <p className="text-xs text-gray-500 mt-1">{error}</p>
-              <Link
-                to="/symptoms/history"
-                className="inline-block mt-4 text-xs font-black text-amber-500 underline"
-              >
-                Quay lại lịch sử
-              </Link>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Symptom Input Recap */}
+          <section className="space-y-4 rounded-3xl border border-theme-line bg-theme-surface p-6 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-theme-line pb-3.5">
+              <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-theme-muted sm:text-sm">
+                <Calendar className="h-4 w-4 text-theme-brand" />
+                Ghi nhận lúc: {formatDate(analysis.createdAt)}
+              </span>
+              <span className="rounded-full bg-theme-brand-soft px-3 py-1 text-xs font-bold text-theme-ink">
+                Hồ sơ triệu chứng
+              </span>
             </div>
-          </div>
-        ) : (
-          /* Report Body */
-          <div className="space-y-6">
-            
-            {/* Symptom Input Recap */}
-            <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm space-y-4">
-              <div className="flex justify-between items-center pb-2 border-b border-gray-50">
-                <span className="text-xs font-bold text-gray-400 flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5" />
-                  Được gửi vào: {formatDate(analysis.createdAt)}
-                </span>
-                <span className="text-[10px] font-black text-amber-500 bg-amber-50 border border-amber-200/50 px-2 py-0.5 rounded-full uppercase">
-                  Báo cáo y khoa
-                </span>
+
+            <div className="space-y-4">
+              <div className="flex items-start gap-3">
+                <FileText className="mt-0.5 h-5 w-5 shrink-0 text-theme-muted" />
+                <p className="text-sm font-medium leading-relaxed text-theme-ink sm:text-base">
+                  {analysis.textDescription}
+                </p>
               </div>
 
-              <div className="space-y-3">
-                <div className="flex items-start gap-2.5">
-                  <FileText className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                  <p className="text-xs font-semibold text-gray-700 leading-relaxed">
-                    {analysis.textDescription}
-                  </p>
-                </div>
-
-                {analysis.imageUrl && (
-                  <div className="pt-2">
-                    <span className="text-[10px] font-bold text-gray-400 block mb-2">Hình ảnh đính kèm:</span>
-                    <div className="max-w-sm rounded-2xl overflow-hidden border border-gray-100 shadow-sm bg-gray-50">
-                      <img
-                        src={getImageUrl(analysis.imageUrl)}
-                        alt="Symptom visual"
-                        className="w-full h-auto object-cover max-h-[300px]"
-                      />
-                    </div>
+              {analysis.imageUrl && (
+                <div className="pt-1">
+                  <span className="mb-2 block text-xs font-bold text-theme-muted">
+                    Hình ảnh đính kèm:
+                  </span>
+                  <div className="max-w-sm overflow-hidden rounded-2xl border border-theme-line bg-theme-page">
+                    <img
+                      src={getImageUrl(analysis.imageUrl)}
+                      alt="Hình ảnh triệu chứng"
+                      className="max-h-[300px] w-full object-cover"
+                    />
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </div>
+          </section>
 
-            {/* Analysis Result Visualizer */}
-            <div className="space-y-3">
-              <h3 className="font-extrabold text-sm text-gray-900 uppercase tracking-wider">
-                Kết quả chẩn đoán sơ bộ
-              </h3>
-              <AnalysisResult analysis={analysis} />
-            </div>
-
-          </div>
-        )}
-
-      </div>
+          {/* Analysis Result */}
+          <section className="space-y-3">
+            <h2 className="text-xl font-bold text-theme-ink">Kết quả phân tích tham khảo</h2>
+            <AnalysisResult analysis={analysis} />
+          </section>
+        </div>
+      )}
     </div>
   );
 }

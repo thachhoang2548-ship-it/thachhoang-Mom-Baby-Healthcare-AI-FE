@@ -66,7 +66,21 @@ function AppContent() {
 
   return (
     <>
-      <Toaster position="top-right" reverseOrder={false} />
+      <Toaster
+        position="top-right"
+        reverseOrder={false}
+        toastOptions={{
+          style: {
+            fontFamily: '"Manrope", sans-serif',
+            borderRadius: "16px",
+            background: "#FFFFFF",
+            color: "#2B2024",
+            border: "1px solid #EADFDA",
+            fontSize: "14px",
+            fontWeight: 600,
+          },
+        }}
+      />
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
@@ -145,7 +159,13 @@ function AppContent() {
 }
 
 function App() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    try {
+      return window.sessionStorage.getItem("momoi_splash_seen") !== "1";
+    } catch {
+      return false;
+    }
+  });
 
   if (loading) return <SplashScreen onFinish={() => setLoading(false)} />;
 

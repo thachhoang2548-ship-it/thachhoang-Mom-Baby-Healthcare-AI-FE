@@ -404,13 +404,13 @@ export default function RelaxMusicPage() {
   };
 
   return (
-    <div className="font-display rounded-3xl bg-theme-page p-4 sm:p-6 border border-theme-line space-y-6 pb-[calc(15rem+env(safe-area-inset-bottom))] sm:pb-[calc(12rem+env(safe-area-inset-bottom))] lg:pb-32">
+    <div className="font-display space-y-6 text-theme-ink pb-[calc(15rem+env(safe-area-inset-bottom))] sm:pb-[calc(12rem+env(safe-area-inset-bottom))] lg:pb-32">
       {/* 1. Header Trang Thư Giãn (Tiêu đề trung tính, không khẳng định phương pháp) */}
-      <section className="bg-theme-surface rounded-2xl border border-theme-line p-5 sm:p-6 shadow-sm space-y-3">
+      <section className="bg-theme-surface rounded-3xl border border-theme-line p-5 sm:p-6 shadow-sm space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1.5">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-theme-brand-soft text-theme-brand text-xs font-bold">
-              <Waves className="w-4 h-4 shrink-0" aria-hidden="true" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-theme-brand-soft text-theme-ink text-xs font-bold">
+              <Waves className="w-4 h-4 shrink-0 text-theme-brand" aria-hidden="true" />
               <span>Thư giãn & Phục hồi</span>
             </div>
             <h1 className="text-xl sm:text-2xl font-bold text-theme-ink">
