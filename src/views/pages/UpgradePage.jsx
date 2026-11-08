@@ -171,19 +171,19 @@ export default function UpgradePage() {
 
       {/* Banner thanh toán thành công */}
       {isPaymentSuccess && (
-        <section className="bg-emerald-50 border-2 border-emerald-300 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <section className="bg-status-ok-bg border-2 border-status-ok-line rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-status-ok text-white flex items-center justify-center shrink-0">
+            <div className="w-11 h-11 rounded-2xl bg-status-ok text-theme-surface flex items-center justify-center shrink-0">
               <CheckCircle2 className="w-6 h-6" aria-hidden="true" />
             </div>
             <div className="space-y-0.5">
-              <p className="text-xs font-bold text-emerald-800">
+              <p className="text-xs font-bold text-status-ok-text">
                 Thanh toán thành công & gói đã kích hoạt
               </p>
-              <h2 className="text-base sm:text-lg font-extrabold text-emerald-950">
+              <h2 className="text-base sm:text-lg font-extrabold text-status-ok-text">
                 Chào mừng mẹ đến với gói {getTierNameVi(tier)}!
               </h2>
-              <p className="text-xs sm:text-sm text-emerald-900 font-medium">
+              <p className="text-xs sm:text-sm text-status-ok-text font-medium">
                 Tài khoản đã mở khóa đầy đủ các công cụ theo dõi chuyên sâu cho mẹ và bé.
               </p>
             </div>
@@ -191,7 +191,7 @@ export default function UpgradePage() {
           <button
             type="button"
             onClick={() => navigate('/dashboard')}
-            className="min-h-[44px] px-5 py-2.5 rounded-2xl bg-status-ok text-white font-bold text-xs sm:text-sm hover:bg-emerald-800 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
+            className="min-h-[44px] px-5 py-2.5 rounded-2xl bg-status-ok text-theme-surface font-bold text-xs sm:text-sm hover:bg-status-ok-text transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-ok-text"
           >
             Về trang Tổng quan
           </button>
@@ -213,7 +213,7 @@ export default function UpgradePage() {
             </p>
           </div>
         </div>
-        <div className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-full px-3.5 py-1.5 inline-flex items-center gap-1.5 self-start sm:self-auto">
+        <div className="text-xs font-bold text-status-ok-text bg-status-ok-bg border border-status-ok-line rounded-full px-3.5 py-1.5 inline-flex items-center gap-1.5 self-start sm:self-auto">
           <Clock className="w-3.5 h-3.5 text-status-ok" aria-hidden="true" />
           <span>Trạng thái: Đang hoạt động</span>
         </div>
@@ -256,7 +256,7 @@ export default function UpgradePage() {
                   </div>
 
                   {isCurrentTier && (
-                    <span className="text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 px-2.5 py-1 rounded-full font-bold shrink-0">
+                    <span className="text-xs bg-status-ok-bg border border-status-ok-line text-status-ok-text px-2.5 py-1 rounded-full font-bold shrink-0">
                       Đang dùng
                     </span>
                   )}
