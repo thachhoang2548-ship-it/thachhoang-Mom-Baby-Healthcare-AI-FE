@@ -31,17 +31,17 @@ export default function EmergencyHelpPage() {
   return (
     <div className="font-display max-w-5xl mx-auto space-y-6 pb-10 text-theme-ink">
       {/* Khối khẩn cấp tĩnh, rõ ràng, tương phản cao */}
-      <header className="rounded-3xl bg-red-50 border-2 border-red-200 p-6 sm:p-8">
+      <header className="rounded-3xl bg-status-danger-bg border-2 border-status-danger-line p-6 sm:p-8">
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-5">
           <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white border border-red-200 px-3.5 py-1.5 text-xs font-bold text-red-800">
-              <AlertTriangle className="w-4 h-4 text-red-700" aria-hidden="true" />
+            <div className="inline-flex items-center gap-2 rounded-full bg-theme-surface border border-status-danger-line px-3.5 py-1.5 text-xs font-bold text-status-danger-text">
+              <AlertTriangle className="w-4 h-4 text-status-danger-text" aria-hidden="true" />
               <span>Hướng dẫn y tế khẩn cấp</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-red-950 tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-status-danger-text tracking-tight">
               {guide?.headline || 'Trợ giúp khẩn cấp'}
             </h1>
-            <p className="text-sm sm:text-base font-medium text-red-900 leading-relaxed">
+            <p className="text-sm sm:text-base font-medium text-status-danger-text leading-relaxed">
               {loading && !guide
                 ? 'Đang tải hướng dẫn xử trí khẩn cấp...'
                 : guide?.notice || 'Khi xuất hiện dấu hiệu nguy hiểm ở mẹ hoặc bé, ưu tiên gọi cấp cứu 115 hoặc đến bệnh viện gần nhất ngay lập tức.'}
@@ -50,7 +50,7 @@ export default function EmergencyHelpPage() {
 
           <a
             href="tel:115"
-            className="inline-flex min-h-[48px] shrink-0 items-center justify-center gap-2.5 rounded-2xl bg-red-700 px-6 py-3 text-base font-extrabold text-white shadow-sm hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-2"
+            className="inline-flex min-h-[48px] shrink-0 items-center justify-center gap-2.5 rounded-2xl bg-red-700 px-6 py-3 text-base font-extrabold text-white shadow-sm hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger-text focus-visible:ring-offset-2"
           >
             <PhoneCall className="w-5 h-5" aria-hidden="true" />
             <span>Gọi cấp cứu 115</span>
@@ -62,7 +62,7 @@ export default function EmergencyHelpPage() {
         {/* Cột 1: Dấu hiệu đỏ */}
         <section className="bg-theme-surface rounded-3xl border border-theme-line p-6 shadow-sm">
           <div className="flex items-center gap-3 pb-4 mb-4 border-b border-theme-line">
-            <div className="w-10 h-10 rounded-2xl bg-red-50 border border-red-200 text-red-700 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-status-danger-bg border border-status-danger-line text-status-danger-text flex items-center justify-center shrink-0">
               <HeartPulse className="w-5 h-5" aria-hidden="true" />
             </div>
             <div>
@@ -82,9 +82,9 @@ export default function EmergencyHelpPage() {
               {redFlags.map((item) => (
                 <li
                   key={item}
-                  className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50/70 p-4 text-sm font-semibold text-red-950 leading-relaxed"
+                  className="flex items-start gap-3 rounded-2xl border border-status-danger-line bg-status-danger-bg/70 p-4 text-sm font-semibold text-status-danger-text leading-relaxed"
                 >
-                  <AlertTriangle className="w-4 h-4 text-red-700 shrink-0 mt-0.5" aria-hidden="true" />
+                  <AlertTriangle className="w-4 h-4 text-status-danger-text shrink-0 mt-0.5" aria-hidden="true" />
                   <span>{item}</span>
                 </li>
               ))}
@@ -95,7 +95,7 @@ export default function EmergencyHelpPage() {
         {/* Cột 2: Hành động ngay */}
         <section className="bg-theme-surface rounded-3xl border border-theme-line p-6 shadow-sm">
           <div className="flex items-center gap-3 pb-4 mb-4 border-b border-theme-line">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-status-ok-bg border border-status-ok-line text-status-ok-text flex items-center justify-center shrink-0">
               <PhoneCall className="w-5 h-5" aria-hidden="true" />
             </div>
             <div>
@@ -115,9 +115,9 @@ export default function EmergencyHelpPage() {
               {actions.map((item, idx) => (
                 <li
                   key={item}
-                  className="flex items-start gap-3 rounded-2xl bg-emerald-50/70 border border-emerald-200 p-4 text-sm font-semibold text-emerald-950 leading-relaxed"
+                  className="flex items-start gap-3 rounded-2xl bg-status-ok-bg/70 border border-status-ok-line p-4 text-sm font-semibold text-status-ok-text leading-relaxed"
                 >
-                  <span className="inline-flex w-6 h-6 rounded-full bg-status-ok text-white text-xs font-bold items-center justify-center shrink-0 mt-0.5">
+                  <span className="inline-flex w-6 h-6 rounded-full bg-status-ok text-theme-surface text-xs font-bold items-center justify-center shrink-0 mt-0.5">
                     {idx + 1}
                   </span>
                   <span>{item}</span>

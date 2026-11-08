@@ -35,9 +35,9 @@ function getUrgencyBadge(urgency) {
   const label = URGENCY_LABELS[urgency] || urgency;
   switch (label) {
     case "Khẩn cấp":
-      return { label, cls: "border-red-300 bg-red-50 text-red-900" };
+      return { label, cls: "border-status-danger-line bg-status-danger-bg text-status-danger-text" };
     case "Cao":
-      return { label, cls: "border-red-200 bg-red-50/75 text-red-800" };
+      return { label, cls: "border-status-danger-line bg-status-danger-bg/75 text-status-danger-text" };
     case "Trung bình":
       return { label, cls: "border-status-warn-line bg-status-warn-bg text-status-warn-text" };
     case "Thấp":

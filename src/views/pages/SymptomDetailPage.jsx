@@ -78,14 +78,14 @@ export default function SymptomDetailPage() {
           <p className="text-sm font-semibold text-theme-muted">Đang tải bản ghi triệu chứng...</p>
         </div>
       ) : error ? (
-        <div className="flex items-start gap-3.5 rounded-3xl border border-red-200 bg-red-50 p-6">
-          <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-red-700" />
+        <div className="flex items-start gap-3.5 rounded-3xl border border-status-danger-line bg-status-danger-bg p-6">
+          <AlertCircle className="mt-0.5 h-6 w-6 shrink-0 text-status-danger-text" />
           <div>
-            <h2 className="text-base font-bold text-red-900">Không thể mở bản ghi</h2>
-            <p className="mt-1 text-sm text-red-800">{error}</p>
+            <h2 className="text-base font-bold text-status-danger-text">Không thể mở bản ghi</h2>
+            <p className="mt-1 text-sm text-status-danger-text">{error}</p>
             <Link
               to="/symptoms/history"
-              className="mt-4 inline-flex min-h-[40px] items-center text-sm font-bold text-red-900 underline"
+              className="mt-4 inline-flex min-h-[40px] items-center text-sm font-bold text-status-danger-text underline"
             >
               Quay lại danh sách lịch sử
             </Link>

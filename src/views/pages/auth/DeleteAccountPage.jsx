@@ -173,7 +173,7 @@ export default function DeleteAccountPage() {
                     type="checkbox"
                     checked={confirmed}
                     onChange={(e) => setConfirmed(e.target.checked)}
-                    className="mt-0.5 h-5 w-5 rounded border-theme-line accent-red-700"
+                    className="mt-0.5 h-5 w-5 rounded border-theme-line accent-status-danger-text"
                   />
                   <span className="text-sm leading-relaxed text-theme-ink">
                     Tôi hiểu tài khoản và toàn bộ dữ liệu sẽ bị xóa vĩnh viễn, không thể khôi phục.

@@ -5,8 +5,8 @@ import { Stethoscope, Bell, AlertTriangle, CheckCircle, ChevronDown, ChevronUp }
 const severityStyles = {
   low: {
     accent: "border-l-status-ok",
-    iconBox: "bg-emerald-50 text-emerald-800 border border-emerald-200",
-    badge: "bg-emerald-50 text-emerald-800 border border-emerald-200",
+    iconBox: "bg-status-ok-bg text-status-ok-text border border-status-ok-line",
+    badge: "bg-status-ok-bg text-status-ok-text border border-status-ok-line",
     label: "Mức thấp",
   },
   medium: {
@@ -16,9 +16,9 @@ const severityStyles = {
     label: "Trung bình",
   },
   high: {
-    accent: "border-l-red-600",
-    iconBox: "bg-red-50 text-red-800 border border-red-200",
-    badge: "bg-red-50 text-red-800 border border-red-200",
+    accent: "border-l-status-danger-text",
+    iconBox: "bg-status-danger-bg text-status-danger-text border border-status-danger-line",
+    badge: "bg-status-danger-bg text-status-danger-text border border-status-danger-line",
     label: "Ưu tiên cao",
   },
 };
@@ -50,7 +50,7 @@ const NotificationItem = ({ alert }) => {
   return (
     <article
       className={`flex flex-col rounded-3xl border border-theme-line border-l-4 ${
-        isStaffConsult ? "border-l-status-ok bg-emerald-50/30" : `${sev.accent} bg-theme-surface`
+        isStaffConsult ? "border-l-status-ok bg-status-ok-bg/30" : `${sev.accent} bg-theme-surface`
       } p-4 sm:p-5 shadow-sm transition-colors`}
     >
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -58,7 +58,7 @@ const NotificationItem = ({ alert }) => {
           <div
             className={`flex w-11 h-11 shrink-0 items-center justify-center rounded-2xl ${
               isStaffConsult
-                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                ? "bg-status-ok-bg text-status-ok-text border border-status-ok-line"
                 : sev.iconBox
             }`}
           >
@@ -81,7 +81,7 @@ const NotificationItem = ({ alert }) => {
               <span
                 className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold ${
                   isStaffConsult
-                    ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                    ? "bg-status-ok-bg text-status-ok-text border border-status-ok-line"
                     : sev.badge
                 }`}
               >
