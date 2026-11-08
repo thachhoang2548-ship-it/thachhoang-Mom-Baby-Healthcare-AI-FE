@@ -6,7 +6,7 @@ import medicationService from "../../../models/services/medicationService";
 const STATUS_META = {
   taken: {
     dot: "bg-status-ok",
-    badge: "bg-emerald-50 text-emerald-800 border-emerald-200",
+    badge: "bg-status-ok-bg text-status-ok-text border-status-ok-line",
     label: "Đã uống",
   },
   skipped: {
@@ -76,7 +76,7 @@ const MedicationItem = ({ med, onUpdate, onDelete }) => {
             type="button"
             disabled={med.status === "taken"}
             onClick={() => handleStatus("taken")}
-            className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs sm:text-sm font-bold bg-status-ok text-white hover:bg-emerald-800 disabled:bg-theme-line disabled:text-theme-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+            className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs sm:text-sm font-bold bg-status-ok text-theme-surface hover:bg-status-ok-text disabled:bg-theme-line disabled:text-theme-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
           >
             <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
             <span>Đã uống</span>
@@ -86,7 +86,7 @@ const MedicationItem = ({ med, onUpdate, onDelete }) => {
             type="button"
             disabled={med.status === "skipped"}
             onClick={() => handleStatus("skipped")}
-            className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs sm:text-sm font-bold bg-status-warn-bg border border-status-warn-line/50 text-status-warn-text hover:bg-amber-100 disabled:bg-theme-line disabled:text-theme-muted disabled:border-theme-line transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+            className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-2xl px-3.5 py-2 text-xs sm:text-sm font-bold bg-status-warn-bg border border-status-warn-line/50 text-status-warn-text hover:bg-status-warn-bg disabled:bg-theme-line disabled:text-theme-muted disabled:border-theme-line transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
           >
             <XCircle className="w-4 h-4" aria-hidden="true" />
             <span>Bỏ qua</span>
@@ -105,7 +105,7 @@ const MedicationItem = ({ med, onUpdate, onDelete }) => {
             type="button"
             onClick={() => onDelete(med._id)}
             aria-label={`Xóa ${med.medName}`}
-            className="w-11 h-11 inline-flex items-center justify-center rounded-2xl border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600"
+            className="w-11 h-11 inline-flex items-center justify-center rounded-2xl border border-status-danger-line bg-status-danger-bg text-status-danger-text hover:bg-status-danger-bg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger-text"
           >
             <Trash2 className="w-4 h-4" aria-hidden="true" />
           </button>

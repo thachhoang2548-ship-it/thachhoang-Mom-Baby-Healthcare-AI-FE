@@ -168,9 +168,9 @@ export default function ExercisePlanPage() {
               </li>
             </ul>
 
-            <div className="flex items-start gap-2.5 rounded-2xl border border-red-200 bg-red-50 p-4">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-700" />
-              <p className="text-xs font-semibold leading-relaxed text-red-900 sm:text-sm">
+            <div className="flex items-start gap-2.5 rounded-2xl border border-status-danger-line bg-status-danger-bg p-4">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-status-danger-text" />
+              <p className="text-xs font-semibold leading-relaxed text-status-danger-text sm:text-sm">
                 Tham khảo ý kiến bác sĩ sản khoa trước khi bắt đầu bất kỳ bài tập vận động thể chất nào trong thai kỳ.
               </p>
             </div>

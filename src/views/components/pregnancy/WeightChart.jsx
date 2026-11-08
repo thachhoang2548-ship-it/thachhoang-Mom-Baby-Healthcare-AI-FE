@@ -10,14 +10,16 @@ import {
   Customized,
 } from 'recharts';
 import { Maximize2, Scale, X } from 'lucide-react';
+import { useThemeColors } from '../../../hooks/useThemeColors';
 
 const CHART_MARGINS = { top: 20, right: 20, left: 6, bottom: 10 };
 
 function AxisArrows(props) {
   const { width, height } = props;
+  const colors = useThemeColors();
   if (!width || !height) return null;
 
-  const axisColor = '#6B5B60';
+  const axisColor = colors.muted;
   const xPos = width - CHART_MARGINS.right;
   const yPos = height - CHART_MARGINS.bottom;
   const leftPos = CHART_MARGINS.left;
@@ -38,25 +40,26 @@ function AxisArrows(props) {
 }
 
 function ChartInner({ data, height = '100%' }) {
+  const colors = useThemeColors();
   return (
     <ResponsiveContainer width="100%" height={height}>
       <AreaChart data={data} margin={CHART_MARGINS}>
         <defs>
           <linearGradient id="momWeightArea" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="5%" stopColor="#AB4256" stopOpacity={0.22} />
-            <stop offset="95%" stopColor="#AB4256" stopOpacity={0.02} />
+            <stop offset="5%" stopColor={colors.brand} stopOpacity={0.22} />
+            <stop offset="95%" stopColor={colors.brand} stopOpacity={0.02} />
           </linearGradient>
         </defs>
-        <CartesianGrid strokeDasharray="3 3" stroke="#EADFDA" />
+        <CartesianGrid strokeDasharray="3 3" stroke={colors.line} />
         <XAxis
           dataKey="date"
-          tick={{ fontSize: 12, fontWeight: 600, fill: '#6B5B60' }}
-          axisLine={{ stroke: '#EADFDA', strokeWidth: 1 }}
+          tick={{ fontSize: 12, fontWeight: 600, fill: colors.muted }}
+          axisLine={{ stroke: colors.line, strokeWidth: 1 }}
           tickLine={false}
         />
         <YAxis
-          tick={{ fontSize: 12, fontWeight: 600, fill: '#6B5B60' }}
-          axisLine={{ stroke: '#EADFDA', strokeWidth: 1 }}
+          tick={{ fontSize: 12, fontWeight: 600, fill: colors.muted }}
+          axisLine={{ stroke: colors.line, strokeWidth: 1 }}
           tickLine={false}
           width={38}
           domain={['dataMin - 1', 'dataMax + 1']}
@@ -64,26 +67,26 @@ function ChartInner({ data, height = '100%' }) {
             value: 'kg',
             position: 'top',
             offset: 8,
-            style: { fontSize: 12, fontWeight: 700, fill: '#6B5B60' },
+            style: { fontSize: 12, fontWeight: 700, fill: colors.muted },
           }}
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: '#FFFFFF',
-            border: '1px solid #EADFDA',
+            backgroundColor: colors.surface,
+            border: `1px solid ${colors.line}`,
             borderRadius: '14px',
             fontSize: '12px',
             fontWeight: 600,
-            color: '#2B2024',
-            boxShadow: '0 6px 20px rgba(43, 32, 36, 0.08)',
+            color: colors.ink,
+            boxShadow: '0 6px 20px rgba(0, 0, 0, 0.12)',
           }}
-          labelStyle={{ color: '#AB4256', fontWeight: 700 }}
+          labelStyle={{ color: colors.brand, fontWeight: 700 }}
         />
         <Area
           type="monotone"
           dataKey="weight"
           name="Cân nặng (kg)"
-          stroke="#AB4256"
+          stroke={colors.brand}
           strokeWidth={2.5}
           fillOpacity={1}
           fill="url(#momWeightArea)"

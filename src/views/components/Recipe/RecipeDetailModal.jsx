@@ -11,12 +11,14 @@ import {
   BarChart3,
 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from "recharts";
+import { useThemeColors } from "../../../hooks/useThemeColors";
 
 export default function RecipeDetailModal({ recipe, onClose }) {
   const [activeTab, setActiveTab] = useState("ingredients"); // "ingredients" | "steps" | "nutrition"
   const [checkedIngredients, setCheckedIngredients] = useState({});
   const [cookMode, setCookMode] = useState(false);
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
+  const colors = useThemeColors();
 
   const { title, ingredients, steps, nutritionInfo, tags, imageUrl } = recipe;
 
@@ -47,9 +49,9 @@ export default function RecipeDetailModal({ recipe, onClose }) {
   const fVal = parseGrams(nutritionInfo?.fat);
 
   const chartData = [
-    { name: "Chất đạm (Protein)", value: pVal, color: "#AB4256" },
-    { name: "Tinh bột (Carbs)", value: cVal, color: "#D9962B" },
-    { name: "Chất béo (Fat)", value: fVal, color: "#4F7F66" },
+    { name: "Chất đạm (Protein)", value: pVal, color: colors.brand },
+    { name: "Tinh bột (Carbs)", value: cVal, color: colors.warn },
+    { name: "Chất béo (Fat)", value: fVal, color: colors.ok },
   ];
 
   return (
@@ -304,7 +306,7 @@ export default function RecipeDetailModal({ recipe, onClose }) {
                       <button
                         type="button"
                         onClick={() => setCookMode(false)}
-                        className="flex min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-full bg-status-ok px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-emerald-800"
+                        className="flex min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-full bg-status-ok px-4 py-2.5 text-sm font-bold text-theme-surface transition-colors hover:bg-status-ok-text"
                       >
                         <Award className="h-4 w-4" />
                         <span>Hoàn tất món ăn</span>
@@ -345,14 +347,16 @@ export default function RecipeDetailModal({ recipe, onClose }) {
                         type="category"
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fill: "#2B2024", fontSize: 12, fontWeight: 600 }}
+                        tick={{ fill: colors.ink, fontSize: 12, fontWeight: 600 }}
                         width={130}
                       />
                       <Tooltip
                         cursor={{ fill: "transparent" }}
                         contentStyle={{
                           borderRadius: "12px",
-                          border: "1px solid #EADFDA",
+                          border: `1px solid ${colors.line}`,
+                          backgroundColor: colors.surface,
+                          color: colors.ink,
                           fontSize: "12px",
                           fontWeight: 600,
                         }}

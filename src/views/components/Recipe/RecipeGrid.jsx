@@ -6,9 +6,9 @@ const RecipeGrid = ({ recipes, onSelect }) => {
   if (!recipes.length)
     return (
       <div className="text-center py-16">
-        <span className="material-symbols-outlined text-6xl text-gray-300 dark:text-gray-600 mb-4">restaurant</span>
-        <p className="text-gray-500 dark:text-gray-400 text-lg">Không tìm thấy công thức nấu ăn nào.</p>
-        <p className="text-gray-400 dark:text-gray-500 text-sm mt-2">
+        <span className="material-symbols-outlined text-6xl text-theme-muted dark:text-theme-muted mb-4">restaurant</span>
+        <p className="text-theme-muted dark:text-theme-muted text-lg">Không tìm thấy công thức nấu ăn nào.</p>
+        <p className="text-theme-muted dark:text-theme-muted text-sm mt-2">
           Hãy thử tạo thực đơn dinh dưỡng hoặc sử dụng nút AI để tạo công thức nấu ăn tùy chỉnh!
         </p>
       </div>

@@ -315,18 +315,18 @@ export default function RecipePage() {
 
       {/* Error message */}
       {error && (
-        <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-900">
-          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-700" />
+        <div className="flex items-start gap-3 rounded-2xl border border-status-danger-line bg-status-danger-bg p-4 text-status-danger-text">
+          <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-status-danger-text" />
           <div>
             <p className="text-sm font-bold">Không thể tải đề xuất thực đơn</p>
-            <p className="mt-0.5 text-xs font-medium text-red-800">{error}</p>
+            <p className="mt-0.5 text-xs font-medium text-status-danger-text">{error}</p>
             <button
               type="button"
               onClick={() => {
                 fetchCurrentProfile();
                 fetchMyRecipes();
               }}
-              className="mt-2 inline-flex min-h-[36px] items-center text-xs font-bold text-red-900 underline hover:text-red-700"
+              className="mt-2 inline-flex min-h-[36px] items-center text-xs font-bold text-status-danger-text underline hover:text-status-danger-text"
             >
               Thử tải lại dữ liệu
             </button>
@@ -405,7 +405,7 @@ export default function RecipePage() {
       {/* Rejected Recipes Section */}
       {!isGenerating && filterType !== "saved" && rejectedRecipes.length > 0 && (
         <section className="mt-8 space-y-4 border-t border-theme-line pt-8">
-          <div className="flex items-center gap-2 text-red-700">
+          <div className="flex items-center gap-2 text-status-danger-text">
             <AlertCircle className="h-5 w-5 shrink-0" />
             <h2 className="text-lg font-bold">
               Món ăn chuyên gia khuyến nghị không dùng ({rejectedRecipes.length})

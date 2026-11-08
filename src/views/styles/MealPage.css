@@ -113,8 +113,8 @@
 }
 
 .filter-btn.active {
-  background-color: #f29e0d33;
-  color: #f29e0d;
+  background-color: rgb(var(--c-brand-soft));
+  color: rgb(var(--c-ink));
 }
 
 .meal-type-radio {
@@ -134,8 +134,8 @@
 }
 
 .meal-type-radio.checked {
-  background-color: #f29e0d33;
-  color: #f29e0d;
+  background-color: rgb(var(--c-brand-soft));
+  color: rgb(var(--c-ink));
 }
 
 .recipe-modal {

@@ -36,7 +36,7 @@ export const MealForm = ({ meals, setMeals }) => {
                   aria-pressed={hadMeal}
                   className={`inline-flex min-h-[44px] items-center gap-1.5 px-3.5 py-2 text-xs sm:text-sm font-bold rounded-2xl border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
                     hadMeal
-                      ? "bg-status-ok text-white border-status-ok"
+                      ? "bg-status-ok text-theme-surface border-status-ok"
                       : "bg-theme-surface text-theme-ink border-theme-line hover:bg-theme-brand-soft"
                   }`}
                 >
