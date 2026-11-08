@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Activity,
-  ArrowUpRight,
   Baby,
   Calendar,
   CheckCircle2,
@@ -23,6 +22,7 @@ import babyWeaningPlayPhoto from '../../assets/editorial/baby-weaning-play.jpg';
 import newbornFeetPhoto from '../../assets/editorial/newborn-feet-towel.jpg';
 import ScientificEvidenceFooter from '../components/common/ScientificEvidenceFooter';
 import MedicalDisclaimer from '../components/common/MedicalDisclaimer';
+import ColorSchemeToggle from '../components/common/ColorSchemeToggle';
 import { ADVISOR_DOCTOR } from '../../config/advisor';
 import { applyBabyThemeToDom } from '../../hooks/useBabyTheme';
 
@@ -97,40 +97,67 @@ const JOURNEY_CHAPTERS = [
   },
 ];
 
+// Hiện dần khi cuộn tới. Chỉ chuyển động nhẹ (mờ + trượt lên), tự tắt khi người dùng bật "giảm chuyển động".
+function Reveal({ children }) {
+  const ref = useRef(null);
+  const [shown, setShown] = useState(() => typeof IntersectionObserver === 'undefined');
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || typeof IntersectionObserver === 'undefined') return undefined;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShown(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '0px 0px -10% 0px' },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={ref}
+      className={`motion-safe:transition-[opacity,transform] motion-safe:duration-700 motion-safe:ease-out ${
+        shown ? 'opacity-100 translate-y-0' : 'motion-safe:translate-y-6 motion-safe:opacity-0'
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
+
 export default function LandingPage() {
   const { user } = useAuthController();
   const navigate = useNavigate();
-  const [activeChapterIdx, setActiveChapterIdx] = useState(0);
-  const [previewGender, setPreviewGender] = useState('boy');
-  const tabRefs = useRef([]);
-
-  // Bàn phím theo mẫu ARIA tabs: mũi tên di chuyển giữa các chặng, Home/End về đầu/cuối
-  const handleTabKeyDown = (event, idx) => {
-    const last = JOURNEY_CHAPTERS.length - 1;
-    const nextByKey = {
-      ArrowDown: idx === last ? 0 : idx + 1,
-      ArrowRight: idx === last ? 0 : idx + 1,
-      ArrowUp: idx === 0 ? last : idx - 1,
-      ArrowLeft: idx === 0 ? last : idx - 1,
-      Home: 0,
-      End: last,
-    };
-    if (!(event.key in nextByKey)) return;
-    event.preventDefault();
-    const next = nextByKey[event.key];
-    setActiveChapterIdx(next);
-    tabRefs.current[next]?.focus();
-  };
+  const [activeChapterId, setActiveChapterId] = useState(JOURNEY_CHAPTERS[0].id);
 
   // Trang giới thiệu công khai luôn giữ bảng màu thương hiệu gốc
   useEffect(() => {
     applyBabyThemeToDom(null);
   }, []);
 
-  const activeChapter = JOURNEY_CHAPTERS[activeChapterIdx] || JOURNEY_CHAPTERS[0];
+  // Thanh bên dính: tô đậm chặng đang nằm giữa màn hình (chỉ đổi state khi đổi chặng)
+  useEffect(() => {
+    const nodes = JOURNEY_CHAPTERS.map((chapter) => document.getElementById(`chang-${chapter.id}`)).filter(Boolean);
+    if (!nodes.length || typeof IntersectionObserver === 'undefined') return undefined;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) setActiveChapterId(entry.target.dataset.chapterId);
+        });
+      },
+      { rootMargin: '-35% 0px -55% 0px' },
+    );
+    nodes.forEach((node) => observer.observe(node));
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-theme-page font-display text-theme-ink selection:bg-theme-brand-soft">
+    <div className="min-h-screen overflow-x-clip bg-theme-page font-display text-theme-ink selection:bg-theme-brand-soft">
       {/* Liên kết bỏ qua điều hướng cho người dùng bàn phím */}
       <a
         href="#noi-dung"
@@ -157,7 +184,7 @@ export default function LandingPage() {
               <span className="block whitespace-nowrap font-brand text-xl font-extrabold leading-none text-theme-brand sm:text-2xl">
                 Mom Ơi!
               </span>
-              <span className="mt-0.5 hidden text-xs font-medium text-theme-muted sm:block">
+              <span className="mt-0.5 hidden text-xs font-medium text-theme-muted sm:block lg:hidden xl:block">
                 Sổ tay sức khỏe mẹ và bé
               </span>
             </div>
@@ -185,6 +212,7 @@ export default function LandingPage() {
           </nav>
 
           <div className="flex items-center gap-2.5 sm:gap-3">
+            <ColorSchemeToggle variant="compact" className="hidden sm:inline-flex" />
             {user ? (
               <button
                 type="button"
@@ -218,289 +246,170 @@ export default function LandingPage() {
       </header>
 
       <main id="noi-dung" tabIndex={-1} className="outline-none">
-        {/* 1. Mở đầu tạp chí (Editorial Hero với ảnh đời thực Mẹ & Bé Việt/Á Đông) */}
-        <section className="border-b border-theme-line bg-theme-page">
-          <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-10 sm:px-8 sm:py-14 lg:grid-cols-12 lg:gap-12 lg:py-16">
-            <div className="lg:col-span-6">
-              <div className="flex items-center gap-3 text-xs font-bold text-theme-brand sm:text-sm">
-                <span className="h-px w-8 bg-theme-brand" aria-hidden="true" />
-                <span>Dành cho mẹ bầu &amp; mẹ bỉm tại Việt Nam</span>
-              </div>
-
-              <h1 className="mt-4 text-3xl font-bold leading-[1.16] tracking-tight text-theme-ink sm:text-5xl sm:leading-[1.12]">
-                Chăm sóc mẹ và bé nhẹ nhàng, có căn cứ hơn mỗi ngày
-              </h1>
-
-              <p className="mt-5 max-w-xl text-base leading-relaxed text-theme-muted sm:text-lg">
-                Từ ngày chuẩn bị đón con, suốt 40 tuần thai kỳ đến những bữa cháo ăn dặm đầu đời, Mom Ơi! gói gọn lịch khám, dinh dưỡng chuẩn WHO và theo dõi phục hồi vào một cuốn sổ tay ấm áp, dễ mở bằng một tay.
-              </p>
-
-              <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <button
-                  type="button"
-                  onClick={() => navigate(user ? '/dashboard' : '/register')}
-                  className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-theme-brand px-7 py-3 text-base font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
-                >
-                  <span>{user ? 'Mở bàn đồng hành của mẹ' : 'Tạo sổ tay miễn phí'}</span>
-                  <ChevronRight className="h-5 w-5" />
-                </button>
-                <a
-                  href="#hanh-trinh"
-                  className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-theme-line bg-theme-surface px-6 py-3 text-base font-semibold text-theme-ink transition-colors hover:border-theme-brand/40 hover:bg-theme-sidebar focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
-                >
-                  Khám phá 4 giai đoạn
-                </a>
-              </div>
-
-              {/* Ba chỉ dấu tin cậy kiểu biên tập */}
-              <dl className="mt-9 grid grid-cols-1 gap-4 border-t border-theme-line pt-6 sm:grid-cols-3">
-                <div className="border-l-2 border-theme-brand pl-3.5">
-                  <dt className="text-xs font-medium text-theme-muted">Nguồn đối chiếu</dt>
-                  <dd className="mt-0.5 text-sm font-bold text-theme-ink">Chuẩn WHO &amp; USDA</dd>
-                </div>
-                <div className="border-l-2 border-status-ok pl-3.5">
-                  <dt className="text-xs font-medium text-theme-muted">Cố vấn chuyên môn</dt>
-                  <dd className="mt-0.5 text-sm font-bold text-theme-ink">{ADVISOR_DOCTOR.displayName}</dd>
-                </div>
-                <div className="border-l-2 border-theme-line pl-3.5">
-                  <dt className="text-xs font-medium text-theme-muted">Quyền riêng tư</dt>
-                  <dd className="mt-0.5 text-sm font-bold text-theme-ink">Nghị định 13/2023</dd>
-                </div>
-              </dl>
+        {/* 1. Mở đầu: tiêu đề trải ngang, ảnh thật, công tắc màu theo bé đè lên mép ảnh */}
+        <section>
+          <div className="mx-auto max-w-6xl px-4 pb-12 pt-10 sm:px-8 sm:pb-16 sm:pt-14">
+            <div className="flex items-center gap-3 text-sm font-bold text-theme-brand">
+              <span className="h-px w-8 bg-theme-brand" aria-hidden="true" />
+              <span>Dành cho mẹ bầu &amp; mẹ bỉm tại Việt Nam</span>
             </div>
 
-            {/* Khung ảnh đời thực + thẻ xem trước giao diện theo giới tính bé */}
-            <div className="space-y-3.5 lg:col-span-6">
-              <figure className="overflow-hidden rounded-3xl border border-theme-line bg-theme-surface p-2.5 shadow-sm">
-                <div className="overflow-hidden rounded-2xl">
-                  <img
-                    src={heroMomBabyPhoto}
-                    alt="Người mẹ mỉm cười ẵm em bé bên khung cửa sổ ngập nắng ấm buổi sáng"
-                    width="1080"
-                    height="717"
-                    fetchPriority="high"
-                    decoding="async"
-                    className="aspect-[16/11] w-full object-cover"
-                  />
-                </div>
-                <figcaption className="flex flex-wrap items-center justify-between gap-2 px-2.5 pb-1.5 pt-3 text-xs">
-                  <span className="font-semibold text-theme-ink">
-                    Buổi sáng bình yên của hai mẹ con · Sổ tay cá nhân hóa theo từng tháng tuổi
-                  </span>
-                  <span className="font-semibold text-status-ok">Thực đơn &amp; tăng trưởng</span>
-                </figcaption>
-              </figure>
+            <h1 className="mt-4 max-w-4xl text-4xl font-extrabold leading-[1.08] tracking-tight text-theme-ink sm:text-5xl lg:text-6xl">
+              Chăm sóc mẹ và bé nhẹ nhàng, có căn cứ hơn mỗi ngày
+            </h1>
 
-              {/* Hai thẻ chi tiết bất đối xứng bên dưới ảnh chính */}
-              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-12">
-                {/* Thẻ thử đổi màu toàn dashboard theo giới tính bé */}
-                <div
-                  className="rounded-2xl border p-4 shadow-sm transition-colors sm:col-span-7"
-                  style={
-                    previewGender === 'boy'
-                      ? {
-                          backgroundColor: '#F2F6F8',
-                          borderColor: '#D8E3E9',
-                          color: '#1D2A33',
-                        }
-                      : {
-                          backgroundColor: '#FFFFFF',
-                          borderColor: '#EADFDA',
-                          color: '#2B2024',
-                        }
-                  }
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold">Giao diện đồng điệu theo bé</span>
-                    <div className="inline-flex rounded-full border border-black/10 bg-white p-0.5 text-xs font-bold">
-                      <button
-                        type="button"
-                        onClick={() => setPreviewGender('boy')}
-                        aria-pressed={previewGender === 'boy'}
-                        className={`min-h-[30px] rounded-full px-2.5 py-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
-                          previewGender === 'boy'
-                            ? 'bg-[#2E6D93] text-white'
-                            : 'text-[#1D2A33] hover:bg-black/5'
-                        }`}
-                      >
-                        Bé trai
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPreviewGender('girl')}
-                        aria-pressed={previewGender === 'girl'}
-                        className={`min-h-[30px] rounded-full px-2.5 py-1 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
-                          previewGender === 'girl'
-                            ? 'bg-[#AB4256] text-white'
-                            : 'text-[#2B2024] hover:bg-black/5'
-                        }`}
-                      >
-                        Bé gái
-                      </button>
-                    </div>
-                  </div>
-                  <p className="mt-2 text-xs leading-relaxed opacity-85">
-                    {previewGender === 'boy'
-                      ? 'Khi hồ sơ là bé trai, toàn bộ bảng điều khiển chuyển sang sắc Xanh lam dịu mắt xuyên suốt mọi trang.'
-                      : 'Khi hồ sơ là bé gái, không gian giữ sắc Hồng đất ấm áp trên toàn bộ thực đơn, lịch khám và trang chủ.'}
-                  </p>
-                </div>
+            <div className="mt-8 grid lg:mt-10 lg:grid-cols-12 lg:items-center lg:gap-x-12">
+              <div className="mb-10 lg:col-span-5 lg:mb-0">
+                <p className="max-w-md text-lg leading-relaxed text-theme-muted lg:text-xl">
+                  Lịch khám, dinh dưỡng chuẩn WHO và theo dõi phục hồi, gói trong một cuốn sổ tay dễ mở bằng một tay.
+                </p>
 
-                {/* Thẻ nhấn thực đơn ăn dặm */}
-                <div className="flex items-center gap-3 rounded-2xl border border-theme-line bg-theme-surface p-3.5 shadow-sm sm:col-span-5">
-                  <img
-                    src={babyWeaningPlayPhoto}
-                    alt="Bữa ăn dặm của bé"
-                    width="56"
-                    height="56"
-                    className="h-14 w-14 shrink-0 rounded-2xl border border-theme-line object-cover"
-                    loading="lazy"
-                  />
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-theme-ink">Ăn dặm &amp; dị ứng</p>
-                    <p className="mt-0.5 text-xs leading-snug text-theme-muted">
-                      Tự lọc thực phẩm bé dị ứng và cảnh báo thiếu sắt sớm.
-                    </p>
-                  </div>
+                <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <button
+                    type="button"
+                    onClick={() => navigate(user ? '/dashboard' : '/register')}
+                    className="inline-flex min-h-[48px] items-center justify-center gap-2 whitespace-nowrap rounded-full bg-theme-brand px-7 py-3 text-base font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
+                  >
+                    <span>{user ? 'Mở bàn đồng hành của mẹ' : 'Tạo sổ tay miễn phí'}</span>
+                    <ChevronRight className="h-5 w-5" aria-hidden="true" />
+                  </button>
+                  <a
+                    href="#hanh-trinh"
+                    className="inline-flex min-h-[48px] items-center justify-center whitespace-nowrap rounded-full border border-theme-line bg-theme-surface px-6 py-3 text-base font-semibold text-theme-ink transition-colors hover:border-theme-brand/40 hover:bg-theme-sidebar focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
+                  >
+                    Khám phá 4 giai đoạn
+                  </a>
                 </div>
               </div>
+
+              <figure className="overflow-hidden rounded-3xl border border-theme-line bg-theme-sidebar lg:col-span-7">
+                <img
+                  src={heroMomBabyPhoto}
+                  alt="Người mẹ mỉm cười ẵm em bé bên khung cửa sổ ngập nắng ấm buổi sáng"
+                  width="1080"
+                  height="717"
+                  fetchPriority="high"
+                  decoding="async"
+                  className="aspect-[4/3] w-full object-cover lg:aspect-[16/10]"
+                />
+              </figure>
+
             </div>
           </div>
         </section>
 
-        {/* 2. Lộ trình 4 chặng (Bố cục tạp chí tương tác thay vì lưới 4 hộp giống nhau) */}
-        <section id="hanh-trinh" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14 sm:px-8 sm:py-20">
-          <div className="mb-10 flex flex-col justify-between gap-4 border-b border-theme-line pb-7 md:flex-row md:items-end">
-            <div className="max-w-xl">
-              <p className="text-xs font-bold text-theme-brand sm:text-sm">Lộ trình liền mạch 4 giai đoạn</p>
-              <h2 className="mt-2 text-2xl font-bold text-theme-ink sm:text-3xl lg:text-4xl">
-                Một cuốn sổ tay lớn lên cùng hai mẹ con
-              </h2>
+        {/* Dải nguồn đối chiếu, ngay dưới phần mở đầu */}
+        <section aria-label="Nguồn đối chiếu và cam kết" className="border-y border-theme-line bg-theme-surface">
+          <dl className="mx-auto grid max-w-6xl gap-5 px-4 py-6 sm:grid-cols-3 sm:px-8">
+            <div className="border-l-2 border-theme-brand pl-3.5">
+              <dt className="text-xs font-medium text-theme-muted">Nguồn đối chiếu</dt>
+              <dd className="mt-0.5 text-sm font-bold text-theme-ink">Chuẩn WHO &amp; USDA</dd>
             </div>
-            <p className="max-w-md text-sm leading-relaxed text-theme-muted sm:text-base">
-              Mẹ không cần tải nhiều ứng dụng rời rạc cho từng thời kỳ. Chọn giai đoạn hiện tại để xem Mom Ơi! chuẩn bị sẵn những gì cho mẹ.
+            <div className="border-l-2 border-theme-brand pl-3.5">
+              <dt className="text-xs font-medium text-theme-muted">Cố vấn chuyên môn</dt>
+              <dd className="mt-0.5 text-sm font-bold text-theme-ink">{ADVISOR_DOCTOR.displayName}</dd>
+            </div>
+            <div className="border-l-2 border-theme-brand pl-3.5">
+              <dt className="text-xs font-medium text-theme-muted">Quyền riêng tư</dt>
+              <dd className="mt-0.5 text-sm font-bold text-theme-ink">Nghị định 13/2023</dd>
+            </div>
+          </dl>
+        </section>
+
+        {/* 2. Lộ trình 4 chặng: dòng thời gian cuộn, thanh bên dính cho biết đang ở chặng nào */}
+        <section id="hanh-trinh" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-14 sm:px-8 sm:py-20">
+          <div className="max-w-2xl">
+            <h2 className="text-3xl font-extrabold leading-tight tracking-tight text-theme-ink sm:text-4xl lg:text-5xl">
+              Một cuốn sổ tay lớn lên cùng hai mẹ con
+            </h2>
+            <p className="mt-4 max-w-[65ch] text-base leading-relaxed text-theme-muted sm:text-lg">
+              Mẹ không cần tải nhiều ứng dụng rời rạc cho từng thời kỳ. Mom Ơi! chuẩn bị sẵn những gì mẹ cần ở từng giai đoạn.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
-            {/* Danh sách chương bên trái */}
-            <div
-              className="space-y-2.5 lg:col-span-5"
-              role="tablist"
-              aria-orientation="vertical"
-              aria-label="Các giai đoạn đồng hành"
-            >
-              {JOURNEY_CHAPTERS.map((chapter, idx) => {
-                const Icon = chapter.icon;
-                const isSelected = idx === activeChapterIdx;
-                return (
-                  <button
-                    key={chapter.id}
-                    ref={(el) => {
-                      tabRefs.current[idx] = el;
-                    }}
-                    id={`chapter-tab-${chapter.id}`}
-                    type="button"
-                    role="tab"
-                    aria-selected={isSelected}
-                    aria-controls="chapter-panel"
-                    tabIndex={isSelected ? 0 : -1}
-                    onClick={() => setActiveChapterIdx(idx)}
-                    onKeyDown={(event) => handleTabKeyDown(event, idx)}
-                    className={`flex min-h-[72px] w-full items-start gap-3.5 rounded-2xl border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand sm:p-5 ${
-                      isSelected
-                        ? 'border-theme-brand bg-theme-surface shadow-sm'
-                        : 'border-theme-line bg-theme-sidebar/55 hover:bg-theme-surface'
-                    }`}
-                  >
-                    <span
-                      className={`mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl text-xs font-bold ${
-                        isSelected
-                          ? 'bg-theme-brand text-theme-surface'
-                          : 'bg-theme-surface text-theme-muted border border-theme-line'
-                      }`}
-                    >
-                      <Icon className="h-4 w-4" aria-hidden="true" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs font-bold text-theme-brand">
-                          Chặng {chapter.step}
-                        </span>
-                        <ChevronRight
-                          className={`h-4 w-4 shrink-0 transition-transform ${
-                            isSelected ? 'translate-x-0.5 text-theme-brand' : 'text-theme-muted'
-                          }`}
+          <div className="mt-12 grid gap-10 lg:grid-cols-12 lg:gap-14">
+            {/* Thanh bên dính (chỉ desktop): bấm để nhảy tới chặng, tô đậm chặng đang xem */}
+            <nav aria-label="Các giai đoạn đồng hành" className="hidden lg:col-span-3 lg:block">
+              <ol className="sticky top-28 border-l border-theme-line">
+                {JOURNEY_CHAPTERS.map((chapter) => {
+                  const Icon = chapter.icon;
+                  const isActive = chapter.id === activeChapterId;
+                  return (
+                    <li key={chapter.id}>
+                      <a
+                        href={`#chang-${chapter.id}`}
+                        aria-current={isActive ? 'step' : undefined}
+                        className={`-ml-px flex min-h-[56px] items-center gap-3 border-l-2 py-2 pl-4 pr-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+                          isActive
+                            ? 'border-theme-brand text-theme-ink'
+                            : 'border-transparent text-theme-muted hover:text-theme-ink'
+                        }`}
+                      >
+                        <Icon
+                          className={`h-4 w-4 shrink-0 ${isActive ? 'text-theme-brand' : ''}`}
                           aria-hidden="true"
                         />
+                        <span>
+                          <span className="block text-xs font-bold text-theme-brand">Chặng {chapter.step}</span>
+                          {chapter.stage}
+                        </span>
+                      </a>
+                    </li>
+                  );
+                })}
+              </ol>
+            </nav>
+
+            <div className="space-y-16 sm:space-y-24 lg:col-span-9">
+              {JOURNEY_CHAPTERS.map((chapter) => (
+                <Reveal key={chapter.id}>
+                  <article
+                    id={`chang-${chapter.id}`}
+                    data-chapter-id={chapter.id}
+                    aria-labelledby={`chang-${chapter.id}-tieu-de`}
+                    className="scroll-mt-28"
+                  >
+                    <figure className="overflow-hidden rounded-3xl border border-theme-line bg-theme-sidebar">
+                      <img
+                        src={chapter.photo}
+                        alt={chapter.photoAlt}
+                        width="1000"
+                        height="667"
+                        loading="lazy"
+                        decoding="async"
+                        className="aspect-[4/3] w-full object-cover sm:aspect-[16/9]"
+                      />
+                    </figure>
+
+                    <div className="mt-6 grid gap-6 md:grid-cols-12 md:gap-10">
+                      <div className="md:col-span-5">
+                        <p className="text-sm font-bold text-theme-brand">Chặng {chapter.step}</p>
+                        <h3
+                          id={`chang-${chapter.id}-tieu-de`}
+                          className="mt-1 text-2xl font-extrabold leading-tight tracking-tight text-theme-ink sm:text-3xl"
+                        >
+                          {chapter.stage}
+                        </h3>
+                        <p className="mt-3 text-base font-semibold leading-snug text-theme-ink">{chapter.title}</p>
                       </div>
-                      <p className="mt-0.5 text-base font-bold text-theme-ink">{chapter.stage}</p>
-                      <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-theme-muted">
-                        {chapter.title}
-                      </p>
+
+                      <div className="md:col-span-7">
+                        <p className="text-base leading-relaxed text-theme-muted">{chapter.summary}</p>
+                        <ul className="mt-5 space-y-3 border-t border-theme-line pt-5">
+                          {chapter.highlights.map((item) => (
+                            <li key={item} className="flex items-start gap-2.5 text-sm font-medium leading-relaxed text-theme-ink">
+                              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-status-ok" aria-hidden="true" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <p className="mt-5 text-sm italic leading-relaxed text-theme-muted">{chapter.caption}</p>
+                      </div>
                     </div>
-                  </button>
-                );
-              })}
+                  </article>
+                </Reveal>
+              ))}
             </div>
-
-            {/* Nội dung chi tiết chương bên phải kèm ảnh đời thực */}
-            <article
-              id="chapter-panel"
-              role="tabpanel"
-              aria-labelledby={`chapter-tab-${activeChapter.id}`}
-              className="flex flex-col justify-between overflow-hidden rounded-3xl border border-theme-line bg-theme-surface shadow-sm lg:col-span-7"
-            >
-              <div className="grid grid-cols-1 gap-0 sm:grid-cols-12">
-                <div className="sm:col-span-5">
-                  <img
-                    src={activeChapter.photo}
-                    alt={activeChapter.photoAlt}
-                    width="1000"
-                    height="667"
-                    decoding="async"
-                    className="h-56 w-full object-cover sm:h-full sm:min-h-[340px]"
-                    loading="lazy"
-                  />
-                </div>
-                <div className="flex flex-col justify-between p-6 sm:col-span-7 sm:p-8">
-                  <div>
-                    <span className="inline-block rounded-md bg-theme-brand-soft px-2.5 py-1 text-xs font-bold text-theme-ink">
-                      {activeChapter.step} · {activeChapter.stage}
-                    </span>
-                    <h3 className="mt-3 text-xl font-bold leading-snug text-theme-ink sm:text-2xl">
-                      {activeChapter.title}
-                    </h3>
-                    <p className="mt-2.5 text-sm leading-relaxed text-theme-muted">
-                      {activeChapter.summary}
-                    </p>
-
-                    <ul className="mt-5 space-y-2.5 border-t border-theme-line pt-4">
-                      {activeChapter.highlights.map((item) => (
-                        <li key={item} className="flex items-start gap-2.5 text-sm font-medium leading-relaxed text-theme-ink">
-                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-status-ok" aria-hidden="true" />
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-theme-line pt-4">
-                    <p className="text-xs font-medium italic text-theme-muted">
-                      {activeChapter.caption}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={() => navigate(user ? '/dashboard' : '/register')}
-                      className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-theme-page px-4 py-2 text-xs font-bold text-theme-brand border border-theme-line transition-colors hover:bg-theme-brand hover:text-theme-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
-                    >
-                      <span>Trải nghiệm chặng này</span>
-                      <ArrowUpRight className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </article>
           </div>
         </section>
 
@@ -516,7 +425,7 @@ export default function LandingPage() {
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
               {/* Cột 7: Sàng lọc triệu chứng chuẩn mực, không gây hoang mang */}
-              <div className="flex flex-col justify-between rounded-3xl border border-theme-line bg-theme-page p-6 sm:p-8 lg:col-span-7">
+              <div className="flex flex-col justify-between rounded-3xl border border-theme-line bg-theme-sidebar p-6 sm:p-8 lg:col-span-7">
                 <div>
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="inline-flex items-center gap-2 text-xs font-bold text-theme-brand sm:text-sm">
@@ -647,7 +556,8 @@ export default function LandingPage() {
             <p>
               © {new Date().getFullYear()} Mom Ơi! · Bác sĩ cố vấn chuyên môn: {ADVISOR_DOCTOR.displayName}
             </p>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              <ColorSchemeToggle variant="segmented" />
               <Link
                 to="/consent"
                 className="inline-flex min-h-[44px] items-center text-theme-ink underline decoration-theme-line underline-offset-4 hover:text-theme-brand"

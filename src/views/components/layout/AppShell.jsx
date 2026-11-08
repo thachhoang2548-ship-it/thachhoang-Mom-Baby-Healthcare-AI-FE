@@ -7,6 +7,7 @@ import momOiLogo from '../../../assets/Logo/mom-oi-submark-cropped.png';
 import { checkTierUnlocked, getTierLevel } from '../../../utils/tierHelpers';
 import { formatTodayVi, getFullName } from '../../../utils/displayName';
 import MedicalDisclaimer from '../common/MedicalDisclaimer';
+import ColorSchemeToggle from '../common/ColorSchemeToggle';
 import { useOnlineStatus } from '../../../hooks/useOnlineStatus';
 import {
   applyBabyThemeToDom,
@@ -418,6 +419,7 @@ export default function AppShell() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-2.5">
+            <ColorSchemeToggle />
             {isMom && (
               <Link
                 to="/notifications"
