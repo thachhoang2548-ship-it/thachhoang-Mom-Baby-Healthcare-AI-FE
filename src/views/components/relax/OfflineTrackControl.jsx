@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useSyncExternalStore } from 'react';
 import {
   Download,
   CheckCircle2,
@@ -18,7 +18,163 @@ import {
 } from '../../../utils/offline';
 import { useOnlineStatus } from '../../../hooks/useOnlineStatus';
 
-const INITIAL = { cached: false, busy: null, error: null };
+/*
+ * Trạng thái tải/xóa nhạc theo TỪNG URL, nằm ngoài React để:
+ *  - đổi bài A→B→A vẫn thấy đúng thao tác A đang chạy (không kẹt "Đang tải", không hiện sai "Đã lưu");
+ *  - hai thẻ có cùng URL luôn đồng bộ (query khác nhau là URL khác nên tách biệt);
+ *  - kết quả của thao tác cũ không ghi đè thao tác/đọc mới (số thứ tự, phiên bản).
+ * Khóa theo chuỗi URL đúng như khóa của Cache API (xem src/utils/offline.js).
+ */
+const EMPTY = Object.freeze({ cached: false, busy: null, error: null });
+const ERROR_MESSAGE = 'Chưa tải được, kiểm tra kết nối rồi thử lại';
+
+const entries = new Map();
+
+function getEntry(url) {
+  let entry = entries.get(url);
+  if (!entry) {
+    entry = { snap: EMPTY, listeners: new Set(), dl: 0, rm: 0, version: 0, readSeq: 0 };
+    entries.set(url, entry);
+  }
+  return entry;
+}
+
+const isBusy = (entry) => entry.dl + entry.rm > 0;
+const busyOf = (entry) => (entry.dl > 0 ? 'download' : entry.rm > 0 ? 'remove' : null);
+
+function setSnap(entry, patch) {
+  const next = { ...entry.snap, ...patch };
+  if (next.cached === entry.snap.cached && next.busy === entry.snap.busy && next.error === entry.snap.error) return;
+  entry.snap = next;
+  entry.listeners.forEach((listener) => listener());
+}
+
+// Bỏ mục khi không còn thẻ nào dùng và không có thao tác đang chạy (lần mở sau đọc lại cache từ đầu)
+function dropIfIdle(url, entry) {
+  if (entry.listeners.size === 0 && !isBusy(entry) && entries.get(url) === entry) entries.delete(url);
+}
+
+function subscribeUrl(url, listener) {
+  if (!url) return () => {};
+  const entry = getEntry(url);
+  entry.listeners.add(listener);
+  return () => {
+    entry.listeners.delete(listener);
+    dropIfIdle(url, entry);
+  };
+}
+
+const snapshotOf = (url) => (url && entries.get(url) ? entries.get(url).snap : EMPTY);
+
+// Đọc cache để biết đã lưu chưa. Chỉ áp dụng khi là lần đọc mới nhất, không có thao tác nào
+// bắt đầu/kết thúc kể từ lúc đọc và không có thao tác đang chạy (thao tác sẽ tự chốt trạng thái).
+function refreshCached(url) {
+  const entry = entries.get(url);
+  if (!entry || isBusy(entry)) return;
+  entry.readSeq += 1;
+  const seq = entry.readSeq;
+  const version = entry.version;
+  const apply = (cached) => {
+    if (entries.get(url) !== entry || entry.readSeq !== seq || entry.version !== version || isBusy(entry)) return;
+    setSnap(entry, { cached });
+  };
+  isAudioCached(url)
+    .then((cached) => apply(Boolean(cached)))
+    .catch(() => apply(false));
+}
+
+async function runDownload(url, title) {
+  const entry = getEntry(url);
+  if (isBusy(entry)) return;
+  entry.version += 1;
+  entry.dl += 1;
+  setSnap(entry, { busy: 'download', error: null });
+
+  let ok = true;
+  try {
+    await cacheAudio(url);
+  } catch {
+    ok = false;
+  }
+
+  entry.version += 1;
+  entry.dl -= 1;
+  setSnap(entry, ok ? { busy: busyOf(entry), cached: true, error: null } : { busy: busyOf(entry), error: ERROR_MESSAGE });
+  // Chỉ báo khi vẫn còn thẻ của URL này trên màn hình
+  if (entry.listeners.size > 0) {
+    if (ok) toast.success(`Đã lưu "${title}" để nghe offline.`);
+    else toast.error('Không tải được bản âm thanh.');
+  }
+  if (ok) refreshStorage();
+  dropIfIdle(url, entry);
+}
+
+async function runRemove(url, title) {
+  const entry = getEntry(url);
+  if (isBusy(entry)) return;
+  entry.version += 1;
+  entry.rm += 1;
+  setSnap(entry, { busy: 'remove' });
+
+  let ok = true;
+  try {
+    await removeAudio(url);
+  } catch {
+    ok = false;
+  }
+
+  entry.version += 1;
+  entry.rm -= 1;
+  setSnap(entry, ok ? { busy: busyOf(entry), cached: false, error: null } : { busy: busyOf(entry) });
+  if (entry.listeners.size > 0) {
+    if (ok) toast.success(`Đã xóa bản lưu "${title}".`);
+    else toast.error('Không xóa được bản lưu.');
+  }
+  if (ok) refreshStorage();
+  dropIfIdle(url, entry);
+}
+
+/*
+ * Cảnh báo dung lượng: thông tin phụ, dùng chung cho mọi thẻ. Chỉ lần truy vấn mới nhất được ghi nhận
+ * (estimate cũ trả muộn không ghi đè estimate mới); lỗi/không có dữ liệu thì không cảnh báo.
+ */
+let storageWarning = false;
+let storageSeq = 0;
+const storageListeners = new Set();
+
+function setStorageWarning(value) {
+  if (value === storageWarning) return;
+  storageWarning = value;
+  storageListeners.forEach((listener) => listener());
+}
+
+function refreshStorage() {
+  storageSeq += 1;
+  const seq = storageSeq;
+  getStorageEstimate()
+    .then((estimate) => {
+      if (seq === storageSeq) {
+        setStorageWarning(Boolean(estimate && estimate.quota > 0 && estimate.usage >= 0.8 * estimate.quota));
+      }
+    })
+    .catch(() => {
+      if (seq === storageSeq) setStorageWarning(false);
+    });
+}
+
+function subscribeStorage(listener) {
+  storageListeners.add(listener);
+  return () => {
+    storageListeners.delete(listener);
+    if (storageListeners.size === 0) {
+      // Không còn thẻ nào: bỏ qua estimate đang chờ và quên cảnh báo cũ
+      storageSeq += 1;
+      storageWarning = false;
+    }
+  };
+}
+
+const getStorageWarning = () => storageWarning;
 
 export default function OfflineTrackControl({ track }) {
   const isOnline = useOnlineStatus();
@@ -26,69 +182,16 @@ export default function OfflineTrackControl({ track }) {
   const audioUrl = track?.audioUrl;
   const title = track?.title || 'bản âm thanh';
 
-  // Trạng thái gắn với đúng URL: đổi bài thì tự về trạng thái ban đầu, không giữ kết quả của bài cũ
-  const [store, setStore] = useState({ url: audioUrl, ...INITIAL });
-  const view = store.url === audioUrl ? store : { url: audioUrl, ...INITIAL };
-  const [storageWarning, setStorageWarning] = useState(false);
-
-  const mountedRef = useRef(true);
-  const urlRef = useRef(audioUrl);
-  // Số thứ tự lượt: tăng khi đổi URL và mỗi lần mẹ bấm tải/xóa; kết quả của lượt cũ bị bỏ qua
-  const genRef = useRef(0);
-
-  const patch = useCallback(
-    (url, p) => setStore((prev) => ({ ...(prev.url === url ? prev : { url, ...INITIAL }), ...p })),
-    []
-  );
-
-  // Kết quả chỉ áp dụng khi còn đúng trang, đúng URL và đúng lượt
-  const isCurrent = useCallback(
-    (url, gen) => mountedRef.current && urlRef.current === url && genRef.current === gen,
-    []
-  );
-
-  // Dung lượng chỉ là thông tin phụ: lỗi hoặc không có dữ liệu thì không cảnh báo, không ảnh hưởng kết quả tải/xóa
-  const refreshStorage = useCallback(() => {
-    getStorageEstimate()
-      .then((estimate) => {
-        if (!mountedRef.current) return;
-        setStorageWarning(Boolean(estimate && estimate.quota > 0 && estimate.usage >= 0.8 * estimate.quota));
-      })
-      .catch(() => {
-        if (mountedRef.current) setStorageWarning(false);
-      });
-  }, []);
+  const subscribe = useCallback((listener) => subscribeUrl(audioUrl, listener), [audioUrl]);
+  const getSnapshot = useCallback(() => snapshotOf(audioUrl), [audioUrl]);
+  const view = useSyncExternalStore(subscribe, getSnapshot);
+  const storageWarningOn = useSyncExternalStore(subscribeStorage, getStorageWarning);
 
   useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    urlRef.current = audioUrl;
-    genRef.current += 1;
-    const gen = genRef.current;
-    const url = audioUrl;
-
-    if (!url || !supported) return undefined;
-
-    isAudioCached(url)
-      .then((cached) => {
-        if (isCurrent(url, gen)) patch(url, { cached: Boolean(cached) });
-      })
-      .catch(() => {
-        if (isCurrent(url, gen)) patch(url, { cached: false });
-      });
-
+    if (!audioUrl || !supported) return;
+    refreshCached(audioUrl);
     refreshStorage();
-
-    return () => {
-      // Đổi bài hoặc rời trang: vô hiệu mọi kết quả đang chờ của URL này
-      genRef.current += 1;
-    };
-  }, [audioUrl, supported, isCurrent, patch, refreshStorage]);
+  }, [audioUrl, supported]);
 
   // Trạng thái 7: Bài tổng hợp Web Audio không có audioUrl
   if (!audioUrl) {
@@ -118,60 +221,22 @@ export default function OfflineTrackControl({ track }) {
   const isDeleting = view.busy === 'remove';
   const { cached: isCached, error: errorMessage } = view;
 
-  const handleDownload = async () => {
-    const url = audioUrl;
+  const handleDownload = () => {
     if (!isOnline) {
       toast.error('Cần có mạng để tải bài này.');
       return;
     }
-
-    genRef.current += 1;
-    const gen = genRef.current;
-    patch(url, { busy: 'download', error: null });
-
-    try {
-      await cacheAudio(url);
-    } catch {
-      if (isCurrent(url, gen)) {
-        patch(url, { busy: null, error: 'Chưa tải được, kiểm tra kết nối rồi thử lại' });
-        toast.error('Không tải được bản âm thanh.');
-      }
-      return;
-    }
-
-    if (!isCurrent(url, gen)) return;
-    patch(url, { busy: null, cached: true, error: null });
-    toast.success(`Đã lưu "${title}" để nghe offline.`);
-    refreshStorage();
+    runDownload(audioUrl, title);
   };
 
-  const handleRemove = async () => {
-    const url = audioUrl;
-
-    genRef.current += 1;
-    const gen = genRef.current;
-    patch(url, { busy: 'remove' });
-
-    try {
-      await removeAudio(url);
-    } catch {
-      if (isCurrent(url, gen)) {
-        patch(url, { busy: null });
-        toast.error('Không xóa được bản lưu.');
-      }
-      return;
-    }
-
-    if (!isCurrent(url, gen)) return;
-    patch(url, { busy: null, cached: false, error: null });
-    toast.success(`Đã xóa bản lưu "${title}".`);
-    refreshStorage();
+  const handleRemove = () => {
+    runRemove(audioUrl, title);
   };
 
   return (
     <div className="space-y-2">
       {/* Cảnh báo dung lượng bộ nhớ */}
-      {storageWarning && (
+      {storageWarningOn && (
         <div
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl border border-status-warn-line bg-status-warn-bg text-status-warn-text text-xs font-semibold"
           role="alert"
@@ -219,7 +284,7 @@ export default function OfflineTrackControl({ track }) {
         </div>
       )}
 
-      {/* Trạng thái 3: Đã tải */}
+      {/* Trạng thái 3: Đã tải (kể cả lúc đang xóa) */}
       {!isDownloading && !errorMessage && isCached && (
         <div className="flex items-center justify-between gap-2 p-1.5 rounded-2xl bg-theme-page border border-theme-line">
           <div
