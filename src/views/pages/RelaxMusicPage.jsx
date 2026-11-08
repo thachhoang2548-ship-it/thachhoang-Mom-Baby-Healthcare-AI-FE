@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import wellnessService from '../../models/services/wellnessService';
+import OfflineTrackControl from '../components/relax/OfflineTrackControl';
 
 function buildNoiseBuffer(audioContext) {
   const buffer = audioContext.createBuffer(1, audioContext.sampleRate * 2, audioContext.sampleRate);
@@ -584,8 +585,8 @@ export default function RelaxMusicPage() {
                     </div>
                   </div>
 
-                  {/* Nút phát / dừng bài */}
-                  <div className="pt-2 border-t border-theme-line">
+                  {/* Nút phát / dừng bài & điều khiển tải offline */}
+                  <div className="pt-2 border-t border-theme-line space-y-2">
                     <button
                       type="button"
                       onClick={() => (isActive ? stopAudio() : playTrack(track))}
@@ -608,6 +609,7 @@ export default function RelaxMusicPage() {
                         </>
                       )}
                     </button>
+                    <OfflineTrackControl track={track} />
                   </div>
                 </article>
               );
