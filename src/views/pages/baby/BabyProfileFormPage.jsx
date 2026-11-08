@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import babyService from '../../../models/services/babyService';
+import { useBabyTheme } from '../../../hooks/useBabyTheme';
 import toast from 'react-hot-toast';
 import {
   ArrowLeft,
@@ -12,6 +13,7 @@ import {
   CheckCircle2,
   Loader2,
   AlertCircle,
+  Info
 } from 'lucide-react';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -47,6 +49,11 @@ export default function BabyProfileFormPage() {
   // ── Loading state ─────────────────────────────────────────────────────────
   const [loading, setLoading] = useState(false);
 
+  // Bắt buộc gọi ở đầu component, TRƯỚC mọi return sớm.
+  // Khi người dùng chọn giới tính trên form hoặc đang sửa hồ sơ có sẵn, bật ngay theme tương ứng.
+  const activeGender = formData.gender || existingBaby?.gender;
+  useBabyTheme(activeGender !== '' && activeGender !== undefined ? { gender: activeGender } : null);
+
   // ── Pre-fill form when editing ────────────────────────────────────────────
   useEffect(() => {
     if (isEditMode && existingBaby) {
@@ -56,7 +63,7 @@ export default function BabyProfileFormPage() {
         dob = new Date(existingBaby.birthDate || existingBaby.dateOfBirth)
           .toISOString()
           .substring(0, 10);
-      } catch (_) {
+      } catch {
         dob = '';
       }
 
@@ -180,7 +187,13 @@ export default function BabyProfileFormPage() {
       // ── Step 3: Save baby profile ──────────────────────────────────────────
       if (isEditMode) {
         // Update existing baby profile
-        const updateRes = await babyService.updateBabyProfile(existingBaby.id, payload);
+        // Gửi lại dị ứng và lịch sử ăn hiện có: form này không chỉnh hai mục đó, nếu thiếu thì
+        // babyService.updateProfile sẽ thay bằng danh sách rỗng và xóa dữ liệu trên server.
+        const updateRes = await babyService.updateBabyProfile(existingBaby.id, {
+          ...payload,
+          allergies: existingBaby.allergies,
+          foodHistory: existingBaby.foodHistory,
+        });
         const isOk = updateRes?.isSuccess || updateRes?.success;
         if (!isOk) {
           toast.error(updateRes?.message || 'Cập nhật hồ sơ bé không thành công.');
@@ -212,8 +225,8 @@ export default function BabyProfileFormPage() {
       // ── Step 5: Show success & redirect ────────────────────────────────────
       toast.success(
         isEditMode
-          ? `Đã cập nhật hồ sơ bé ${formData.babyName} thành công! 🧸`
-          : `Tạo hồ sơ bé ${formData.babyName} thành công! 🎉`
+          ? `Đã cập nhật hồ sơ bé ${formData.babyName} thành công!`
+          : `Tạo hồ sơ bé ${formData.babyName} thành công!`
       );
 
       // Navigate back to Baby Profile dashboard
@@ -236,47 +249,60 @@ export default function BabyProfileFormPage() {
   /** Renders an inline error message below a field */
   const FieldError = ({ name }) =>
     errors[name] ? (
-      <p className="mt-1.5 flex items-center gap-1 text-[11px] font-semibold text-red-500">
-        <AlertCircle className="w-3 h-3 shrink-0" />
-        {errors[name]}
+      <p className="mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-status-warn-text">
+        <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+        <span>{errors[name]}</span>
       </p>
     ) : null;
 
-  /** Input wrapper — adds red border + background when field has an error */
+  /** Input wrapper — adds warning border + background when field has an error */
   const inputClass = (name) =>
-    `w-full px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all duration-200
-    focus:outline-none focus:ring-2 focus:ring-momPink/30 focus:border-momPink
-    dark:bg-gray-900 dark:text-white
-    ${errors[name]
-      ? 'border-red-400 bg-red-50/30 dark:border-red-600'
-      : 'border-gray-200 dark:border-gray-700 bg-white'
+    `w-full min-h-[44px] px-4 py-2.5 rounded-2xl border text-xs sm:text-sm font-medium text-theme-ink placeholder:text-theme-muted transition-colors
+    focus:outline-none focus:ring-2 focus:ring-theme-brand
+    ${
+      errors[name]
+        ? 'border-status-warn-line bg-status-warn-bg/60'
+        : 'border-theme-line bg-theme-surface'
     }`;
+
+  // Khi chưa chọn giới tính ở chế độ tạo mới, --c-brand mặc định (#FF7A8A) chưa đạt 4,5:1 với chữ trắng;
+  // dùng bg-theme-ink text-theme-surface nếu chưa bật theme.
+  const hasTheme = Boolean(activeGender !== '' && activeGender !== undefined);
+  const submitBtnClass = hasTheme
+    ? 'bg-theme-brand hover:bg-theme-ink text-theme-surface'
+    : 'bg-theme-ink hover:bg-status-ok text-theme-surface';
 
   // ─────────────────────────────────────────────────────────────────────────────
   // Render
   // ─────────────────────────────────────────────────────────────────────────────
   return (
-    <div className="max-w-xl mx-auto space-y-6">
-
+    <div className="font-display max-w-xl mx-auto rounded-3xl bg-theme-page p-4 sm:p-6 border border-theme-line space-y-6">
       {/* ── Back button ── */}
-      <button
-        onClick={() => navigate('/baby-nutrition')}
-        className="flex items-center gap-1.5 text-xs font-bold text-gray-400 hover:text-gray-700 dark:hover:text-white transition"
-      >
-        <ArrowLeft className="w-4 h-4" />
-        Quay lại trang bé yêu
-      </button>
+      <div>
+        <button
+          type="button"
+          onClick={() => navigate('/baby-nutrition')}
+          className="inline-flex items-center gap-2 min-h-[44px] px-3.5 py-2 rounded-2xl border border-theme-line bg-theme-surface hover:bg-theme-sidebar text-xs sm:text-sm font-semibold text-theme-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+        >
+          <ArrowLeft className="w-4 h-4 shrink-0" aria-hidden="true" />
+          <span>Quay lại trang bé yêu</span>
+        </button>
+      </div>
 
       {/* ── Page header ── */}
-      <div className="flex items-center gap-3">
-        <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-momPink to-momPurple flex items-center justify-center text-white shadow-md">
-          <Baby className="w-5 h-5" />
+      <div className="flex items-center gap-3.5 bg-theme-surface p-5 rounded-2xl border border-theme-line shadow-sm">
+        <div
+          className={`w-12 h-12 rounded-2xl border border-theme-line flex items-center justify-center shrink-0 ${
+            hasTheme ? 'bg-theme-brand-soft text-theme-brand' : 'bg-theme-sidebar text-theme-ink'
+          }`}
+        >
+          <Baby className="w-6 h-6" aria-hidden="true" />
         </div>
-        <div>
-          <h2 className="text-xl font-black text-gray-800 dark:text-white uppercase tracking-wide">
-            {isEditMode ? 'Chỉnh Sửa Hồ Sơ Bé' : 'Thêm Hồ Sơ Bé Mới'}
-          </h2>
-          <p className="text-[11px] text-gray-400 font-semibold mt-0.5">
+        <div className="space-y-0.5">
+          <h1 className="text-lg sm:text-xl font-bold text-theme-ink">
+            {isEditMode ? 'Chỉnh sửa hồ sơ bé' : 'Thêm hồ sơ bé mới'}
+          </h1>
+          <p className="text-xs sm:text-sm text-theme-muted font-medium">
             {isEditMode
               ? 'Cập nhật thông tin bé yêu của mami'
               : 'Tạo hồ sơ để theo dõi tăng trưởng chuẩn WHO'}
@@ -288,17 +314,17 @@ export default function BabyProfileFormPage() {
       <form
         onSubmit={handleSubmit}
         noValidate
-        className="bg-white dark:bg-gray-800 rounded-3xl border border-pink-100/50 dark:border-gray-750 shadow-sm p-6 space-y-5"
+        className="bg-theme-surface rounded-2xl border border-theme-line shadow-sm p-5 sm:p-6 space-y-5"
       >
-
         {/* ── 1. Baby name ── */}
         <div>
           <label
             htmlFor="babyName"
-            className="flex items-center gap-1.5 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5"
+            className="flex items-center gap-1.5 text-xs font-bold text-theme-ink mb-1.5"
           >
-            <User className="w-3.5 h-3.5 text-momPink" />
-            Tên bé <span className="text-red-400">*</span>
+            <User className="w-4 h-4 text-theme-ink shrink-0" aria-hidden="true" />
+            <span>Tên bé</span>
+            <span className="text-status-warn-text">*</span>
           </label>
           <input
             id="babyName"
@@ -318,10 +344,11 @@ export default function BabyProfileFormPage() {
         <div>
           <label
             htmlFor="dateOfBirth"
-            className="flex items-center gap-1.5 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5"
+            className="flex items-center gap-1.5 text-xs font-bold text-theme-ink mb-1.5"
           >
-            <Calendar className="w-3.5 h-3.5 text-momPink" />
-            Ngày sinh <span className="text-red-400">*</span>
+            <Calendar className="w-4 h-4 text-theme-ink shrink-0" aria-hidden="true" />
+            <span>Ngày sinh</span>
+            <span className="text-status-warn-text">*</span>
           </label>
           <input
             id="dateOfBirth"
@@ -338,48 +365,53 @@ export default function BabyProfileFormPage() {
 
         {/* ── 3. Gender ── */}
         <div>
-          <label className="flex items-center gap-1.5 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5">
-            <Baby className="w-3.5 h-3.5 text-momPink" />
-            Giới tính <span className="text-red-400">*</span>
-          </label>
+          <span className="flex items-center gap-1.5 text-xs font-bold text-theme-ink mb-1.5">
+            <Baby className="w-4 h-4 text-theme-ink shrink-0" aria-hidden="true" />
+            <span>Giới tính</span>
+            <span className="text-status-warn-text">*</span>
+          </span>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { value: 'male', label: 'Bé Trai 👦', activeColor: 'from-blue-400 to-blue-600' },
-              { value: 'female', label: 'Bé Gái 👧', activeColor: 'from-momPink to-momPurple' },
-            ].map((opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => {
-                  handleChange({ target: { name: 'gender', value: opt.value } });
-                }}
-                disabled={loading}
-                className={`py-3 rounded-2xl text-xs font-black transition-all duration-200 border
-                  ${formData.gender === opt.value
-                    ? `bg-gradient-to-r ${opt.activeColor} text-white border-transparent shadow-md scale-[1.02]`
-                    : `bg-white dark:bg-gray-900 text-gray-500 dark:text-gray-400
-                       border-gray-200 dark:border-gray-700 hover:border-momPink/40
-                       ${errors.gender ? 'border-red-400 bg-red-50/30' : ''}`
+              { value: 'male', label: 'Bé trai' },
+              { value: 'female', label: 'Bé gái' },
+            ].map((opt) => {
+              const isSelected = formData.gender === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => {
+                    handleChange({ target: { name: 'gender', value: opt.value } });
+                  }}
+                  disabled={loading}
+                  className={`min-h-[48px] py-3 px-4 rounded-2xl text-xs sm:text-sm font-bold transition-colors border inline-flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+                    isSelected
+                      ? 'bg-theme-brand text-theme-surface border-theme-brand'
+                      : errors.gender
+                      ? 'border-status-warn-line bg-status-warn-bg/60 text-theme-ink hover:bg-theme-sidebar'
+                      : 'bg-theme-page text-theme-ink border-theme-line hover:bg-theme-sidebar'
                   }`}
-              >
-                {opt.label}
-              </button>
-            ))}
+                >
+                  <Baby className="w-4 h-4 shrink-0" aria-hidden="true" />
+                  <span>{opt.label}</span>
+                </button>
+              );
+            })}
           </div>
           <FieldError name="gender" />
         </div>
 
         {/* ── 4 & 5. Weight + Height (side by side) ── */}
-        <div className="grid grid-cols-2 gap-4">
-
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Weight */}
           <div>
             <label
               htmlFor="weight"
-              className="flex items-center gap-1.5 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5"
+              className="flex items-center gap-1.5 text-xs font-bold text-theme-ink mb-1.5"
             >
-              <Scale className="w-3.5 h-3.5 text-momPink" />
-              Cân nặng (kg) <span className="text-red-400">*</span>
+              <Scale className="w-4 h-4 text-theme-ink shrink-0" aria-hidden="true" />
+              <span>Cân nặng (kg)</span>
+              <span className="text-status-warn-text">*</span>
             </label>
             <input
               id="weight"
@@ -401,10 +433,11 @@ export default function BabyProfileFormPage() {
           <div>
             <label
               htmlFor="height"
-              className="flex items-center gap-1.5 text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1.5"
+              className="flex items-center gap-1.5 text-xs font-bold text-theme-ink mb-1.5"
             >
-              <Maximize2 className="w-3.5 h-3.5 text-momPink" />
-              Chiều cao (cm) <span className="text-red-400">*</span>
+              <Maximize2 className="w-4 h-4 text-theme-ink shrink-0" aria-hidden="true" />
+              <span>Chiều cao (cm)</span>
+              <span className="text-status-warn-text">*</span>
             </label>
             <input
               id="height"
@@ -425,23 +458,24 @@ export default function BabyProfileFormPage() {
 
         {/* ── Global error summary (shown only when errors exist) ── */}
         {Object.keys(errors).length > 0 && (
-          <div className="flex items-start gap-2.5 p-3.5 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800/40 rounded-2xl">
-            <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-            <p className="text-xs font-semibold text-red-600 dark:text-red-400 leading-relaxed">
-              Vui lòng điền đầy đủ và chính xác các trường được đánh dấu <span className="font-black">*</span> trước khi lưu.
+          <div
+            role="alert"
+            className="flex items-start gap-2.5 p-3.5 bg-status-warn-bg border border-status-warn-line rounded-2xl text-status-warn-text"
+          >
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+            <p className="text-xs font-semibold leading-relaxed">
+              Vui lòng điền đầy đủ và chính xác các trường được đánh dấu <span className="font-bold">*</span> trước khi lưu.
             </p>
           </div>
         )}
 
         {/* ── Action buttons ── */}
-        <div className="grid grid-cols-2 gap-3 pt-1">
+        <div className="grid grid-cols-2 gap-3 pt-2">
           <button
             type="button"
             onClick={() => navigate('/baby-nutrition')}
             disabled={loading}
-            className="py-3 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900
-              text-xs font-black text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800
-              transition active:scale-95 disabled:opacity-50"
+            className="min-h-[48px] py-3 px-4 rounded-2xl border border-theme-line bg-theme-surface hover:bg-theme-sidebar text-xs sm:text-sm font-bold text-theme-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand disabled:opacity-50"
           >
             Huỷ bỏ
           </button>
@@ -449,19 +483,17 @@ export default function BabyProfileFormPage() {
           <button
             type="submit"
             disabled={loading}
-            className="py-3 rounded-2xl bg-gradient-to-r from-momPink to-momPurple text-white
-              text-xs font-black shadow-md hover:opacity-95 transition active:scale-95
-              flex items-center justify-center gap-2 disabled:opacity-60"
+            className={`min-h-[48px] py-3 px-4 rounded-2xl text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand disabled:opacity-60 ${submitBtnClass}`}
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                {isEditMode ? 'Đang cập nhật...' : 'Đang tạo...'}
+                <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none shrink-0" aria-hidden="true" />
+                <span>{isEditMode ? 'Đang cập nhật...' : 'Đang tạo...'}</span>
               </>
             ) : (
               <>
-                <CheckCircle2 className="w-4 h-4" />
-                {isEditMode ? 'Lưu thay đổi' : 'Tạo hồ sơ bé'}
+                <CheckCircle2 className="w-4 h-4 shrink-0" aria-hidden="true" />
+                <span>{isEditMode ? 'Lưu thay đổi' : 'Tạo hồ sơ bé'}</span>
               </>
             )}
           </button>
@@ -469,9 +501,10 @@ export default function BabyProfileFormPage() {
       </form>
 
       {/* ── Activity diagram note for context ── */}
-      <p className="text-center text-[10px] text-gray-400 font-semibold pb-4">
-        Sau khi lưu, hệ thống sẽ tự động cập nhật biểu đồ tăng trưởng WHO 📊
-      </p>
+      <div className="flex items-center justify-center gap-2 text-center text-xs text-theme-muted font-medium pb-1">
+        <Info className="w-4 h-4 shrink-0 text-theme-ink" aria-hidden="true" />
+        <span>Sau khi lưu, hệ thống sẽ tự động cập nhật biểu đồ tăng trưởng WHO</span>
+      </div>
     </div>
   );
 }

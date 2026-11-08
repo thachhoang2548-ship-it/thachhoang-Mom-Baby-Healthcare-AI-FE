@@ -105,9 +105,14 @@ axiosClient.interceptors.response.use(
 
     // Xử lý lỗi mạng / 503
     if (!error.response || error.response.status === 503) {
-      toast.error('Dịch vụ tạm thời gián đoạn. Vui lòng thử lại sau! 😢', {
-        id: 'service-disrupted',
-      });
+      // Máy đang offline (trình duyệt báo mất mạng): AppShell đã có biểu ngữ "Bạn đang offline",
+      // không hiện thêm thông báo "gián đoạn" cho từng request. 503 và lỗi mạng khi đang online vẫn báo như cũ.
+      const isOffline = !error.response && typeof navigator !== 'undefined' && navigator.onLine === false;
+      if (!isOffline) {
+        toast.error('Dịch vụ tạm thời gián đoạn. Vui lòng thử lại sau! 😢', {
+          id: 'service-disrupted',
+        });
+      }
       return Promise.reject(error);
     }
 
