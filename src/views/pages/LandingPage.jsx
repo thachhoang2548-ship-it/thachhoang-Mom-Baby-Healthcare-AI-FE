@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Activity,
@@ -53,7 +53,7 @@ const JOURNEY_CHAPTERS = [
       'Mỗi tuần thai mở ra cột mốc phát triển mới của em bé, đi kèm công cụ kiểm tra an toàn món ăn, thực đơn 7 ngày và biểu đồ cân nặng của mẹ.',
     highlights: [
       'Cập nhật kích thước và sự thay đổi của thai nhi theo đúng tuần thai thực tế',
-      'Tra cứu nhanh món ăn nhạy cảm (BR02) và gợi ý món chín an toàn thay thế',
+      'Tra cứu nhanh món ăn nhạy cảm và gợi ý món chín an toàn thay thế',
       'Theo dõi cân nặng thai kỳ và số bước đi bộ nhẹ nhàng mỗi ngày',
     ],
     photo: pregnantCouplePhoto,
@@ -81,10 +81,10 @@ const JOURNEY_CHAPTERS = [
   {
     id: 'baby',
     step: '04',
-    stage: 'Nuôi con nhỏ (0–24 tháng)',
+    stage: 'Nuôi con nhỏ (0-24 tháng)',
     title: 'Thực đơn ăn dặm chuẩn WHO & không gian riêng theo giới tính bé',
     summary:
-      'Gợi ý cữ ăn phù hợp từng tháng tuổi, tự động rà soát thực phẩm dị ứng, đối chiếu lượng sắt – đạm và vẽ biểu đồ tăng trưởng chuẩn WHO.',
+      'Gợi ý cữ ăn phù hợp từng tháng tuổi, tự động rà soát thực phẩm dị ứng, đối chiếu lượng sắt và đạm, vẽ biểu đồ tăng trưởng chuẩn WHO.',
     highlights: [
       'Thực đơn ngày và 7 ngày tự động cảnh báo hoặc đổi món khi bé có tiền sử dị ứng',
       'Biểu đồ cân nặng, chiều cao đối chiếu bách phân vị chuẩn Tổ chức Y tế Thế giới',
@@ -100,8 +100,27 @@ const JOURNEY_CHAPTERS = [
 export default function LandingPage() {
   const { user } = useAuthController();
   const navigate = useNavigate();
-  const [activeChapterIdx, setActiveChapterIdx] = useState(3);
+  const [activeChapterIdx, setActiveChapterIdx] = useState(0);
   const [previewGender, setPreviewGender] = useState('boy');
+  const tabRefs = useRef([]);
+
+  // Bàn phím theo mẫu ARIA tabs: mũi tên di chuyển giữa các chặng, Home/End về đầu/cuối
+  const handleTabKeyDown = (event, idx) => {
+    const last = JOURNEY_CHAPTERS.length - 1;
+    const nextByKey = {
+      ArrowDown: idx === last ? 0 : idx + 1,
+      ArrowRight: idx === last ? 0 : idx + 1,
+      ArrowUp: idx === 0 ? last : idx - 1,
+      ArrowLeft: idx === 0 ? last : idx - 1,
+      Home: 0,
+      End: last,
+    };
+    if (!(event.key in nextByKey)) return;
+    event.preventDefault();
+    const next = nextByKey[event.key];
+    setActiveChapterIdx(next);
+    tabRefs.current[next]?.focus();
+  };
 
   // Trang giới thiệu công khai luôn giữ bảng màu thương hiệu gốc
   useEffect(() => {
@@ -112,29 +131,39 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-theme-page font-display text-theme-ink selection:bg-theme-brand-soft">
+      {/* Liên kết bỏ qua điều hướng cho người dùng bàn phím */}
+      <a
+        href="#noi-dung"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-theme-brand focus:px-5 focus:py-3 focus:text-sm focus:font-bold focus:text-theme-surface focus:outline-none focus:ring-2 focus:ring-theme-brand focus:ring-offset-2"
+      >
+        Bỏ qua đến nội dung chính
+      </a>
+
       {/* Thanh điều hướng biên tập */}
       <header className="sticky top-0 z-50 border-b border-theme-line bg-theme-surface/95 px-4 py-3 backdrop-blur-sm sm:px-8">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 sm:gap-4">
           <Link
             to="/"
-            className="flex min-h-[44px] items-center gap-3 rounded-full pr-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
+            className="flex min-h-[44px] shrink-0 items-center gap-2 rounded-full pr-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2 sm:gap-3"
           >
             <img
               src={momOiLogo}
               alt="Mom Ơi!"
-              className="h-10 w-10 rounded-full border border-theme-line object-cover sm:h-11 sm:w-11"
+              width="512"
+              height="512"
+              className="h-9 w-9 rounded-full border border-theme-line object-cover sm:h-11 sm:w-11"
             />
             <div>
-              <span className="block font-brand text-2xl font-extrabold leading-none text-theme-brand">
+              <span className="block whitespace-nowrap font-brand text-xl font-extrabold leading-none text-theme-brand sm:text-2xl">
                 Mom Ơi!
               </span>
-              <span className="mt-0.5 block text-xs font-medium text-theme-muted">
+              <span className="mt-0.5 hidden text-xs font-medium text-theme-muted sm:block">
                 Sổ tay sức khỏe mẹ và bé
               </span>
             </div>
           </Link>
 
-          <nav className="hidden items-center gap-7 text-sm font-semibold text-theme-muted md:flex" aria-label="Điều hướng trang giới thiệu">
+          <nav className="hidden items-center gap-5 whitespace-nowrap text-sm font-semibold text-theme-muted lg:flex xl:gap-7" aria-label="Điều hướng trang giới thiệu">
             <a
               href="#hanh-trinh"
               className="py-2 transition-colors hover:text-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand rounded-md px-1"
@@ -169,17 +198,18 @@ export default function LandingPage() {
               <>
                 <Link
                   to="/login"
-                  className="inline-flex min-h-[44px] items-center justify-center rounded-full px-4 py-2 text-sm font-semibold text-theme-ink transition-colors hover:bg-theme-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+                  className="inline-flex min-h-[44px] items-center justify-center whitespace-nowrap rounded-full px-3 py-2 text-sm font-semibold text-theme-ink transition-colors hover:bg-theme-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand sm:px-4"
                 >
                   Đăng nhập
                 </Link>
                 <button
                   type="button"
                   onClick={() => navigate('/register')}
-                  className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-theme-brand px-5 py-2.5 text-sm font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
+                  className="inline-flex min-h-[44px] items-center gap-1.5 whitespace-nowrap rounded-full bg-theme-brand px-4 py-2.5 text-sm font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2 sm:px-5"
                 >
-                  <span>Bắt đầu miễn phí</span>
-                  <ChevronRight className="h-4 w-4" />
+                  <span className="sm:hidden">Tạo sổ tay</span>
+                  <span className="hidden sm:inline">Tạo sổ tay miễn phí</span>
+                  <ChevronRight className="hidden h-4 w-4 sm:block" aria-hidden="true" />
                 </button>
               </>
             )}
@@ -187,7 +217,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <main>
+      <main id="noi-dung" tabIndex={-1} className="outline-none">
         {/* 1. Mở đầu tạp chí (Editorial Hero với ảnh đời thực Mẹ & Bé Việt/Á Đông) */}
         <section className="border-b border-theme-line bg-theme-page">
           <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-10 sm:px-8 sm:py-14 lg:grid-cols-12 lg:gap-12 lg:py-16">
@@ -202,7 +232,7 @@ export default function LandingPage() {
               </h1>
 
               <p className="mt-5 max-w-xl text-base leading-relaxed text-theme-muted sm:text-lg">
-                Từ ngày chuẩn bị đón con, suốt 40 tuần thai kỳ đến những bữa cháo ăn dặm đầu đời — Mom Ơi! gói gọn lịch khám, dinh dưỡng chuẩn WHO và theo dõi phục hồi vào một cuốn sổ tay ấm áp, dễ mở bằng một tay.
+                Từ ngày chuẩn bị đón con, suốt 40 tuần thai kỳ đến những bữa cháo ăn dặm đầu đời, Mom Ơi! gói gọn lịch khám, dinh dưỡng chuẩn WHO và theo dõi phục hồi vào một cuốn sổ tay ấm áp, dễ mở bằng một tay.
               </p>
 
               <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -246,6 +276,10 @@ export default function LandingPage() {
                   <img
                     src={heroMomBabyPhoto}
                     alt="Người mẹ mỉm cười ẵm em bé bên khung cửa sổ ngập nắng ấm buổi sáng"
+                    width="1080"
+                    height="717"
+                    fetchPriority="high"
+                    decoding="async"
                     className="aspect-[16/11] w-full object-cover"
                   />
                 </div>
@@ -317,6 +351,8 @@ export default function LandingPage() {
                   <img
                     src={babyWeaningPlayPhoto}
                     alt="Bữa ăn dặm của bé"
+                    width="56"
+                    height="56"
                     className="h-14 w-14 shrink-0 rounded-2xl border border-theme-line object-cover"
                     loading="lazy"
                   />
@@ -348,17 +384,29 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
             {/* Danh sách chương bên trái */}
-            <div className="space-y-2.5 lg:col-span-5" role="tablist" aria-label="Các giai đoạn đồng hành">
+            <div
+              className="space-y-2.5 lg:col-span-5"
+              role="tablist"
+              aria-orientation="vertical"
+              aria-label="Các giai đoạn đồng hành"
+            >
               {JOURNEY_CHAPTERS.map((chapter, idx) => {
                 const Icon = chapter.icon;
                 const isSelected = idx === activeChapterIdx;
                 return (
                   <button
                     key={chapter.id}
+                    ref={(el) => {
+                      tabRefs.current[idx] = el;
+                    }}
+                    id={`chapter-tab-${chapter.id}`}
                     type="button"
                     role="tab"
                     aria-selected={isSelected}
+                    aria-controls="chapter-panel"
+                    tabIndex={isSelected ? 0 : -1}
                     onClick={() => setActiveChapterIdx(idx)}
+                    onKeyDown={(event) => handleTabKeyDown(event, idx)}
                     className={`flex min-h-[72px] w-full items-start gap-3.5 rounded-2xl border p-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand sm:p-5 ${
                       isSelected
                         ? 'border-theme-brand bg-theme-surface shadow-sm'
@@ -387,7 +435,7 @@ export default function LandingPage() {
                         />
                       </div>
                       <p className="mt-0.5 text-base font-bold text-theme-ink">{chapter.stage}</p>
-                      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-theme-muted sm:text-sm">
+                      <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-theme-muted">
                         {chapter.title}
                       </p>
                     </div>
@@ -398,7 +446,9 @@ export default function LandingPage() {
 
             {/* Nội dung chi tiết chương bên phải kèm ảnh đời thực */}
             <article
+              id="chapter-panel"
               role="tabpanel"
+              aria-labelledby={`chapter-tab-${activeChapter.id}`}
               className="flex flex-col justify-between overflow-hidden rounded-3xl border border-theme-line bg-theme-surface shadow-sm lg:col-span-7"
             >
               <div className="grid grid-cols-1 gap-0 sm:grid-cols-12">
@@ -406,6 +456,9 @@ export default function LandingPage() {
                   <img
                     src={activeChapter.photo}
                     alt={activeChapter.photoAlt}
+                    width="1000"
+                    height="667"
+                    decoding="async"
                     className="h-56 w-full object-cover sm:h-full sm:min-h-[340px]"
                     loading="lazy"
                   />
@@ -424,7 +477,7 @@ export default function LandingPage() {
 
                     <ul className="mt-5 space-y-2.5 border-t border-theme-line pt-4">
                       {activeChapter.highlights.map((item) => (
-                        <li key={item} className="flex items-start gap-2.5 text-xs font-medium leading-relaxed text-theme-ink sm:text-sm">
+                        <li key={item} className="flex items-start gap-2.5 text-sm font-medium leading-relaxed text-theme-ink">
                           <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-status-ok" aria-hidden="true" />
                           <span>{item}</span>
                         </li>
@@ -499,7 +552,7 @@ export default function LandingPage() {
                     </span>
                   </div>
 
-                  <div className="space-y-3 text-xs leading-relaxed sm:text-sm">
+                  <div className="space-y-3 text-sm leading-relaxed">
                     <div className="rounded-2xl border border-theme-line bg-theme-page px-4 py-3 font-medium text-theme-ink">
                       &ldquo;Bé 7 tháng mới thử lòng đỏ trứng gà, quanh miệng hơi ửng hồng nhẹ nhưng bé vẫn ti sữa và chơi ngoan.&rdquo;
                     </div>
@@ -519,6 +572,9 @@ export default function LandingPage() {
                   <img
                     src={sleepingNewbornPhoto}
                     alt="Em bé ngủ yên bình trong chăn bông mềm"
+                    width="1000"
+                    height="667"
+                    decoding="async"
                     className="h-52 w-full rounded-2xl object-cover sm:h-60"
                     loading="lazy"
                   />
@@ -570,7 +626,7 @@ export default function LandingPage() {
                 onClick={() => navigate(user ? '/dashboard' : '/register')}
                 className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-theme-brand px-7 py-3 text-base font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
               >
-                <span>{user ? 'Tiếp tục chăm sóc' : 'Tạo tài khoản miễn phí'}</span>
+                <span>{user ? 'Tiếp tục chăm sóc' : 'Tạo sổ tay miễn phí'}</span>
                 <ChevronRight className="h-5 w-5" />
               </button>
             </div>
