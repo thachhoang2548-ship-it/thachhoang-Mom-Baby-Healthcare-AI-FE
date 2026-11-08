@@ -226,6 +226,10 @@ export default function EpdsPage() {
                       key={oIdx}
                       type="button"
                       onClick={() => handleSelectOption(opt.score)}
+                      onKeyDown={(e) => {
+                        // Giữ Enter/Space (auto-repeat) không được tự chọn câu kế tiếp: mỗi câu cần một lần nhấn mới
+                        if (e.repeat) e.preventDefault();
+                      }}
                       disabled={loading}
                       className="w-full text-left px-4 py-3.5 border border-theme-line bg-theme-page hover:bg-theme-sidebar hover:border-theme-brand rounded-2xl text-xs sm:text-sm font-semibold text-theme-ink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand flex justify-between items-center min-h-[48px] disabled:opacity-50"
                     >
