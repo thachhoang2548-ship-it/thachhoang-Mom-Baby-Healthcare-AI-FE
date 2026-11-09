@@ -7,9 +7,9 @@ const formatMoney = (amount) => `${Number(amount || 0).toLocaleString('vi-VN')} 
 const formatDate = (value) => (value ? new Date(value).toLocaleString('vi-VN') : 'Chưa có');
 
 const STATUS_META = {
-  Completed: { badge: 'bg-emerald-50 text-emerald-800 border-emerald-200', label: 'Hoàn tất' },
+  Completed: { badge: 'bg-status-ok-bg text-status-ok-text border-status-ok-line', label: 'Hoàn tất' },
   Pending: { badge: 'bg-status-warn-bg text-status-warn-text border-status-warn-line/50', label: 'Đang chờ' },
-  Failed: { badge: 'bg-red-50 text-red-800 border-red-200', label: 'Thất bại' },
+  Failed: { badge: 'bg-status-danger-bg text-status-danger-text border-status-danger-line', label: 'Thất bại' },
   Refunded: { badge: 'bg-theme-page text-theme-ink border-theme-line', label: 'Hoàn tiền' },
 };
 
@@ -133,9 +133,9 @@ export default function AdminPaymentsPanel() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-4">
-          <p className="text-xs font-bold text-emerald-800">Doanh thu đã hoàn tất</p>
-          <p className="text-lg font-extrabold text-emerald-950 mt-1">
+        <div className="rounded-2xl bg-status-ok-bg border border-status-ok-line p-4">
+          <p className="text-xs font-bold text-status-ok-text">Doanh thu đã hoàn tất</p>
+          <p className="text-lg font-extrabold text-status-ok-text mt-1">
             {formatMoney(data?.completedRevenue)}
           </p>
         </div>

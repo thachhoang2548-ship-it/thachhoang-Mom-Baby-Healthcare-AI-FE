@@ -46,13 +46,13 @@ export default function AnalysisResult({ analysis }) {
   let iconColor = "text-status-ok";
 
   if (urgencyText === "Khẩn cấp") {
-    urgencyStyles = "border-red-400 bg-red-50 text-red-950";
+    urgencyStyles = "border-status-danger-text bg-status-danger-bg text-status-danger-text";
     UrgencyIcon = AlertOctagon;
-    iconColor = "text-red-700";
+    iconColor = "text-status-danger-text";
   } else if (urgencyText === "Cao") {
-    urgencyStyles = "border-red-300 bg-red-50/75 text-red-900";
+    urgencyStyles = "border-status-danger-line bg-status-danger-bg/75 text-status-danger-text";
     UrgencyIcon = AlertTriangle;
-    iconColor = "text-red-700";
+    iconColor = "text-status-danger-text";
   } else if (urgencyText === "Trung bình") {
     urgencyStyles = "border-status-warn-line bg-status-warn-bg text-status-warn-text";
     UrgencyIcon = Info;
@@ -129,12 +129,12 @@ export default function AnalysisResult({ analysis }) {
 
       {/* Section F: See Doctor Referral */}
       {shouldSeeDoctor && (
-        <div className="flex flex-col justify-between gap-4 rounded-3xl border border-red-300 bg-red-50 p-5 sm:flex-row sm:items-center sm:p-6">
+        <div className="flex flex-col justify-between gap-4 rounded-3xl border border-status-danger-line bg-status-danger-bg p-5 sm:flex-row sm:items-center sm:p-6">
           <div className="flex items-start gap-3.5">
-            <Stethoscope className="mt-0.5 h-6 w-6 shrink-0 text-red-700" />
+            <Stethoscope className="mt-0.5 h-6 w-6 shrink-0 text-status-danger-text" />
             <div>
-              <h4 className="text-base font-bold text-red-900">Khuyến nghị gặp chuyên gia y tế</h4>
-              <p className="mt-1 text-sm leading-relaxed text-red-900">
+              <h4 className="text-base font-bold text-status-danger-text">Khuyến nghị gặp chuyên gia y tế</h4>
+              <p className="mt-1 text-sm leading-relaxed text-status-danger-text">
                 Mẹ nên sắp xếp lịch khám hoặc trao đổi trực tiếp với bác sĩ chuyên khoa:{" "}
                 <strong className="underline">{specialistType || "Sản - Nhi / Đa khoa"}</strong>
               </p>
@@ -142,7 +142,7 @@ export default function AnalysisResult({ analysis }) {
           </div>
           <a
             href={`tel:${ADVISOR_DOCTOR.phone}`}
-            className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 self-start rounded-full bg-red-700 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-2 sm:self-center"
+            className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 self-start rounded-full bg-red-700 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger-text focus-visible:ring-offset-2 sm:self-center"
           >
             <Phone className="h-4 w-4" />
             <span>Gọi {ADVISOR_DOCTOR.displayName}</span>

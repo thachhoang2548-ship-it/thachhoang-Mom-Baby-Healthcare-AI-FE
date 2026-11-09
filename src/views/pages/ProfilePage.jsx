@@ -659,7 +659,7 @@ export default function ProfilePage() {
                       type="button"
                       onClick={() => handleRemoveCondition(cond)}
                       aria-label={`Xóa ${cond}`}
-                      className="inline-flex h-5 w-5 items-center justify-center rounded-full text-theme-muted hover:bg-red-100 hover:text-red-700"
+                      className="inline-flex h-5 w-5 items-center justify-center rounded-full text-theme-muted hover:bg-status-danger-bg hover:text-status-danger-text"
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -696,7 +696,7 @@ export default function ProfilePage() {
           </Link>
           <Link
             to="/delete-account"
-            className="inline-flex min-h-[44px] items-center gap-1.5 font-semibold text-red-700 hover:underline"
+            className="inline-flex min-h-[44px] items-center gap-1.5 font-semibold text-status-danger-text hover:underline"
           >
             <Trash2 className="h-3.5 w-3.5" />
             <span>Xóa tài khoản</span>

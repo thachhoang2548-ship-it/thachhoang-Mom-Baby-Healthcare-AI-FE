@@ -120,7 +120,7 @@ export default function ImageDropzone({ value, onChange, onRemove }) {
               onRemove();
             }}
             aria-label="Xóa hình ảnh"
-            className="inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full border border-theme-line bg-theme-surface text-theme-ink hover:bg-red-50 hover:text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+            className="inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-full border border-theme-line bg-theme-surface text-theme-ink hover:bg-status-danger-bg hover:text-status-danger-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
           >
             <X className="h-4 w-4" />
           </button>

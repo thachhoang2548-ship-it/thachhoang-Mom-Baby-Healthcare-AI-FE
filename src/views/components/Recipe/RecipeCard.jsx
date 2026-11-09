@@ -90,7 +90,7 @@ export default function RecipeCard({ recipe, onSave, onView }) {
 
         {/* Expert Status badges (static, >= 4.5:1 contrast) */}
         {isApproved ? (
-          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-status-ok px-3 py-1 text-xs font-bold text-white shadow-sm">
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-status-ok px-3 py-1 text-xs font-bold text-theme-surface shadow-sm">
             <ShieldCheck className="h-3.5 w-3.5" />
             <span>Đã duyệt</span>
           </span>

@@ -86,15 +86,15 @@ export default function ConsentDocument() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-red-300 bg-red-50 p-5">
-              <div className="mb-2 flex items-center gap-2.5 text-red-800">
+            <section className="rounded-2xl border border-status-danger-line bg-status-danger-bg p-5">
+              <div className="mb-2 flex items-center gap-2.5 text-status-danger-text">
                 <ShieldAlert className="h-5 w-5 shrink-0" />
                 <h2 className="text-lg font-bold sm:text-xl">4. Cảnh báo y tế thai kỳ khẩn cấp</h2>
               </div>
-              <p className="mb-2 font-semibold text-red-900">
+              <p className="mb-2 font-semibold text-status-danger-text">
                 Khi có bất kỳ dấu hiệu nguy hiểm nào dưới đây, hãy gọi ngay 115 hoặc di chuyển đến bệnh viện sản/nhi gần nhất:
               </p>
-              <ul className="list-disc space-y-1 pl-6 text-red-900">
+              <ul className="list-disc space-y-1 pl-6 text-status-danger-text">
                 <li>Chảy máu âm đạo bất thường (dù ít hay nhiều)</li>
                 <li>Đau bụng dưới dữ dội hoặc co thắt tử cung liên tục</li>
                 <li>Nhức đầu dữ dội, hoa mắt, mờ mắt hoặc sưng phù đột ngột mặt/tay/chân (tiền sản giật)</li>

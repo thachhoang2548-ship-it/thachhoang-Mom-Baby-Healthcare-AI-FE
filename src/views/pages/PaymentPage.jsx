@@ -208,7 +208,7 @@ export default function PaymentPage() {
             Kích hoạt gói {tierInfo.name}
           </h1>
         </div>
-        <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-800 px-3.5 py-2 rounded-2xl border border-emerald-200 text-xs font-bold self-start sm:self-auto">
+        <div className="inline-flex items-center gap-2 bg-status-ok-bg text-status-ok-text px-3.5 py-2 rounded-2xl border border-status-ok-line text-xs font-bold self-start sm:self-auto">
           <ShieldCheck className="w-4 h-4 text-status-ok" aria-hidden="true" />
           <span>Xác thực VietQR an toàn</span>
         </div>
@@ -327,8 +327,8 @@ export default function PaymentPage() {
             </div>
 
             {errorMessage && (
-              <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs font-semibold flex gap-2.5">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-red-700" aria-hidden="true" />
+              <div className="p-3.5 rounded-2xl bg-status-danger-bg border border-status-danger-line text-status-danger-text text-xs font-semibold flex gap-2.5">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-status-danger-text" aria-hidden="true" />
                 <span>{errorMessage}</span>
               </div>
             )}
@@ -350,9 +350,9 @@ export default function PaymentPage() {
               <div
                 className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold border ${
                   completed
-                    ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    ? 'bg-status-ok-bg text-status-ok-text border-status-ok-line'
                     : isFailed
-                    ? 'bg-red-50 text-red-800 border-red-200'
+                    ? 'bg-status-danger-bg text-status-danger-text border-status-danger-line'
                     : 'bg-status-warn-bg text-status-warn-text border-status-warn-line/50'
                 }`}
               >

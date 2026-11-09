@@ -7,6 +7,7 @@ import momOiLogo from '../../../assets/Logo/mom-oi-submark-cropped.png';
 import { checkTierUnlocked, getTierLevel } from '../../../utils/tierHelpers';
 import { formatTodayVi, getFullName } from '../../../utils/displayName';
 import MedicalDisclaimer from '../common/MedicalDisclaimer';
+import ColorSchemeToggle from '../common/ColorSchemeToggle';
 import { useOnlineStatus } from '../../../hooks/useOnlineStatus';
 import {
   applyBabyThemeToDom,
@@ -418,6 +419,7 @@ export default function AppShell() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-2.5">
+            <ColorSchemeToggle />
             {isMom && (
               <Link
                 to="/notifications"
@@ -431,7 +433,7 @@ export default function AppShell() {
             {isMom && (
               <Link
                 to="/emergency"
-                className="hidden min-h-[44px] items-center gap-2 rounded-full bg-red-700 px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-2 sm:inline-flex"
+                className="hidden min-h-[44px] items-center gap-2 rounded-full bg-red-700 px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger-text focus-visible:ring-offset-2 sm:inline-flex"
               >
                 <Phone className="h-4 w-4" />
                 <span>Khẩn cấp</span>
@@ -591,7 +593,7 @@ export default function AppShell() {
           <>
             <Link
               to="/emergency"
-              className="flex min-h-[60px] flex-col items-center justify-center gap-1 px-1 py-2 text-xs font-bold text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red-700"
+              className="flex min-h-[60px] flex-col items-center justify-center gap-1 px-1 py-2 text-xs font-bold text-status-danger-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-status-danger-text"
             >
               <Phone className="h-5 w-5 shrink-0" />
               <span className="leading-tight">Khẩn cấp</span>

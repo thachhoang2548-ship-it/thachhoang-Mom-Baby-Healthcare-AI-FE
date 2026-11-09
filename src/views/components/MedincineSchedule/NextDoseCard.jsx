@@ -33,7 +33,7 @@ const NextDoseCard = ({ nextDose, onMarkTaken, onSkip }) => {
           <button
             type="button"
             onClick={onMarkTaken}
-            className="min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-2xl bg-status-ok text-white text-xs sm:text-sm font-bold hover:bg-emerald-800 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+            className="min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-2xl bg-status-ok text-theme-surface text-xs sm:text-sm font-bold hover:bg-status-ok-text transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
           >
             <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
             <span>Đã uống</span>
@@ -41,7 +41,7 @@ const NextDoseCard = ({ nextDose, onMarkTaken, onSkip }) => {
           <button
             type="button"
             onClick={onSkip}
-            className="min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-2xl bg-status-warn-bg border border-status-warn-line/50 text-status-warn-text text-xs sm:text-sm font-bold hover:bg-amber-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+            className="min-h-[44px] inline-flex items-center justify-center gap-1.5 rounded-2xl bg-status-warn-bg border border-status-warn-line/50 text-status-warn-text text-xs sm:text-sm font-bold hover:bg-status-warn-bg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
           >
             <XCircle className="w-4 h-4" aria-hidden="true" />
             <span>Bỏ qua</span>

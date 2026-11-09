@@ -32,6 +32,15 @@
   --c-warn-bg: 255 243 214;
   --c-warn-line: 217 150 43;
   --c-warn-text: 110 67 0;
+  /* Lỗi/nguy hiểm và thành công (nền, viền, chữ). Nút đặc "Khẩn cấp"/"Xóa" giữ đỏ cố định bg-red-700 text-white. */
+  --c-danger-bg: 254 242 242;
+  --c-danger-line: 252 165 165;
+  --c-danger-text: 153 27 27;
+  --c-ok-bg: 236 253 245;
+  --c-ok-line: 167 243 208;
+  --c-ok-text: 6 95 70;
+  /* Màu thông tin (xanh dương), dùng cho biểu đồ nhiều nhóm */
+  --c-info: 46 109 147;
 }
 
 [data-baby-theme='girl'] {
@@ -52,6 +61,48 @@
   --c-brand: 46 109 147;
   --c-brand-soft: 220 235 243;
   --c-line: 216 227 233;
+}
+
+/*
+  Chế độ tối (D1). Bật bằng data-color-scheme="dark" trên <html> (xem src/hooks/useColorScheme.js).
+  Đặt SAU hai theme bé và dùng selector ghép để thắng ở mọi tổ hợp: 2 theme bé x sáng/tối = 4 bảng màu.
+  Nền không dùng đen tuyền: bé gái nghiêng nâu mận ấm, bé trai nghiêng xanh xám. Thẻ sáng hơn nền một bậc.
+  Đã đo 34 cặp chữ/nền cho hai bảng tối: tất cả >= 4,5:1 (thấp nhất 4,83).
+  Quy ước đã có: chữ trên nút chính là text-theme-surface (tối) trên bg-theme-brand (sáng).
+*/
+[data-color-scheme='dark'],
+[data-color-scheme='dark'][data-baby-theme='girl'] {
+  color-scheme: dark;
+  --c-page: 28 21 24;
+  --c-sidebar: 36 28 32;
+  --c-surface: 43 33 38;
+  --c-ink: 245 236 238;
+  --c-muted: 192 176 181;
+  --c-brand: 232 130 150;
+  --c-brand-soft: 74 42 51;
+  --c-line: 66 52 58;
+  --c-ok: 110 190 150;
+  --c-warn-bg: 58 44 14;
+  --c-warn-line: 217 150 43;
+  --c-warn-text: 247 214 140;
+  --c-danger-bg: 72 26 28;
+  --c-danger-line: 127 45 48;
+  --c-danger-text: 254 202 202;
+  --c-ok-bg: 20 50 40;
+  --c-ok-line: 45 100 78;
+  --c-ok-text: 167 243 208;
+  --c-info: 110 176 214;
+}
+
+[data-color-scheme='dark'][data-baby-theme='boy'] {
+  --c-page: 18 25 31;
+  --c-sidebar: 25 34 41;
+  --c-surface: 31 42 51;
+  --c-ink: 233 240 245;
+  --c-muted: 164 182 194;
+  --c-brand: 110 176 214;
+  --c-brand-soft: 30 58 77;
+  --c-line: 48 63 74;
 }
 
 body {

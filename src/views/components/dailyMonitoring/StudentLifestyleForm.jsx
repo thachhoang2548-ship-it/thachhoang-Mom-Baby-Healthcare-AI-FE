@@ -2,9 +2,9 @@ import React from "react";
 import { BookOpen } from "lucide-react";
 
 const STRESS_ITEMS = [
-  { level: "Low", label: "Thấp", activeClass: "bg-emerald-50 border-emerald-400 text-emerald-900" },
+  { level: "Low", label: "Thấp", activeClass: "bg-status-ok-bg border-status-ok-text text-status-ok-text" },
   { level: "Moderate", label: "Vừa phải", activeClass: "bg-status-warn-bg border-status-warn-line text-status-warn-text" },
-  { level: "High", label: "Cao", activeClass: "bg-red-50 border-red-400 text-red-900" },
+  { level: "High", label: "Cao", activeClass: "bg-status-danger-bg border-status-danger-text text-status-danger-text" },
 ];
 
 export const StudentLifestyleForm = ({ lifestyle, setLifestyle }) => {

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
@@ -9,7 +9,20 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="shortcut icon" href="/favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mom Ơi! - Maternity Health Super App</title>
+    <title>Mom Ơi! - Sổ tay sức khỏe mẹ và bé</title>
+    <script>
+      /* Áp chế độ sáng/tối trước khi vẽ để không bị chớp trắng. Giữ đồng bộ với src/hooks/useColorScheme.js (cùng khóa lưu và cùng mặc định). */
+      (function () {
+        try {
+          var mode = window.localStorage.getItem('momoi_color_mode_v1');
+          if (mode !== 'light' && mode !== 'dark' && mode !== 'system') mode = 'light';
+          var dark = mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          var root = document.documentElement;
+          root.dataset.colorScheme = dark ? 'dark' : 'light';
+          if (dark) root.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

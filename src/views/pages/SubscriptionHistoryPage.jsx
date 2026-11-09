@@ -15,7 +15,7 @@ const formatDate = (value) => {
 
 const STATUS_META = {
   Completed: {
-    badge: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+    badge: 'bg-status-ok-bg text-status-ok-text border-status-ok-line',
     label: 'Hoàn tất',
   },
   Pending: {
@@ -23,7 +23,7 @@ const STATUS_META = {
     label: 'Đang chờ',
   },
   Failed: {
-    badge: 'bg-red-50 text-red-800 border-red-200',
+    badge: 'bg-status-danger-bg text-status-danger-text border-status-danger-line',
     label: 'Thất bại',
   },
   Refunded: {
@@ -133,7 +133,7 @@ export default function SubscriptionHistoryPage() {
         </article>
 
         <article className="bg-theme-surface rounded-3xl border border-theme-line p-5 sm:p-6 shadow-sm space-y-2">
-          <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-status-ok border border-emerald-200 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-2xl bg-status-ok-bg text-status-ok border border-status-ok-line flex items-center justify-center">
             <CreditCard className="w-5 h-5" aria-hidden="true" />
           </div>
           <p className="text-xs font-bold text-theme-muted">Tổng đã thanh toán</p>

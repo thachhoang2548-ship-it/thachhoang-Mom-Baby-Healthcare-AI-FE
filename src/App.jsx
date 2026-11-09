@@ -73,9 +73,9 @@ function AppContent() {
           style: {
             fontFamily: '"Manrope", sans-serif',
             borderRadius: "16px",
-            background: "#FFFFFF",
-            color: "#2B2024",
-            border: "1px solid #EADFDA",
+            background: "rgb(var(--c-surface))",
+            color: "rgb(var(--c-ink))",
+            border: "1px solid rgb(var(--c-line))",
             fontSize: "14px",
             fontWeight: 600,
           },

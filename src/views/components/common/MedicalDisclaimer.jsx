@@ -31,7 +31,7 @@ export default function MedicalDisclaimer({ className = '' }) {
         </div>
         <a
           href={`tel:${EMERGENCY_NUMBER}`}
-          className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 self-start rounded-full bg-red-700 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-2 sm:text-base"
+          className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 self-start rounded-full bg-red-700 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger-text focus-visible:ring-offset-2 sm:text-base"
         >
           <Phone className="h-4 w-4" />
           <span>Cấp cứu: gọi {EMERGENCY_NUMBER}</span>

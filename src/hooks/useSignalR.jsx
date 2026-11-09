@@ -50,17 +50,17 @@ export function useSignalR() {
           <div
             className={`${
               t.visible ? 'animate-slide-in' : 'animate-fade-in'
-            } max-w-md w-full bg-pink-50 border-l-4 border-momPink shadow-xl rounded-r-2xl pointer-events-auto flex p-4 ring-1 ring-black ring-opacity-5`}
+            } max-w-md w-full bg-theme-brand-soft border-l-4 border-theme-brand shadow-xl rounded-r-2xl pointer-events-auto flex p-4 ring-1 ring-theme-line`}
           >
             <div className="flex-1">
-              <p className="text-sm font-bold text-momPink-dark flex items-center gap-1.5">
+              <p className="text-sm font-bold text-theme-ink flex items-center gap-1.5">
                 🌸 {alert.title || alert.titleVi || 'Cảnh Báo Sức Khỏe'}
               </p>
-              <p className="mt-1 text-xs text-gray-700 leading-relaxed font-medium">
+              <p className="mt-1 text-xs text-theme-muted leading-relaxed font-medium">
                 {alert.message || alert.messageVi}
               </p>
               {(alert.suggestion || alert.suggestionVi) && (
-                <p className="mt-2 text-[10px] text-gray-500 font-semibold bg-white/70 p-2 rounded-xl border border-pink-100/60 leading-normal">
+                <p className="mt-2 text-[10px] text-theme-muted font-semibold bg-theme-surface/70 p-2 rounded-xl border border-theme-line/60 leading-normal">
                   💡 AI khuyên: {alert.suggestion || alert.suggestionVi}
                 </p>
               )}
