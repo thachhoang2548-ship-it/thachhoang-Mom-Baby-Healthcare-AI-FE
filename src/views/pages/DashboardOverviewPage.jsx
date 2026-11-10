@@ -5,9 +5,9 @@ import { useProfileController } from '../../controllers/profileController';
 import { getTierLevel } from '../../utils/tierHelpers';
 import { getFullName, getGivenName, getTimeGreeting, formatTodayVi } from '../../utils/displayName';
 import { formatBabyDisplayName, useActiveBaby } from '../../hooks/useBabyTheme';
-import heroMomBabyPhoto from '../../assets/editorial/hero-mom-baby-sunlight.jpg';
-import pregnantCouplePhoto from '../../assets/editorial/pregnant-couple-warm.jpg';
-import newbornFeetPhoto from '../../assets/editorial/newborn-feet-towel.jpg';
+import { getAvatarSummaryText, useMomAvatar } from '../../hooks/useMomAvatar';
+import MomAvatar from '../components/avatar/MomAvatar';
+import MomAvatarStudioModal from '../components/avatar/MomAvatarStudioModal';
 import {
   Heart,
   Calendar,
@@ -31,6 +31,7 @@ import {
   Sparkles,
   Headphones,
   Baby,
+  Gem,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -63,6 +64,8 @@ export default function DashboardOverviewPage() {
   const { user, tier, token } = useAuthController();
   const { journeyStage } = useProfileController();
   const activeBaby = useActiveBaby();
+  const { avatar, updateAvatar, resetAvatar, randomizeAvatar } = useMomAvatar(user);
+  const [studioOpen, setStudioOpen] = useState(false);
   const navigate = useNavigate();
 
   const givenName = getGivenName(getFullName(user, token));
@@ -91,8 +94,6 @@ export default function DashboardOverviewPage() {
         return {
           title: 'Chuẩn bị mang thai',
           subtitle: 'Theo dõi nhịp chu kỳ tự nhiên và chuẩn bị nền tảng thể chất vững vàng trước thai kỳ.',
-          photo: newbornFeetPhoto,
-          photoAlt: 'Đôi bàn chân em bé sơ sinh trong khăn trắng ấm áp',
           featured: {
             label: 'Mở lịch rụng trứng & chu kỳ',
             desc: 'Nhận diện cửa sổ dễ thụ thai nhất trong tháng và ghi chú biểu hiện cơ thể.',
@@ -105,8 +106,6 @@ export default function DashboardOverviewPage() {
         return {
           title: 'Đang mang thai',
           subtitle: 'Cập nhật sự lớn lên của thai nhi từng tuần, ăn uống đủ chất và vận động nhẹ nhàng.',
-          photo: pregnantCouplePhoto,
-          photoAlt: 'Gia đình trẻ đón chờ em bé chào đời',
           featured: {
             label: 'Xem thai kỳ tuần này của mẹ',
             desc: 'Theo dõi cột mốc thai nhi, kiểm tra món ăn an toàn và biểu đồ cân nặng.',
@@ -122,8 +121,6 @@ export default function DashboardOverviewPage() {
         return {
           title: 'Mẹ & bé sau sinh',
           subtitle: 'Chăm sóc thực đơn, giấc ngủ cho bé song song với nhịp hồi phục thể chất và tinh thần của mẹ.',
-          photo: heroMomBabyPhoto,
-          photoAlt: 'Người mẹ mỉm cười ôm con bên khung cửa sổ nắng ấm',
           featured: {
             label: activeBaby
               ? `Góc chăm sóc ${formatBabyDisplayName(activeBaby.name)}`
@@ -143,8 +140,6 @@ export default function DashboardOverviewPage() {
         return {
           title: null,
           subtitle: 'Thiết lập giai đoạn hiện tại để Mom Ơi! cá nhân hóa thực đơn và lịch chăm sóc cho mẹ.',
-          photo: newbornFeetPhoto,
-          photoAlt: 'Đôi bàn chân em bé sơ sinh trong khăn trắng ấm áp',
           featured: {
             label: 'Thiết lập hồ sơ đồng hành',
             desc: 'Cho Mom Ơi! biết mẹ đang chuẩn bị mang thai, đang bầu hay nuôi con nhỏ.',
@@ -244,12 +239,35 @@ export default function DashboardOverviewPage() {
             </div>
           </div>
 
-          <div className="border-t border-theme-line bg-theme-page p-2.5 lg:col-span-4 lg:border-l lg:border-t-0">
-            <img
-              src={stage.photo}
-              alt={stage.photoAlt}
-              className="h-48 w-full rounded-2xl object-cover sm:h-56 lg:h-full lg:min-h-[210px]"
-            />
+          <div className="flex flex-col items-center justify-between gap-3 border-t border-theme-line bg-theme-page p-4 sm:flex-row lg:col-span-4 lg:flex-col lg:justify-center lg:border-l lg:border-t-0 lg:p-5">
+            <button
+              type="button"
+              onClick={() => setStudioOpen(true)}
+              aria-label="Mở tủ trang sức và tùy chỉnh diện mạo của mẹ"
+              className="group relative overflow-hidden rounded-3xl border border-theme-line bg-theme-surface shadow-sm transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
+            >
+              <MomAvatar
+                config={avatar}
+                mood={mood}
+                variant="scene"
+                className="h-36 w-36 sm:h-40 sm:w-40 lg:h-44 lg:w-44"
+                label={`Chân dung minh họa của ${givenName ? `mẹ ${givenName}` : 'mẹ'}`}
+              />
+            </button>
+
+            <div className="flex flex-col items-center gap-2 text-center sm:items-start sm:text-left lg:items-center lg:text-center">
+              <p className="line-clamp-1 text-xs font-semibold text-theme-muted">
+                {getAvatarSummaryText(avatar)}
+              </p>
+              <button
+                type="button"
+                onClick={() => setStudioOpen(true)}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-theme-line bg-theme-surface px-4 py-2 text-xs font-bold text-theme-ink shadow-sm transition-colors hover:border-theme-brand/50 hover:bg-theme-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+              >
+                <Gem className="h-3.5 w-3.5 text-theme-brand shrink-0" aria-hidden="true" />
+                <span>Đổi trang sức &amp; kiểu tóc</span>
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -381,7 +399,7 @@ export default function DashboardOverviewPage() {
                   <span
                     className={`rounded-full px-2.5 py-1 text-xs font-bold ${
                       cupsLeft === 0
-                        ? 'bg-status-ok/15 text-status-ok'
+                        ? 'border border-status-ok-line bg-status-ok-bg text-status-ok-text'
                         : 'bg-theme-surface text-theme-ink border border-theme-line'
                     }`}
                   >
@@ -491,6 +509,16 @@ export default function DashboardOverviewPage() {
           )}
         </section>
       </div>
+
+      <MomAvatarStudioModal
+        open={studioOpen}
+        onClose={() => setStudioOpen(false)}
+        avatar={avatar}
+        mood={mood}
+        onUpdate={updateAvatar}
+        onReset={resetAvatar}
+        onRandomize={randomizeAvatar}
+      />
     </div>
   );
 }

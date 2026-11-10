@@ -2,7 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useProfileController } from "../../controllers/profileController";
 import { useAuthController } from "../../controllers/authController";
-import { getTierNameVi } from "../../utils/tierHelpers";
+import { getTierLevel } from "../../utils/tierHelpers";
+import { getAvatarSummaryText, useMomAvatar } from "../../hooks/useMomAvatar";
+import MomAvatar from "../components/avatar/MomAvatar";
+import MomAvatarStudioModal from "../components/avatar/MomAvatarStudioModal";
 import {
   Heart,
   Activity,
@@ -15,6 +18,7 @@ import {
   Plus,
   X,
   Trash2,
+  Gem,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -38,9 +42,18 @@ const COMMON_CONDITIONS = [
   "Hen suyễn",
 ];
 
+function getCleanTierLabel(tier) {
+  const level = getTierLevel(tier);
+  if (level === 2) return "Super Mom VIP";
+  if (level === 1) return "Mẹ Hiện Đại";
+  return "Mẹ Bầu Cơ Bản";
+}
+
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { user, tier } = useAuthController();
+  const { avatar, updateAvatar, resetAvatar, randomizeAvatar } = useMomAvatar(user);
+  const [studioOpen, setStudioOpen] = useState(false);
   const { momProfile, fetchProfile, updateProfile, updateWeightLog, isLoading } =
     useProfileController();
 
@@ -244,18 +257,44 @@ export default function ProfilePage() {
         <span>Quay lại</span>
       </button>
 
-      {/* Header */}
-      <div className="border-b border-theme-line pb-5">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-theme-brand-soft px-3.5 py-1 text-xs font-semibold text-theme-ink">
-          <Heart className="h-3.5 w-3.5 text-theme-brand" />
-          Hồ sơ cá nhân hóa
-        </span>
-        <h1 className="mt-2.5 text-2xl font-bold text-theme-ink sm:text-3xl">
-          Hồ sơ sức khỏe của mẹ
-        </h1>
-        <p className="mt-1.5 text-sm text-theme-muted sm:text-base">
-          Cập nhật giai đoạn hiện tại và các chỉ số cơ thể để Mom Ơi! gợi ý thực đơn, lịch chăm sóc sát nhất với mẹ.
-        </p>
+      {/* Header kèm nhân vật minh họa cá nhân của mẹ */}
+      <div className="flex flex-col justify-between gap-5 rounded-3xl border border-theme-line bg-theme-surface p-5 shadow-sm sm:flex-row sm:items-center sm:p-6">
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setStudioOpen(true)}
+            aria-label="Tùy chỉnh nhân vật của mẹ"
+            className="h-20 w-20 shrink-0 overflow-hidden rounded-3xl border border-theme-line bg-theme-brand-soft shadow-sm transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+          >
+            <MomAvatar
+              config={avatar}
+              variant="badge"
+              className="h-full w-full"
+              label="Nhân vật minh họa của mẹ"
+            />
+          </button>
+          <div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-theme-brand-soft px-3 py-0.5 text-xs font-semibold text-theme-ink">
+              <Heart className="h-3.5 w-3.5 text-theme-brand" />
+              Hồ sơ cá nhân hóa
+            </span>
+            <h1 className="mt-1.5 text-xl font-bold text-theme-ink sm:text-2xl">
+              Hồ sơ sức khỏe của mẹ
+            </h1>
+            <p className="mt-0.5 text-xs font-medium text-theme-muted sm:text-sm">
+              {getAvatarSummaryText(avatar)}
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setStudioOpen(true)}
+          className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-full border border-theme-line bg-theme-page px-4 py-2 text-xs font-bold text-theme-ink transition-colors hover:border-theme-brand/45 hover:bg-theme-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand sm:text-sm"
+        >
+          <Gem className="h-4 w-4 text-theme-brand shrink-0" aria-hidden="true" />
+          <span>Đổi trang sức &amp; kiểu tóc</span>
+        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -268,12 +307,12 @@ export default function ProfilePage() {
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-semibold text-theme-muted">Gói dịch vụ hiện tại</span>
-                <span className="rounded-full bg-status-ok/15 px-2.5 py-0.5 text-xs font-bold text-status-ok">
+                <span className="rounded-full border border-status-ok-line bg-status-ok-bg px-2.5 py-0.5 text-xs font-bold text-status-ok-text">
                   Đang kích hoạt
                 </span>
               </div>
               <h2 className="mt-0.5 text-lg font-bold text-theme-ink">
-                {getTierNameVi(tier)}
+                {getCleanTierLabel(tier)}
               </h2>
             </div>
           </div>
@@ -331,7 +370,7 @@ export default function ProfilePage() {
                 >
                   <div className="flex w-full items-center justify-between gap-2">
                     <span
-                      className={`flex h-10 w-10 items-center justify-center rounded-xl ${
+                      className={`flex h-10 w-10 items-center justify-center rounded-2xl ${
                         isSelected
                           ? "bg-theme-brand text-theme-surface"
                           : "bg-theme-surface text-theme-muted border border-theme-line"
@@ -703,6 +742,15 @@ export default function ProfilePage() {
           </Link>
         </div>
       </form>
+
+      <MomAvatarStudioModal
+        open={studioOpen}
+        onClose={() => setStudioOpen(false)}
+        avatar={avatar}
+        onUpdate={updateAvatar}
+        onReset={resetAvatar}
+        onRandomize={randomizeAvatar}
+      />
     </div>
   );
 }

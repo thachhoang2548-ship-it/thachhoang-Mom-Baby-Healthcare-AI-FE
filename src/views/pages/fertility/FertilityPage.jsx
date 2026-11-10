@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useProfileController } from '../../../controllers/profileController';
 import fertilityService from '../../../models/services/fertilityService';
 import CycleCalendar from '../../components/fertility/CycleCalendar';
-import newbornFeetPhoto from '../../../assets/editorial/newborn-feet-towel.jpg';
 import { Calendar, Heart, Plus, Info, X, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -113,10 +112,10 @@ export default function FertilityPage() {
 
   return (
     <div className="space-y-6 pb-8 font-display text-theme-ink">
-      {/* Editorial Hero */}
+      {/* Đầu trang gọn hiện đại, tập trung dự báo chu kỳ */}
       <section className="overflow-hidden rounded-3xl border border-theme-line bg-theme-surface shadow-sm">
         <div className="grid grid-cols-1 lg:grid-cols-12">
-          <div className="flex flex-col justify-between gap-5 p-5 sm:p-7 lg:col-span-8">
+          <div className="flex flex-col justify-center gap-3 p-5 sm:p-7 lg:col-span-7">
             <div className="space-y-2">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-theme-brand-soft px-3.5 py-1 text-xs font-bold text-theme-ink">
                 <Heart className="h-3.5 w-3.5 text-theme-brand" />
@@ -129,35 +128,27 @@ export default function FertilityPage() {
                 Quản lý lịch kinh nguyệt đều đặn để nhận biết thời điểm dễ thụ thai tự nhiên và chuẩn bị sức khỏe tiền sản.
               </p>
             </div>
-
-            <div className="flex flex-col gap-3 border-t border-theme-line pt-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3 rounded-2xl border border-theme-line bg-theme-page px-4 py-2.5">
-                <Sparkles className="h-5 w-5 shrink-0 text-theme-brand" />
-                <div>
-                  <p className="text-xs font-semibold text-theme-muted">Dự báo cửa sổ thụ thai</p>
-                  <p className="text-xs font-bold text-theme-ink sm:text-sm">
-                    {getFertileCountdownText()}
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setShowLogModal(true)}
-                className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 rounded-full bg-theme-brand px-5 py-2.5 text-sm font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Ghi nhận kỳ kinh</span>
-              </button>
-            </div>
           </div>
 
-          <div className="border-t border-theme-line bg-theme-page p-2.5 lg:col-span-4 lg:border-l lg:border-t-0">
-            <img
-              src={newbornFeetPhoto}
-              alt="Đôi bàn chân em bé trong khăn bông trắng ấm áp"
-              className="h-44 w-full rounded-2xl object-cover sm:h-52 lg:h-full lg:min-h-[190px]"
-            />
+          <div className="flex flex-col justify-between gap-4 border-t border-theme-line bg-theme-page p-5 sm:p-6 lg:col-span-5 lg:border-l lg:border-t-0">
+            <div className="flex items-start gap-3 rounded-2xl border border-theme-line bg-theme-surface p-4">
+              <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-theme-brand" />
+              <div>
+                <p className="text-xs font-semibold text-theme-muted">Dự báo cửa sổ thụ thai</p>
+                <p className="mt-0.5 text-xs font-bold leading-relaxed text-theme-ink sm:text-sm">
+                  {getFertileCountdownText()}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowLogModal(true)}
+              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-full bg-theme-brand px-5 py-2.5 text-sm font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Ghi nhận kỳ kinh</span>
+            </button>
           </div>
         </div>
       </section>

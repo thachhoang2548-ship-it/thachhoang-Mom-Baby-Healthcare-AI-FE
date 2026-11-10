@@ -6,7 +6,6 @@ import pregnancyService from '../../../models/services/pregnancyService';
 import WeeklyMilestone from '../../components/pregnancy/WeeklyMilestone';
 import WeightChart from '../../components/pregnancy/WeightChart';
 import TierGate from '../../components/layout/TierGate';
-import pregnantCouplePhoto from '../../../assets/editorial/pregnant-couple-warm.jpg';
 import {
   Heart,
   Scale,
@@ -271,12 +270,42 @@ export default function PregnancyDashPage() {
             </div>
           </div>
 
-          <div className="border-t border-theme-line bg-theme-page p-2.5 lg:col-span-4 lg:border-l lg:border-t-0">
-            <img
-              src={pregnantCouplePhoto}
-              alt="Gia đình trẻ mỉm cười hạnh phúc trong thai kỳ"
-              className="h-44 w-full rounded-2xl object-cover sm:h-52 lg:h-full lg:min-h-[190px]"
-            />
+          <div className="flex flex-col justify-between gap-3 border-t border-theme-line bg-theme-page p-5 lg:col-span-4 lg:border-l lg:border-t-0 sm:p-6">
+            <div>
+              <span className="text-xs font-bold text-theme-muted">Tiến độ hành trình 40 tuần</span>
+              <div className="mt-1.5 flex items-baseline justify-between gap-2">
+                <p className="text-2xl font-bold text-theme-ink sm:text-3xl">
+                  {currentWeek ? `Tuần ${currentWeek}` : 'Chưa đặt tuần'}
+                </p>
+                {currentWeek ? (
+                  <span className="text-xs font-bold text-theme-brand">
+                    {Math.min(100, Math.round((currentWeek / 40) * 100))}%
+                  </span>
+                ) : null}
+              </div>
+            </div>
+
+            <div
+              className="h-2.5 overflow-hidden rounded-full border border-theme-line bg-theme-surface"
+              role="progressbar"
+              aria-valuenow={currentWeek ? Math.min(100, Math.round((currentWeek / 40) * 100)) : 0}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Tiến độ tuần thai"
+            >
+              <div
+                className="h-full rounded-full bg-theme-brand transition-all duration-300"
+                style={{
+                  width: `${currentWeek ? Math.min(100, Math.round((currentWeek / 40) * 100)) : 0}%`,
+                }}
+              />
+            </div>
+
+            <p className="text-xs font-medium leading-relaxed text-theme-muted">
+              {currentWeek
+                ? `Còn khoảng ${Math.max(0, 40 - currentWeek)} tuần nữa đến mốc 40 tuần dự kiến.`
+                : 'Cập nhật ngày kinh cuối trong Hồ sơ của mẹ để tính tuần thai tự động.'}
+            </p>
           </div>
         </div>
       </section>
