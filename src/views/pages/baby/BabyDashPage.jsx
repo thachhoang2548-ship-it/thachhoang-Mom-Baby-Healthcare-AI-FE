@@ -7,8 +7,6 @@ import {
   pickPreferredBaby,
   useBabyTheme,
 } from '../../../hooks/useBabyTheme';
-import babyWeaningPlayPhoto from '../../../assets/editorial/baby-weaning-play.jpg';
-import newbornFeetPhoto from '../../../assets/editorial/newborn-feet-towel.jpg';
 import {
   Radar,
   RadarChart,
@@ -198,56 +196,48 @@ export default function BabyDashPage() {
   // Trạng thái trống: chưa có hồ sơ bé
   if (!selectedBaby) {
     return (
-      <div className="mx-auto max-w-3xl py-4 font-display sm:py-8">
-        <div className="overflow-hidden rounded-3xl border border-theme-line bg-theme-surface shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-12">
-            <div className="p-6 sm:p-8 md:col-span-7 space-y-5">
-              <div className="space-y-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-theme-brand-soft px-3 py-1 text-xs font-bold text-theme-ink">
-                  <Baby className="h-3.5 w-3.5 text-theme-brand" aria-hidden="true" />
-                  Không gian riêng của bé
-                </span>
-                <h1 className="text-xl font-bold text-theme-ink sm:text-2xl">
-                  Thiết lập hồ sơ bé yêu đầu tiên
-                </h1>
-                <p className="text-sm leading-relaxed text-theme-muted">
-                  Tạo hồ sơ để mở khóa thực đơn ăn dặm chuẩn WHO, theo dõi bách phân vị tăng trưởng và đồng bộ tông màu toàn trang theo bé trai hoặc bé gái.
-                </p>
-              </div>
-
-              <div className="space-y-2.5 text-xs font-semibold text-theme-ink sm:text-sm">
-                <div className="flex items-center gap-2.5 rounded-2xl border border-theme-line bg-theme-page px-3.5 py-2.5">
-                  <Utensils className="h-4 w-4 shrink-0 text-theme-brand" aria-hidden="true" />
-                  <span>Gợi ý cữ ăn và định lượng vi chất theo tháng tuổi</span>
-                </div>
-                <div className="flex items-center gap-2.5 rounded-2xl border border-theme-line bg-theme-page px-3.5 py-2.5">
-                  <Activity className="h-4 w-4 shrink-0 text-status-ok" aria-hidden="true" />
-                  <span>Biểu đồ cân nặng và chiều cao đối chiếu chuẩn WHO</span>
-                </div>
-                <div className="flex items-center gap-2.5 rounded-2xl border border-theme-line bg-theme-page px-3.5 py-2.5">
-                  <HeartHandshake className="h-4 w-4 shrink-0 text-theme-brand" aria-hidden="true" />
-                  <span>Tự động đổi màu bảng điều khiển theo bé trai / bé gái</span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => navigate('/baby-nutrition/create-baby')}
-                className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full bg-theme-brand px-6 py-3 text-sm font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
-              >
-                <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span>Thêm hồ sơ bé ngay</span>
-              </button>
+      <div className="mx-auto max-w-2xl py-4 font-display sm:py-8">
+        <div className="overflow-hidden rounded-3xl border border-theme-line bg-theme-surface p-6 shadow-sm sm:p-8 space-y-5">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-theme-line bg-theme-brand-soft text-theme-brand">
+              <Baby className="h-7 w-7" aria-hidden="true" />
             </div>
-
-            <div className="border-t border-theme-line bg-theme-page p-2.5 md:col-span-5 md:border-l md:border-t-0">
-              <img
-                src={newbornFeetPhoto}
-                alt="Đôi bàn chân trẻ sơ sinh trong khăn bông ấm áp"
-                className="h-52 w-full rounded-2xl object-cover md:h-full"
-              />
+            <div className="space-y-1.5">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-theme-brand-soft px-3 py-1 text-xs font-bold text-theme-ink">
+                Không gian riêng của bé
+              </span>
+              <h1 className="text-xl font-bold text-theme-ink sm:text-2xl">
+                Thiết lập hồ sơ bé yêu đầu tiên
+              </h1>
+              <p className="text-sm leading-relaxed text-theme-muted">
+                Tạo hồ sơ để mở khóa thực đơn ăn dặm chuẩn WHO, theo dõi bách phân vị tăng trưởng và đồng bộ tông màu toàn trang theo bé trai hoặc bé gái.
+              </p>
             </div>
           </div>
+
+          <div className="space-y-2.5 text-xs font-semibold text-theme-ink sm:text-sm">
+            <div className="flex items-center gap-2.5 rounded-2xl border border-theme-line bg-theme-page px-3.5 py-2.5">
+              <Utensils className="h-4 w-4 shrink-0 text-theme-brand" aria-hidden="true" />
+              <span>Gợi ý cữ ăn và định lượng vi chất theo tháng tuổi</span>
+            </div>
+            <div className="flex items-center gap-2.5 rounded-2xl border border-theme-line bg-theme-page px-3.5 py-2.5">
+              <Activity className="h-4 w-4 shrink-0 text-status-ok" aria-hidden="true" />
+              <span>Biểu đồ cân nặng và chiều cao đối chiếu chuẩn WHO</span>
+            </div>
+            <div className="flex items-center gap-2.5 rounded-2xl border border-theme-line bg-theme-page px-3.5 py-2.5">
+              <HeartHandshake className="h-4 w-4 shrink-0 text-theme-brand" aria-hidden="true" />
+              <span>Tự động đổi màu bảng điều khiển theo bé trai / bé gái</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate('/baby-nutrition/create-baby')}
+            className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full bg-theme-brand px-6 py-3 text-sm font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2"
+          >
+            <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
+            <span>Thêm hồ sơ bé ngay</span>
+          </button>
         </div>
       </div>
     );
@@ -372,12 +362,16 @@ export default function BabyDashPage() {
         </div>
       )}
 
-      {/* 1. Đầu trang Hồ sơ bé biên tập (cân đối, có số đo nhanh & ảnh đời thực nhẹ nhàng) */}
-      <section className="overflow-hidden rounded-3xl border border-theme-line bg-theme-surface shadow-sm">
-        <div className="grid grid-cols-1 lg:grid-cols-12">
-          <div className="flex flex-col justify-between gap-5 p-5 sm:p-7 lg:col-span-8">
-            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
-              <div className="space-y-2">
+      {/* 1. Đầu trang Hồ sơ bé gọn hiện đại (chỉ số nhanh & điều hướng trực tiếp, không dùng ảnh stock người lạ) */}
+      <section className="overflow-hidden rounded-3xl border border-theme-line bg-theme-surface p-5 shadow-sm sm:p-7">
+        <div className="flex flex-col justify-between gap-5">
+          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+            <div className="flex items-start gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-theme-line bg-theme-brand-soft text-theme-brand sm:h-16 sm:w-16">
+                <Baby className="h-7 w-7 sm:h-8 sm:w-8" aria-hidden="true" />
+              </div>
+
+              <div className="space-y-1.5">
                 <div className="flex flex-wrap items-center gap-2">
                   {genderLabel && (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-theme-brand-soft px-3 py-1 text-xs font-bold text-theme-ink">
@@ -391,94 +385,82 @@ export default function BabyDashPage() {
                 </div>
 
                 <h1 className="text-2xl font-bold text-theme-ink sm:text-3xl">{displayName}</h1>
-                <p className="text-xs font-semibold text-status-ok sm:text-sm">
+                <p className="text-xs font-semibold text-status-ok-text sm:text-sm">
                   {getWeaningStage(ageMonths)}
                 </p>
               </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => navigate('/baby-nutrition/edit-baby', { state: { baby: selectedBaby } })}
-                  className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-theme-line bg-theme-page px-4 py-2 text-xs font-bold text-theme-ink transition-colors hover:bg-theme-sidebar focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand sm:text-sm"
-                >
-                  <Pencil className="h-4 w-4 text-theme-brand shrink-0" aria-hidden="true" />
-                  <span>Sửa hồ sơ</span>
-                </button>
-                {babies.length <= 1 && (
-                  <button
-                    type="button"
-                    onClick={() => navigate('/baby-nutrition/create-baby')}
-                    className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-theme-line bg-theme-surface px-3.5 py-2 text-xs font-semibold text-theme-muted transition-colors hover:border-theme-brand hover:text-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand sm:text-sm"
-                  >
-                    <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
-                    <span>Thêm bé</span>
-                  </button>
-                )}
-              </div>
             </div>
 
-            {/* Chỉ số nhanh + Lối tắt điều hướng vừa vặn, không bị kéo giãn thô */}
-            <div className="flex flex-col gap-3 border-t border-theme-line pt-5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-              <div className="flex flex-wrap items-center gap-2.5">
-                {currentWeight && (
-                  <div className="inline-flex items-center gap-2 rounded-2xl border border-theme-line bg-theme-page px-3.5 py-2 text-xs font-semibold text-theme-ink">
-                    <Scale className="h-4 w-4 text-theme-brand" aria-hidden="true" />
-                    <span>
-                      Cân nặng: <strong>{currentWeight} kg</strong>
-                    </span>
-                  </div>
-                )}
-                {currentHeight && (
-                  <div className="inline-flex items-center gap-2 rounded-2xl border border-theme-line bg-theme-page px-3.5 py-2 text-xs font-semibold text-theme-ink">
-                    <Ruler className="h-4 w-4 text-status-ok" aria-hidden="true" />
-                    <span>
-                      Chiều cao: <strong>{currentHeight} cm</strong>
-                    </span>
-                  </div>
-                )}
-                <div className="inline-flex items-center gap-2 rounded-2xl border border-theme-line bg-theme-page px-3.5 py-2 text-xs font-semibold text-theme-ink">
-                  <ShieldCheck className="h-4 w-4 text-theme-brand" aria-hidden="true" />
-                  <span>
-                    Cần tránh: <strong>{selectedBaby.allergies?.length || 0} thực phẩm</strong>
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => navigate('/baby-nutrition/edit-baby', { state: { baby: selectedBaby } })}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-theme-line bg-theme-page px-4 py-2 text-xs font-bold text-theme-ink transition-colors hover:bg-theme-sidebar focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand sm:text-sm"
+              >
+                <Pencil className="h-4 w-4 text-theme-brand shrink-0" aria-hidden="true" />
+                <span>Sửa hồ sơ</span>
+              </button>
+              {babies.length <= 1 && (
                 <button
                   type="button"
-                  onClick={() => navigate('/baby-nutrition/menu')}
-                  className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-theme-brand px-5 py-2.5 text-xs font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2 sm:text-sm"
+                  onClick={() => navigate('/baby-nutrition/create-baby')}
+                  className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border border-theme-line bg-theme-surface px-3.5 py-2 text-xs font-semibold text-theme-muted transition-colors hover:border-theme-brand hover:text-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand sm:text-sm"
                 >
-                  <BookOpen className="h-4 w-4 shrink-0" aria-hidden="true" />
-                  <span>Xem thực đơn tuần</span>
-                  <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <Plus className="h-4 w-4 shrink-0" aria-hidden="true" />
+                  <span>Thêm bé</span>
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => navigate('/baby-nutrition/growth')}
-                  className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-theme-line bg-theme-sidebar px-5 py-2.5 text-xs font-bold text-theme-ink transition-colors hover:bg-theme-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2 sm:text-sm"
-                >
-                  <Activity className="h-4 w-4 text-theme-brand shrink-0" aria-hidden="true" />
-                  <span>Biểu đồ WHO</span>
-                  <ChevronRight className="h-4 w-4 text-theme-muted shrink-0" aria-hidden="true" />
-                </button>
-              </div>
+              )}
             </div>
           </div>
 
-          <div className="border-t border-theme-line bg-theme-page p-2.5 lg:col-span-4 lg:border-l lg:border-t-0">
-            <img
-              src={ageMonths >= 6 ? babyWeaningPlayPhoto : newbornFeetPhoto}
-              alt={
-                ageMonths >= 6
-                  ? 'Em bé trong giai đoạn tập ăn dặm'
-                  : 'Chăm sóc trẻ sơ sinh dưới 6 tháng tuổi'
-              }
-              className="h-44 w-full rounded-2xl object-cover sm:h-52 lg:h-full lg:min-h-[195px]"
-            />
+          {/* Chỉ số nhanh + Lối tắt điều hướng vừa vặn */}
+          <div className="flex flex-col gap-3 border-t border-theme-line pt-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap items-center gap-2.5">
+              {currentWeight && (
+                <div className="inline-flex items-center gap-2 rounded-2xl border border-theme-line bg-theme-page px-3.5 py-2 text-xs font-semibold text-theme-ink">
+                  <Scale className="h-4 w-4 text-theme-brand" aria-hidden="true" />
+                  <span>
+                    Cân nặng: <strong>{currentWeight} kg</strong>
+                  </span>
+                </div>
+              )}
+              {currentHeight && (
+                <div className="inline-flex items-center gap-2 rounded-2xl border border-theme-line bg-theme-page px-3.5 py-2 text-xs font-semibold text-theme-ink">
+                  <Ruler className="h-4 w-4 text-status-ok" aria-hidden="true" />
+                  <span>
+                    Chiều cao: <strong>{currentHeight} cm</strong>
+                  </span>
+                </div>
+              )}
+              <div className="inline-flex items-center gap-2 rounded-2xl border border-theme-line bg-theme-page px-3.5 py-2 text-xs font-semibold text-theme-ink">
+                <ShieldCheck className="h-4 w-4 text-theme-brand" aria-hidden="true" />
+                <span>
+                  Cần tránh: <strong>{selectedBaby.allergies?.length || 0} thực phẩm</strong>
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={() => navigate('/baby-nutrition/menu')}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-theme-brand px-5 py-2.5 text-xs font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2 sm:text-sm"
+              >
+                <BookOpen className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>Xem thực đơn tuần</span>
+                <ChevronRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate('/baby-nutrition/growth')}
+                className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-theme-line bg-theme-sidebar px-5 py-2.5 text-xs font-bold text-theme-ink transition-colors hover:bg-theme-brand-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2 sm:text-sm"
+              >
+                <Activity className="h-4 w-4 text-theme-brand shrink-0" aria-hidden="true" />
+                <span>Biểu đồ WHO</span>
+                <ChevronRight className="h-4 w-4 text-theme-muted shrink-0" aria-hidden="true" />
+              </button>
+            </div>
           </div>
         </div>
       </section>

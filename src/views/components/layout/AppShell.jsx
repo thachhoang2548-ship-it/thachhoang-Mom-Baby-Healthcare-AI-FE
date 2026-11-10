@@ -17,6 +17,8 @@ import {
   setGlobalActiveBaby,
   useActiveBaby,
 } from '../../../hooks/useBabyTheme';
+import { useMomAvatar } from '../../../hooks/useMomAvatar';
+import MomAvatar from '../avatar/MomAvatar';
 
 import {
   Calendar,
@@ -67,6 +69,7 @@ export default function AppShell() {
   const { journeyStage, fetchProfile, momProfile } = useProfileController();
   const online = useOnlineStatus();
   const activeBaby = useActiveBaby();
+  const { avatar } = useMomAvatar(user);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -360,9 +363,20 @@ export default function AppShell() {
               to="/profile"
               className="flex min-h-[48px] items-center gap-3 rounded-2xl border border-theme-line bg-theme-surface px-3.5 py-2.5 transition-colors hover:border-theme-brand/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
             >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-theme-brand-soft text-sm font-bold text-theme-ink">
-                {(fullName || 'M').trim().charAt(0).toUpperCase()}
-              </span>
+              {isMom ? (
+                <span className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-theme-line bg-theme-brand-soft">
+                  <MomAvatar
+                    config={avatar}
+                    variant="badge"
+                    className="h-full w-full"
+                    label="Nhân vật của mẹ"
+                  />
+                </span>
+              ) : (
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-theme-brand-soft text-sm font-bold text-theme-ink">
+                  {(fullName || 'M').trim().charAt(0).toUpperCase()}
+                </span>
+              )}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold text-theme-ink">
                   {fullName || 'Tài khoản của mẹ'}
@@ -529,13 +543,25 @@ export default function AppShell() {
             aria-label="Tất cả mục"
           >
             <div className="mb-3 flex items-center justify-between border-b border-theme-line px-2 pb-3">
-              <div>
-                <p className="text-lg font-bold text-theme-ink">Danh mục chăm sóc</p>
-                {user && (
-                  <p className="text-xs font-medium text-theme-muted">
-                    {fullName || 'Tài khoản của mẹ'} · {getRoleBadgeVi()}
-                  </p>
+              <div className="flex min-w-0 items-center gap-3">
+                {isMom && user && (
+                  <span className="h-10 w-10 shrink-0 overflow-hidden rounded-full border border-theme-line bg-theme-brand-soft">
+                    <MomAvatar
+                      config={avatar}
+                      variant="badge"
+                      className="h-full w-full"
+                      label="Nhân vật của mẹ"
+                    />
+                  </span>
                 )}
+                <div className="min-w-0">
+                  <p className="text-lg font-bold text-theme-ink">Danh mục chăm sóc</p>
+                  {user && (
+                    <p className="truncate text-xs font-medium text-theme-muted">
+                      {fullName || 'Tài khoản của mẹ'} · {getRoleBadgeVi()}
+                    </p>
+                  )}
+                </div>
               </div>
               <button
                 type="button"

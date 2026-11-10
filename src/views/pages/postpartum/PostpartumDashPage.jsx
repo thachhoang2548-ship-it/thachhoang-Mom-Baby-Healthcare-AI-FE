@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuthController } from '../../../controllers/authController';
 import { useProfileController as useActualProfileController } from '../../../controllers/profileController';
 import postpartumService from '../../../models/services/postpartumService';
 import dailyMonitoringService from '../../../models/services/dailyMonitoringService';
 import TierGate from '../../components/layout/TierGate';
-import sleepingNewbornPhoto from '../../../assets/editorial/newborn-sleeping-soft.jpg';
+import MomAvatar from '../../components/avatar/MomAvatar';
+import { useMomAvatar } from '../../../hooks/useMomAvatar';
 import {
   Activity,
   AlertTriangle,
@@ -46,6 +48,8 @@ const DAILY_CARE_ITEMS = [
 
 export default function PostpartumDashPage() {
   const navigate = useNavigate();
+  const { user } = useAuthController();
+  const { avatar } = useMomAvatar(user);
   const { fetchProfile } = useActualProfileController();
   const [loading, setLoading] = useState(true);
   const [setupMode, setSetupMode] = useState(false);
@@ -259,10 +263,12 @@ export default function PostpartumDashPage() {
     );
   }
 
+  const activeMoodLabel = MOODS.find((item) => item.score === selectedMood)?.label || '';
+
   // 3. Trạng thái Dashboard chính
   return (
     <div className="font-display space-y-6 pb-8 text-theme-ink">
-      {/* 3.1. Hero Banner: Hành trình phục hồi của mẹ là trung tâm */}
+      {/* 3.1. Hero Banner: Hành trình phục hồi của mẹ là trung tâm, đi kèm nhân vật của mẹ */}
       <section className="overflow-hidden rounded-3xl border border-theme-line bg-theme-surface shadow-sm">
         <div className="grid grid-cols-1 lg:grid-cols-12">
           <div className="flex flex-col justify-between gap-5 p-5 sm:p-7 lg:col-span-8">
@@ -298,12 +304,21 @@ export default function PostpartumDashPage() {
             </div>
           </div>
 
-          <div className="border-t border-theme-line bg-theme-page p-2.5 lg:col-span-4 lg:border-l lg:border-t-0">
-            <img
-              src={sleepingNewbornPhoto}
-              alt="Em bé sơ sinh ngủ bình yên trong chăn mềm"
-              className="h-44 w-full rounded-2xl object-cover sm:h-52 lg:h-full lg:min-h-[190px]"
-            />
+          <div className="flex flex-col items-center justify-center gap-3 border-t border-theme-line bg-theme-page p-5 text-center lg:col-span-4 lg:border-l lg:border-t-0">
+            <div className="h-28 w-28 overflow-hidden rounded-3xl border border-theme-line bg-theme-surface shadow-sm sm:h-32 sm:w-32">
+              <MomAvatar
+                config={avatar}
+                mood={activeMoodLabel}
+                variant="scene"
+                className="h-full w-full"
+                label="Nhân vật minh họa của mẹ"
+              />
+            </div>
+            <p className="text-xs font-semibold text-theme-muted">
+              {activeMoodLabel
+                ? `Hôm nay mẹ thấy: ${activeMoodLabel.toLowerCase()}`
+                : 'Lắng nghe cơ thể mỗi ngày nhé mẹ'}
+            </p>
           </div>
         </div>
       </section>
