@@ -1,11 +1,16 @@
-import React, { useState } from "react";
+import React from "react";
+import { Link } from "react-router-dom";
 import { Mascot } from "page-mascot";
-import { PhoneCall, Copy, Check, Stethoscope, MessageCircle } from "lucide-react";
-import toast from "react-hot-toast";
-import { ADVISOR_DOCTOR } from "../../../config/advisor";
+import { PhoneIncoming, Phone, Crown, Stethoscope } from "lucide-react";
+import { ADVISOR_DOCTOR, EMERGENCY_NUMBER } from "../../../config/advisor";
+import { useAuthController } from "../../../controllers/authController";
+import { checkTierUnlocked } from "../../../utils/tierHelpers";
+import { CALLBACK_FEE } from "../../../models/services/doctorCallbackService";
 
 const NURSE_DIRECTIONS = "/mascots/nurse-directions.png";
 const NURSE_REACTIONS = "/mascots/nurse-reactions.png";
+
+const feeText = `${CALLBACK_FEE.toLocaleString("vi-VN")}đ`;
 
 function NurseMascot({ size = 76, className = "" }) {
   return (
@@ -22,47 +27,65 @@ function NurseMascot({ size = 76, className = "" }) {
   );
 }
 
-function ContactButtons({ large = false }) {
-  const { phone, phoneDisplay } = ADVISOR_DOCTOR;
+function ContactActions({ isVip, urgent, concern, large = false }) {
   const padClass = large ? "px-5 py-3 text-sm sm:text-base" : "px-4 py-2.5 text-sm";
   return (
     <div className="flex flex-wrap gap-2.5">
-      <a
-        href={`tel:${phone}`}
-        className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-status-ok font-bold text-theme-surface transition-colors hover:bg-status-ok-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-ok focus-visible:ring-offset-2 ${padClass}`}
-      >
-        <PhoneCall className="h-4 w-4 shrink-0" />
-        <span>Gọi {phoneDisplay}</span>
-      </a>
-      <a
-        href={`https://zalo.me/${phone}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-sky-700 font-bold text-white transition-colors hover:bg-sky-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-ink focus-visible:ring-offset-2 ${padClass}`}
-      >
-        <MessageCircle className="h-4 w-4 shrink-0" />
-        <span>Nhắn Zalo</span>
-      </a>
+      {isVip ? (
+        <Link
+          to="/doctor-callback"
+          state={concern ? { concern } : undefined}
+          className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-status-ok font-bold text-theme-surface transition-colors hover:bg-status-ok-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-ok focus-visible:ring-offset-2 ${padClass}`}
+        >
+          <PhoneIncoming className="h-4 w-4 shrink-0" />
+          <span>Yêu cầu bác sĩ gọi lại</span>
+        </Link>
+      ) : (
+        <Link
+          to="/upgrade"
+          state={{ targetTier: "SuperMomVip" }}
+          className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-theme-brand font-bold text-theme-surface transition-colors hover:bg-theme-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand focus-visible:ring-offset-2 ${padClass}`}
+        >
+          <Crown className="h-4 w-4 shrink-0" />
+          <span>Nâng cấp Super Mom VIP</span>
+        </Link>
+      )}
+      {urgent && (
+        <a
+          href={`tel:${EMERGENCY_NUMBER}`}
+          className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-red-700 font-bold text-white transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger-text focus-visible:ring-offset-2 ${padClass}`}
+        >
+          <Phone className="h-4 w-4 shrink-0" />
+          <span>Cấp cứu {EMERGENCY_NUMBER}</span>
+        </a>
+      )}
     </div>
   );
 }
 
-export default function DoctorConsultationCard({ variant = "full", urgent = false }) {
-  const [copied, setCopied] = useState(false);
-  const { displayName, role, phone, phoneDisplay } = ADVISOR_DOCTOR;
+function Description({ isVip }) {
+  return isVip ? (
+    <>
+      Mẹ để lại số điện thoại, bác sĩ sẽ gọi lại tư vấn. Phí {feeText}/cuộc, chỉ tính khi bác sĩ tư vấn thành công.
+    </>
+  ) : (
+    <>
+      Hội viên <strong className="text-theme-ink">Super Mom VIP</strong> được bác sĩ gọi lại tư vấn trực tiếp
+      ({feeText}/cuộc, chỉ tính khi tư vấn thành công).
+    </>
+  );
+}
 
-  const handleCopyPhone = () => {
-    navigator.clipboard
-      .writeText(phone)
-      .then(() => {
-        setCopied(true);
-        toast.success(`Đã sao chép số của ${displayName}: ${phoneDisplay}`);
-        setTimeout(() => setCopied(false), 2500);
-      })
-      .catch(() => {
-        toast.error("Không thể sao chép số điện thoại.");
-      });
-  };
+/**
+ * Thẻ liên hệ bác sĩ cố vấn. Không hiển thị số bác sĩ:
+ * - Super Mom VIP: nút "Yêu cầu bác sĩ gọi lại".
+ * - Gói khác: lời mời nâng cấp.
+ * - Trường hợp khẩn: luôn kèm nút gọi 115 miễn phí cho mọi gói.
+ */
+export default function DoctorConsultationCard({ variant = "full", urgent = false, concern = "" }) {
+  const tier = useAuthController((state) => state.tier);
+  const isVip = checkTierUnlocked(tier, "SuperMomVip");
+  const { displayName, role } = ADVISOR_DOCTOR;
 
   if (variant === "banner") {
     return (
@@ -76,11 +99,11 @@ export default function DoctorConsultationCard({ variant = "full", urgent = fals
             <p className="text-xs font-bold text-status-ok-text">{role}</p>
             <p className="text-lg font-bold text-theme-ink sm:text-xl">{displayName}</p>
             <p className="mt-0.5 text-sm text-theme-muted">
-              Cần hỏi thêm, mẹ có thể gọi trực tiếp hoặc nhắn Zalo cho bác sĩ.
+              <Description isVip={isVip} />
             </p>
           </div>
         </div>
-        <ContactButtons />
+        <ContactActions isVip={isVip} urgent={urgent} concern={concern} />
       </section>
     );
   }
@@ -97,7 +120,7 @@ export default function DoctorConsultationCard({ variant = "full", urgent = fals
       {urgent && (
         <p className="flex items-center gap-2 text-base font-bold text-status-danger-text sm:text-lg">
           <Stethoscope className="h-5 w-5 shrink-0" />
-          <span>Mẹ nên hỏi ý kiến bác sĩ sớm</span>
+          <span>Mẹ nên hỏi ý kiến bác sĩ sớm. Nếu nguy cấp, gọi ngay {EMERGENCY_NUMBER}.</span>
         </p>
       )}
 
@@ -107,27 +130,13 @@ export default function DoctorConsultationCard({ variant = "full", urgent = fals
           <div>
             <p className="text-xs font-bold text-status-ok-text">{role}</p>
             <p className="text-xl font-bold text-theme-ink sm:text-2xl">{displayName}</p>
-            <p className="mt-1 text-sm text-theme-ink sm:text-base">
-              Điện thoại / Zalo: <strong className="tracking-wide">{phoneDisplay}</strong>
+            <p className="mt-1 max-w-md text-sm text-theme-ink sm:text-base">
+              <Description isVip={isVip} />
             </p>
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <ContactButtons large />
-          <button
-            type="button"
-            onClick={handleCopyPhone}
-            className="inline-flex min-h-[44px] items-center gap-2 self-start rounded-full px-3 text-sm font-semibold text-theme-ink hover:bg-theme-page hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
-          >
-            {copied ? (
-              <Check className="h-4 w-4 text-status-ok" />
-            ) : (
-              <Copy className="h-4 w-4 text-theme-muted" />
-            )}
-            <span>{copied ? "Đã sao chép số" : "Sao chép số điện thoại"}</span>
-          </button>
-        </div>
+        <ContactActions isVip={isVip} urgent={urgent} concern={concern} large />
       </div>
     </section>
   );

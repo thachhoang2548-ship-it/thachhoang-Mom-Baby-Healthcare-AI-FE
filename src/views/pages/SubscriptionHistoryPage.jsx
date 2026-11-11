@@ -197,7 +197,9 @@ export default function SubscriptionHistoryPage() {
                     <tr key={txn.id || txn.orderCode} className="hover:bg-theme-page/50">
                       <td className="px-5 py-4 font-bold text-theme-ink whitespace-nowrap">{txn.orderCode}</td>
                       <td className="px-5 py-4 font-semibold text-theme-ink">
-                        {txn.planCode} ({txn.durationMonths} tháng)
+                        {txn.planCode === 'CALLBACK_FEE'
+                          ? 'Phí bác sĩ gọi lại tư vấn'
+                          : `${txn.planCode} (${txn.durationMonths} tháng)`}
                       </td>
                       <td className="px-5 py-4 font-extrabold text-theme-ink whitespace-nowrap">
                         {formatMoney(txn.amount)}

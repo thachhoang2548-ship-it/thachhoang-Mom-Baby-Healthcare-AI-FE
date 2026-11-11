@@ -25,7 +25,7 @@ export const TIERS_DATA = {
     features: [
       'Toàn bộ đặc quyền của gói Mẹ Hiện Đại',
       'Phân tích nhật ký cảm xúc và giọng nói AI',
-      'Ưu tiên kết nối chuyên gia',
+      'Bác sĩ gọi lại tư vấn (5.000đ/cuộc, chỉ tính khi tư vấn thành công)',
       'Care Staff đồng hành và phản hồi 24/7',
     ],
   },
