@@ -27,14 +27,14 @@ function NurseMascot({ size = 76, className = "" }) {
   );
 }
 
-function ContactActions({ isVip, urgent, concern, large = false }) {
+function ContactActions({ isVip, urgent, concern, symptomLogId, large = false }) {
   const padClass = large ? "px-5 py-3 text-sm sm:text-base" : "px-4 py-2.5 text-sm";
   return (
     <div className="flex flex-wrap gap-2.5">
       {isVip ? (
         <Link
           to="/doctor-callback"
-          state={concern ? { concern } : undefined}
+          state={concern || symptomLogId ? { concern, symptomLogId } : undefined}
           className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full bg-status-ok font-bold text-theme-surface transition-colors hover:bg-status-ok-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-ok focus-visible:ring-offset-2 ${padClass}`}
         >
           <PhoneIncoming className="h-4 w-4 shrink-0" />
@@ -82,7 +82,7 @@ function Description({ isVip }) {
  * - Gói khác: lời mời nâng cấp.
  * - Trường hợp khẩn: luôn kèm nút gọi 115 miễn phí cho mọi gói.
  */
-export default function DoctorConsultationCard({ variant = "full", urgent = false, concern = "" }) {
+export default function DoctorConsultationCard({ variant = "full", urgent = false, concern = "", symptomLogId = null }) {
   const tier = useAuthController((state) => state.tier);
   const isVip = checkTierUnlocked(tier, "SuperMomVip");
   const { displayName, role } = ADVISOR_DOCTOR;
@@ -103,7 +103,7 @@ export default function DoctorConsultationCard({ variant = "full", urgent = fals
             </p>
           </div>
         </div>
-        <ContactActions isVip={isVip} urgent={urgent} concern={concern} />
+        <ContactActions isVip={isVip} urgent={urgent} concern={concern} symptomLogId={symptomLogId} />
       </section>
     );
   }
@@ -136,7 +136,7 @@ export default function DoctorConsultationCard({ variant = "full", urgent = fals
           </div>
         </div>
 
-        <ContactActions isVip={isVip} urgent={urgent} concern={concern} large />
+        <ContactActions isVip={isVip} urgent={urgent} concern={concern} symptomLogId={symptomLogId} large />
       </div>
     </section>
   );
