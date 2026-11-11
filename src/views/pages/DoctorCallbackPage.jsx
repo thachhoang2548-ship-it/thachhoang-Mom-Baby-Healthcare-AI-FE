@@ -22,6 +22,9 @@ import doctorCallbackService, {
   CALLBACK_STATUS_META,
 } from "../../models/services/doctorCallbackService";
 import { getPaymentStatus } from "../../models/services/paymentService";
+import symptomService from "../../models/services/symptomService";
+
+const URGENCY_VI = { Low: "Thấp", Medium: "Trung bình", High: "Cao", Critical: "Khẩn cấp" };
 
 const formatMoney = (amount) => `${Number(amount || 0).toLocaleString("vi-VN")}đ`;
 const formatDateTime = (value) =>
@@ -185,6 +188,27 @@ export default function DoctorCallbackPage() {
   const [requests, setRequests] = useState([]);
   const [loadingList, setLoadingList] = useState(true);
   const [payingId, setPayingId] = useState(null);
+  const [symptomLogId, setSymptomLogId] = useState(location.state?.symptomLogId || null);
+  const [recentSymptoms, setRecentSymptoms] = useState([]);
+
+  // Các lần kiểm tra triệu chứng gần đây để mẹ đính kèm (bác sĩ sẽ xem ảnh và kết quả AI).
+  useEffect(() => {
+    if (!isVip) return;
+    let cancelled = false;
+    symptomService
+      .fetchHistory()
+      .then((res) => {
+        if (cancelled) return;
+        const list = Array.isArray(res?.data) ? res.data : [];
+        setRecentSymptoms(
+          [...list].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5)
+        );
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isVip]);
 
   const loadRequests = useCallback(async () => {
     try {
@@ -216,9 +240,10 @@ export default function DoctorCallbackPage() {
     }
     setSubmitting(true);
     try {
-      await doctorCallbackService.create({ contactPhone: phone, concern: concern.trim(), preferredTime });
+      await doctorCallbackService.create({ contactPhone: phone, concern: concern.trim(), preferredTime, symptomLogId });
       toast.success("Đã gửi yêu cầu. Bác sĩ sẽ gọi lại cho mẹ sớm nhất có thể.");
       setConcern("");
+      setSymptomLogId(null);
       await loadRequests();
     } catch (err) {
       toast.error(errorMessage(err, "Không gửi được yêu cầu. Mẹ thử lại nhé."));
@@ -333,6 +358,62 @@ export default function DoctorCallbackPage() {
                 />
               </div>
 
+              {recentSymptoms.length > 0 && (
+                <fieldset>
+                  <legend className="mb-1 text-sm font-semibold">Đính kèm kết quả kiểm tra triệu chứng</legend>
+                  <p className="mb-2 text-xs text-theme-muted">
+                    Bác sĩ sẽ xem ảnh mẹ đã chụp và kết quả AI trước khi gọi.
+                  </p>
+                  <div className="space-y-2">
+                    {[{ id: null }, ...recentSymptoms].map((s) => {
+                      const selected = (symptomLogId || null) === (s.id || null);
+                      const image = s.imageUrl || s.images?.[0];
+                      return (
+                        <label
+                          key={s.id ?? "none"}
+                          className={`flex cursor-pointer items-center gap-3 rounded-2xl border p-3 transition-colors ${
+                            selected ? "border-theme-brand bg-theme-brand-soft/50" : "border-theme-line bg-theme-page/40 hover:bg-theme-brand-soft/30"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="attach-symptom"
+                            checked={selected}
+                            onChange={() => {
+                              setSymptomLogId(s.id || null);
+                              if (s.id && !concern.trim()) setConcern((s.textDescription || "").slice(0, 1000));
+                            }}
+                            className="h-4 w-4 accent-current text-theme-brand"
+                          />
+                          {s.id ? (
+                            <>
+                              {image ? (
+                                <img src={image} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
+                              ) : (
+                                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-theme-surface text-xs text-theme-muted">
+                                  Không ảnh
+                                </span>
+                              )}
+                              <span className="min-w-0">
+                                <span className="block truncate text-sm font-semibold">{s.textDescription}</span>
+                                <span className="block text-xs text-theme-muted">
+                                  {formatDateTime(s.createdAt)}
+                                  {s.analysisResult?.urgencyLevel
+                                    ? ` · Mức độ: ${URGENCY_VI[s.analysisResult.urgencyLevel] || s.analysisResult.urgencyLevel}`
+                                    : ""}
+                                </span>
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-sm font-semibold">Không đính kèm</span>
+                          )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+              )}
+
               <fieldset>
                 <legend className="mb-1.5 text-sm font-semibold">Khung giờ mẹ tiện nghe máy</legend>
                 <div className="flex flex-wrap gap-2">
@@ -409,6 +490,7 @@ export default function DoctorCallbackPage() {
                     <p className="mt-1 text-xs text-theme-muted">
                       Gọi tới {r.contactPhone}
                       {r.preferredTime ? ` · ${r.preferredTime}` : ""}
+                      {r.symptomLogId ? " · Có đính kèm kết quả kiểm tra triệu chứng" : ""}
                     </p>
 
                     <div className="mt-3 flex flex-wrap items-center gap-2">

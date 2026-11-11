@@ -23,6 +23,9 @@ export default function AnalysisResult({ analysis }) {
 
   // Mô tả triệu chứng mẹ đã nhập — điền sẵn vào form "bác sĩ gọi lại".
   const symptomText = (doc.textDescription || "").slice(0, 1000);
+  // Đính kèm lần kiểm tra này vào yêu cầu gọi lại để bác sĩ xem ảnh và kết quả AI.
+  const symptomLogId = doc.id || doc._id || null;
+  const callbackState = { concern: symptomText, symptomLogId };
 
   const {
     urgencyLevel,
@@ -146,7 +149,7 @@ export default function AnalysisResult({ analysis }) {
           </div>
           <Link
             to="/doctor-callback"
-            state={symptomText ? { concern: symptomText } : undefined}
+            state={callbackState}
             className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 self-start rounded-full bg-red-700 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger-text focus-visible:ring-offset-2 sm:self-center"
           >
             <PhoneIncoming className="h-4 w-4" />
@@ -240,6 +243,7 @@ export default function AnalysisResult({ analysis }) {
         variant="full"
         urgent={shouldSeeDoctor || urgencyText === "Khẩn cấp" || urgencyText === "Cao"}
         concern={symptomText}
+        symptomLogId={symptomLogId}
       />
 
       {/* Section G: Disclaimer riêng cho kết quả AI */}

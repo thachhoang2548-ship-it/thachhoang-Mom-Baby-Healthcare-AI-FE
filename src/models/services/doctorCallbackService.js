@@ -8,8 +8,15 @@ const unwrap = (response) => response.data?.data ?? response.data;
 
 const doctorCallbackService = {
   // ── Phía mẹ ──
-  create: async ({ contactPhone, concern, preferredTime }) =>
-    unwrap(await axiosClient.post('/api/doctor-callbacks', { contactPhone, concern, preferredTime })),
+  create: async ({ contactPhone, concern, preferredTime, symptomLogId }) =>
+    unwrap(
+      await axiosClient.post('/api/doctor-callbacks', {
+        contactPhone,
+        concern,
+        preferredTime,
+        symptomLogId: symptomLogId || null,
+      })
+    ),
 
   getMine: async () => unwrap(await axiosClient.get('/api/doctor-callbacks/mine')) || [],
 

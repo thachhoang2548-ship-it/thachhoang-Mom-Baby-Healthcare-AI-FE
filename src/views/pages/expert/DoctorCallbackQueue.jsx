@@ -12,6 +12,81 @@ const formatDateTime = (value) =>
     : "";
 const errorMessage = (error, fallback) => error?.response?.data?.message || fallback;
 
+const URGENCY_META = {
+  Low: { label: "Thấp", cls: "bg-status-ok-bg text-status-ok-text border-status-ok-line" },
+  Medium: { label: "Trung bình", cls: "bg-status-warn-bg text-status-warn-text border-status-warn-line/50" },
+  High: { label: "Cao", cls: "bg-status-danger-bg text-status-danger-text border-status-danger-line" },
+  Critical: { label: "Khẩn cấp", cls: "bg-status-danger-bg text-status-danger-text border-status-danger-text" },
+};
+
+function parseConditions(json) {
+  if (!json) return [];
+  try {
+    const ai = JSON.parse(json);
+    const list = Array.isArray(ai) ? ai : ai?.possibleConditions || [];
+    return list.map((c) => c?.name).filter(Boolean).slice(0, 4);
+  } catch {
+    return [];
+  }
+}
+
+/** Ảnh và kết quả AI của lần kiểm tra triệu chứng mẹ đính kèm. Bấm ảnh để phóng to. */
+function AttachedSymptom({ symptom }) {
+  const [zoom, setZoom] = useState(false);
+  const urgency = URGENCY_META[symptom.urgencyLevel];
+  const conditions = parseConditions(symptom.analysisJson);
+
+  return (
+    <div className="space-y-2 rounded-2xl border border-theme-line bg-theme-page/60 p-3">
+      <p className="text-xs font-bold text-theme-muted">
+        Kết quả kiểm tra triệu chứng mẹ đính kèm · {formatDateTime(symptom.createdAt)}
+      </p>
+      <div className="flex gap-3">
+        {symptom.imageUrl && (
+          <button
+            type="button"
+            onClick={() => setZoom(true)}
+            aria-label="Phóng to ảnh triệu chứng"
+            className="shrink-0 overflow-hidden rounded-xl border border-theme-line focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand"
+          >
+            <img src={symptom.imageUrl} alt="Ảnh triệu chứng mẹ chụp" className="h-24 w-24 object-cover" />
+          </button>
+        )}
+        <div className="min-w-0 space-y-1.5 text-sm">
+          <p className="text-theme-ink">{symptom.textDescription}</p>
+          <div className="flex flex-wrap gap-1.5">
+            {urgency && (
+              <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-bold ${urgency.cls}`}>
+                AI đánh giá: {urgency.label}
+              </span>
+            )}
+            {symptom.shouldSeeDoctor && (
+              <span className="inline-flex rounded-full border border-status-danger-line bg-status-danger-bg px-2 py-0.5 text-xs font-bold text-status-danger-text">
+                AI khuyên gặp bác sĩ{symptom.specialistType ? `: ${symptom.specialistType}` : ""}
+              </span>
+            )}
+          </div>
+          {conditions.length > 0 && (
+            <p className="text-xs text-theme-muted">Khả năng AI nêu: {conditions.join(", ")}</p>
+          )}
+        </div>
+      </div>
+
+      {zoom && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Ảnh triệu chứng"
+          onClick={() => setZoom(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+        >
+          <img src={symptom.imageUrl} alt="Ảnh triệu chứng mẹ chụp" className="max-h-[90vh] max-w-full rounded-2xl object-contain" />
+        </div>
+      )}
+    </div>
+  );
+}
+
 /**
  * Hàng đợi "bác sĩ gọi lại" cho bác sĩ / chuyên gia.
  * Bác sĩ bấm số để gọi từ điện thoại của mình, rồi đánh dấu kết quả:
@@ -115,6 +190,8 @@ export default function DoctorCallbackQueue({ onPendingCountChange }) {
               <p className="whitespace-pre-line rounded-2xl bg-theme-page p-3 text-sm leading-relaxed text-theme-ink">
                 {item.concern}
               </p>
+
+              {item.symptom && <AttachedSymptom symptom={item.symptom} />}
 
               <label className="block">
                 <span className="mb-1 block text-xs font-semibold text-theme-muted">Ghi chú sau cuộc gọi (chỉ bác sĩ thấy)</span>
