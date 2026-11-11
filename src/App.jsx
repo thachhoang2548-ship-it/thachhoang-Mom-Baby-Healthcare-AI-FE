@@ -48,6 +48,7 @@ import MedicationScheduler from "./views/pages/MedicationScheduler";
 import SymptomPage from "./views/pages/SymptomPage";
 import SymptomHistoryPage from "./views/pages/SymptomHistoryPage";
 import SymptomDetailPage from "./views/pages/SymptomDetailPage";
+import DoctorCallbackPage from "./views/pages/DoctorCallbackPage";
 import DailyMonitoringPage from "./views/pages/DailyMonitoringPage";
 
 import ProtectedRoute from "./views/components/ProtectedRoute";
@@ -151,6 +152,7 @@ function AppContent() {
           <Route path="/symptoms/history" element={<SymptomHistoryPage />} />
           <Route path="/symptoms/:id" element={<SymptomDetailPage />} />
           <Route path="/symptom-entry" element={<SymptomPage />} />
+          <Route path="/doctor-callback" element={<DoctorCallbackPage />} />
           <Route path="/daily-monitoring" element={<DailyMonitoringPage />} />
         </Route>
       </Routes>

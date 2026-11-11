@@ -45,6 +45,7 @@ import {
   ChefHat,
   WifiOff,
   ChevronRight,
+  PhoneIncoming,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -218,6 +219,7 @@ export default function AppShell() {
         items: [
           { label: 'Thực đơn AI cho mẹ', path: '/diet-recipes', icon: ChefHat },
           { label: 'Kiểm tra triệu chứng', path: '/symptoms', icon: Stethoscope },
+          { label: 'Bác sĩ gọi lại', path: '/doctor-callback', icon: PhoneIncoming },
           { label: 'Thư giãn', path: '/relax', icon: Headphones },
         ],
       },

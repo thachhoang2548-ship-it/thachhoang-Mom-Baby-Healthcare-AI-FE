@@ -6,10 +6,11 @@ import {
   Stethoscope,
   Info,
   ShieldAlert,
-  Phone,
+  PhoneIncoming,
   Sprout,
   AlertOctagon,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import DoctorConsultationCard from "./DoctorConsultationCard";
 import { ADVISOR_DOCTOR, EMERGENCY_NUMBER } from "../../../config/advisor";
 
@@ -19,6 +20,9 @@ export default function AnalysisResult({ analysis }) {
   const doc = analysis.analysis || analysis;
   const result = doc.analysisResult;
   if (!result) return null;
+
+  // Mô tả triệu chứng mẹ đã nhập — điền sẵn vào form "bác sĩ gọi lại".
+  const symptomText = (doc.textDescription || "").slice(0, 1000);
 
   const {
     urgencyLevel,
@@ -140,13 +144,14 @@ export default function AnalysisResult({ analysis }) {
               </p>
             </div>
           </div>
-          <a
-            href={`tel:${ADVISOR_DOCTOR.phone}`}
+          <Link
+            to="/doctor-callback"
+            state={symptomText ? { concern: symptomText } : undefined}
             className="inline-flex min-h-[44px] shrink-0 items-center justify-center gap-2 self-start rounded-full bg-red-700 px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-status-danger-text focus-visible:ring-offset-2 sm:self-center"
           >
-            <Phone className="h-4 w-4" />
-            <span>Gọi {ADVISOR_DOCTOR.displayName}</span>
-          </a>
+            <PhoneIncoming className="h-4 w-4" />
+            <span>Nhờ {ADVISOR_DOCTOR.displayName} gọi lại</span>
+          </Link>
         </div>
       )}
 
@@ -234,6 +239,7 @@ export default function AnalysisResult({ analysis }) {
       <DoctorConsultationCard
         variant="full"
         urgent={shouldSeeDoctor || urgencyText === "Khẩn cấp" || urgencyText === "Cao"}
+        concern={symptomText}
       />
 
       {/* Section G: Disclaimer riêng cho kết quả AI */}
@@ -243,7 +249,7 @@ export default function AnalysisResult({ analysis }) {
           <p className="text-sm leading-relaxed text-theme-ink sm:text-base">
             <strong>Kết quả này do AI gợi ý, không phải chẩn đoán của bác sĩ. </strong>
             {disclaimer && <span>{disclaimer} </span>}
-            Hãy hỏi <strong>{ADVISOR_DOCTOR.displayName} ({ADVISOR_DOCTOR.phoneDisplay})</strong> hoặc đến cơ sở y tế
+            Hãy hỏi <strong>{ADVISOR_DOCTOR.displayName}</strong> hoặc đến cơ sở y tế
             để được khám và điều trị đúng. Trường hợp khẩn cấp, gọi ngay <strong>{EMERGENCY_NUMBER}</strong>.
           </p>
         </div>

@@ -13,8 +13,10 @@ import {
   Baby,
   Heart,
   X,
+  PhoneIncoming,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import DoctorCallbackQueue from "./DoctorCallbackQueue";
 
 function RecipeTable({ title, icon, recipes, onApprove, onReject }) {
   const approved = recipes.filter((r) => r.status === "Approved" || r._reviewedStatus === "approved");
@@ -190,7 +192,7 @@ export default function ExpertDashboardPage() {
             setPendingRecipes(Array.isArray(res.data) ? res.data : []);
           }
         }
-      } else {
+      } else if (activeTab === "moms") {
         const res = await expertService.getAssignedMoms();
         if ((res.isSuccess || res.success) && res.data) {
           setAssignedMoms(Array.isArray(res.data) ? res.data : []);
@@ -320,10 +322,26 @@ export default function ExpertDashboardPage() {
             <UserCheck className="w-4 h-4" aria-hidden="true" />
             <span>Tư vấn mẹ bầu</span>
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "callbacks"}
+            onClick={() => setActiveTab("callbacks")}
+            className={`min-h-[44px] px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-colors inline-flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-theme-brand ${
+              activeTab === "callbacks"
+                ? "bg-theme-brand text-theme-surface shadow-sm"
+                : "bg-theme-page text-theme-ink border border-theme-line hover:bg-theme-brand-soft"
+            }`}
+          >
+            <PhoneIncoming className="w-4 h-4" aria-hidden="true" />
+            <span>Yêu cầu gọi lại</span>
+          </button>
         </div>
       </header>
 
-      {loading ? (
+      {activeTab === "callbacks" ? (
+        <DoctorCallbackQueue />
+      ) : loading ? (
         <div className="text-center py-16 bg-theme-surface rounded-3xl border border-theme-line">
           <p className="text-sm font-semibold text-theme-muted">Đang tải dữ liệu thẩm định...</p>
         </div>
