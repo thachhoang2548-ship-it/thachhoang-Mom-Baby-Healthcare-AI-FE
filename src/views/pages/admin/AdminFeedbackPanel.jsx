@@ -2,11 +2,12 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { MessageSquareHeart, RefreshCw } from 'lucide-react';
 import adminService from '../../../models/services/adminService';
 import feedbackSamples from './feedbackSamples.json';
+import feedbackMore from './feedbackMore';
 
 const formatDate = (value) => (value ? new Date(value).toLocaleString('vi-VN') : 'Chưa có');
 const displayName = (ticket) =>
   ticket.userName?.trim().replace(/^Mẹ\s+/iu, '') || ticket.userEmail || 'Người dùng';
-const sampleTickets = feedbackSamples.map(({ n, name, category, page, body }) => {
+const sampleTickets = [...feedbackSamples, ...feedbackMore].map(({ n, name, category, page, body }) => {
   const suffix = String(n).padStart(2, '0');
   const createdAt = new Date(Date.UTC(2026, 10, 27, 4 - n)).toISOString();
   return {
@@ -91,7 +92,7 @@ export default function AdminFeedbackPanel() {
             {loading ? 'Đang tải phản hồi...' : 'Chưa có phản hồi mới nào.'}
           </div>
         ) : (
-          tickets.slice(0, 34).map((ticket) => {
+          tickets.slice(0, 104).map((ticket) => {
             const parsed = parseFeedback(ticket.message);
             return (
               <article
