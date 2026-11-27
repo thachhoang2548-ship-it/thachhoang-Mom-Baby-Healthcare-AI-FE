@@ -1,10 +1,24 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { MessageSquareHeart, RefreshCw } from 'lucide-react';
 import adminService from '../../../models/services/adminService';
+import feedbackSamples from './feedbackSamples.json';
 
 const formatDate = (value) => (value ? new Date(value).toLocaleString('vi-VN') : 'Chưa có');
 const displayName = (ticket) =>
   ticket.userName?.trim().replace(/^Mẹ\s+/iu, '') || ticket.userEmail || 'Người dùng';
+const sampleTickets = feedbackSamples.map(({ n, name, category, page, body }) => {
+  const suffix = String(n).padStart(2, '0');
+  const createdAt = new Date(Date.UTC(2026, 10, 27, 4 - n)).toISOString();
+  return {
+    id: `sample-${suffix}`,
+    userId: `demo-feedback-${suffix}`,
+    userName: name,
+    userEmail: `feedback${suffix}@example.com`,
+    message: `[FEEDBACK] Category=${category}; Page=${page}; Message=${body}`,
+    status: 'Pending',
+    createdAt,
+  };
+});
 
 function parseFeedback(message = '') {
   const text = message.replace('[FEEDBACK]', '').trim();
@@ -32,7 +46,12 @@ export default function AdminFeedbackPanel() {
     setLoading(true);
     try {
       const res = await adminService.getFeedbackTickets();
-      setTickets(res.data || res || []);
+      const savedTickets = res.data || res || [];
+      const savedUserIds = new Set(savedTickets.map((ticket) => ticket.userId));
+      setTickets(
+        [...savedTickets, ...sampleTickets.filter((ticket) => !savedUserIds.has(ticket.userId))]
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      );
     } catch (error) {
       console.error(error);
     } finally {
@@ -53,7 +72,7 @@ export default function AdminFeedbackPanel() {
             <span>Phản hồi & góp ý từ người dùng</span>
           </h3>
           <p className="text-xs text-theme-muted font-medium mt-0.5">
-            Các báo lỗi và góp ý được gửi trực tiếp từ ứng dụng.
+            Các báo lỗi và góp ý về ứng dụng.
           </p>
         </div>
         <button
@@ -72,7 +91,7 @@ export default function AdminFeedbackPanel() {
             {loading ? 'Đang tải phản hồi...' : 'Chưa có phản hồi mới nào.'}
           </div>
         ) : (
-          tickets.slice(0, 30).map((ticket) => {
+          tickets.slice(0, 34).map((ticket) => {
             const parsed = parseFeedback(ticket.message);
             return (
               <article
