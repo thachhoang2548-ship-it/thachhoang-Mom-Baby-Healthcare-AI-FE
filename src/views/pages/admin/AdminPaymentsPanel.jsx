@@ -1,53 +1,30 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Download, RefreshCw, Search, SlidersHorizontal } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Download, Search, SlidersHorizontal } from 'lucide-react';
 import toast from 'react-hot-toast';
-import adminService from '../../../models/services/adminService';
+import { demoTransactions } from './demoPayments';
 
 const formatMoney = (amount) => `${Number(amount || 0).toLocaleString('vi-VN')} đ`;
 const formatDate = (value) => (value ? new Date(value).toLocaleString('vi-VN') : 'Chưa có');
 
 const STATUS_META = {
   Completed: { badge: 'bg-status-ok-bg text-status-ok-text border-status-ok-line', label: 'Hoàn tất' },
-  Pending: { badge: 'bg-status-warn-bg text-status-warn-text border-status-warn-line/50', label: 'Đang chờ' },
-  Failed: { badge: 'bg-status-danger-bg text-status-danger-text border-status-danger-line', label: 'Thất bại' },
-  Refunded: { badge: 'bg-theme-page text-theme-ink border-theme-line', label: 'Hoàn tiền' },
 };
 
 export default function AdminPaymentsPanel() {
-  const [filters, setFilters] = useState({ status: '', email: '' });
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(false);
-
-  const transactions = useMemo(() => data?.transactions || [], [data]);
-  const statuses = data?.statuses || [];
-
-  const loadTransactions = useCallback(async (customFilters) => {
-    setLoading(true);
-    try {
-      const targetFilters = customFilters || { status: '', email: '' };
-      const cleanFilters = Object.fromEntries(
-        Object.entries(targetFilters).filter(([, value]) => value)
-      );
-      const res = await adminService.getPaymentTransactions(cleanFilters);
-      setData(res.data || res);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadTransactions({ status: '', email: '' });
-  }, [loadTransactions]);
+  const [emailFilter, setEmailFilter] = useState('');
+  const transactions = useMemo(() => demoTransactions.filter((item) =>
+    item.userEmail.toLowerCase().includes(emailFilter.trim().toLowerCase())
+  ), [emailFilter]);
+  const completedRevenue = transactions.reduce((sum, item) => sum + item.amount, 0);
 
   const exportCsv = () => {
     if (transactions.length === 0) {
       toast.error('Chưa có giao dịch để xuất.');
       return;
     }
-    const header = ['OrderCode', 'Email', 'Plan', 'Amount', 'Status', 'Method', 'PaidAt'];
+    const header = ['DataType', 'OrderCode', 'Email', 'Plan', 'Amount', 'Status', 'Method', 'PaidAt'];
     const rows = transactions.map((item) => [
+      'Demo',
       item.orderCode,
       item.userEmail,
       item.planCode,
@@ -62,7 +39,7 @@ export default function AdminPaymentsPanel() {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = 'momoi-admin-transactions.csv';
+    link.download = 'momoi-demo-transactions.csv';
     link.click();
     URL.revokeObjectURL(link.href);
   };
@@ -76,7 +53,7 @@ export default function AdminPaymentsPanel() {
             <span>Bảng đối soát giao dịch thanh toán</span>
           </h3>
           <p className="text-xs text-theme-muted font-medium mt-0.5">
-            Theo dõi doanh thu, lọc trạng thái giao dịch và xuất chứng từ CSV.
+            Theo dõi các giao dịch hoàn tất và xuất danh sách CSV.
           </p>
         </div>
 
@@ -88,38 +65,12 @@ export default function AdminPaymentsPanel() {
             </label>
             <input
               id="admin-payment-email"
-              value={filters.email}
-              onChange={(event) => setFilters({ ...filters, email: event.target.value })}
+              value={emailFilter}
+              onChange={(event) => setEmailFilter(event.target.value)}
               placeholder="Tìm theo email..."
               className="min-h-[44px] pl-10 pr-3.5 py-2 rounded-2xl border border-theme-line bg-theme-page/60 text-xs sm:text-sm font-semibold text-theme-ink placeholder:text-theme-muted focus:outline-none focus:ring-2 focus:ring-theme-brand"
             />
           </div>
-
-          <label htmlFor="admin-payment-status" className="sr-only">
-            Lọc trạng thái
-          </label>
-          <select
-            id="admin-payment-status"
-            value={filters.status}
-            onChange={(event) => setFilters({ ...filters, status: event.target.value })}
-            className="min-h-[44px] px-3.5 py-2 rounded-2xl border border-theme-line bg-theme-page/60 text-xs sm:text-sm font-semibold text-theme-ink focus:outline-none focus:ring-2 focus:ring-theme-brand"
-          >
-            <option value="">Tất cả trạng thái</option>
-            {statuses.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </select>
-
-          <button
-            type="button"
-            onClick={() => loadTransactions(filters)}
-            className="min-h-[44px] px-4 py-2 rounded-2xl bg-theme-brand-soft border border-theme-brand/25 text-theme-ink hover:bg-theme-brand hover:text-theme-surface text-xs sm:text-sm font-bold inline-flex items-center gap-2 transition-colors"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin motion-reduce:animate-none' : ''}`} aria-hidden="true" />
-            <span>Lọc</span>
-          </button>
 
           <button
             type="button"
@@ -136,7 +87,7 @@ export default function AdminPaymentsPanel() {
         <div className="rounded-2xl bg-status-ok-bg border border-status-ok-line p-4">
           <p className="text-xs font-bold text-status-ok-text">Doanh thu đã hoàn tất</p>
           <p className="text-lg font-extrabold text-status-ok-text mt-1">
-            {formatMoney(data?.completedRevenue)}
+            {formatMoney(completedRevenue)}
           </p>
         </div>
         <div className="rounded-2xl bg-theme-page border border-theme-line p-4">
@@ -161,12 +112,12 @@ export default function AdminPaymentsPanel() {
             {transactions.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-theme-muted font-semibold">
-                  {loading ? 'Đang tải giao dịch...' : 'Chưa có giao dịch phù hợp.'}
+                  Chưa có giao dịch phù hợp.
                 </td>
               </tr>
             ) : (
               transactions.map((txn) => {
-                const meta = STATUS_META[txn.status] || STATUS_META.Pending;
+                const meta = STATUS_META.Completed;
                 return (
                   <tr key={txn.id || txn.orderCode} className="hover:bg-theme-page/50">
                     <td className="px-4 py-3.5 font-bold text-theme-ink whitespace-nowrap">

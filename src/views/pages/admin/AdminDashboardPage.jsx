@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import adminService from "../../../models/services/adminService";
 import AdminPaymentsPanel from "./AdminPaymentsPanel";
 import AdminFeedbackPanel from "./AdminFeedbackPanel";
+import { demoRevenueSummary } from "./demoPayments";
 import {
   Users,
   Lock,
@@ -44,7 +45,7 @@ export default function AdminDashboardPage() {
   const [users, setUsers] = useState([]);
   const [riskUsers, setRiskUsers] = useState([]);
   const [businessRules, setBusinessRules] = useState([]);
-  const [revenueSummary, setRevenueSummary] = useState(null);
+  const [revenueSummary, setRevenueSummary] = useState(demoRevenueSummary);
   const [loading, setLoading] = useState(true);
 
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -94,8 +95,7 @@ export default function AdminDashboardPage() {
         if (res.isSuccess && res.data) setUsers(res.data);
         else if (Array.isArray(res.data)) setUsers(res.data);
 
-        const revenueRes = await adminService.getRevenueSummary();
-        if (revenueRes.isSuccess && revenueRes.data) setRevenueSummary(revenueRes.data);
+        setRevenueSummary(demoRevenueSummary);
       } else if (activeTab === "risk") {
         const res = await adminService.getUsersAtRisk();
         if (res.isSuccess && res.data) setRiskUsers(res.data);
@@ -105,9 +105,7 @@ export default function AdminDashboardPage() {
         if (res.isSuccess && res.data) setBusinessRules(res.data);
         else if (Array.isArray(res.data)) setBusinessRules(res.data);
       } else if (activeTab === "revenue") {
-        const res = await adminService.getRevenueSummary();
-        if (res.isSuccess && res.data) setRevenueSummary(res.data);
-        else setRevenueSummary(res.data || null);
+        setRevenueSummary(demoRevenueSummary);
       }
     } catch (err) {
       console.error("Failed to load admin data", err);
