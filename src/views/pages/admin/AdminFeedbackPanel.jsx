@@ -3,6 +3,8 @@ import { MessageSquareHeart, RefreshCw } from 'lucide-react';
 import adminService from '../../../models/services/adminService';
 
 const formatDate = (value) => (value ? new Date(value).toLocaleString('vi-VN') : 'Chưa có');
+const displayName = (ticket) =>
+  ticket.userName?.trim().replace(/^Mẹ\s+/iu, '') || ticket.userEmail || 'Người dùng';
 
 function parseFeedback(message = '') {
   const text = message.replace('[FEEDBACK]', '').trim();
@@ -70,7 +72,7 @@ export default function AdminFeedbackPanel() {
             {loading ? 'Đang tải phản hồi...' : 'Chưa có phản hồi mới nào.'}
           </div>
         ) : (
-          tickets.slice(0, 8).map((ticket) => {
+          tickets.slice(0, 30).map((ticket) => {
             const parsed = parseFeedback(ticket.message);
             return (
               <article
@@ -83,7 +85,7 @@ export default function AdminFeedbackPanel() {
                       {parsed.category}
                     </span>
                     <h4 className="text-sm font-bold text-theme-ink mt-1.5">
-                      {ticket.userName || ticket.userEmail || 'Người dùng'}
+                      {displayName(ticket)}
                     </h4>
                     <p className="text-xs font-medium text-theme-muted">{ticket.userEmail}</p>
                   </div>
